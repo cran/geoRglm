@@ -141,7 +141,7 @@
 "prior.glm.check.aux" <-
   function(prior, fct)
 {
-  if(is.null(class(prior)) || class(prior) != "prior.geoRglm"){
+  if(class(prior) != "prior.geoRglm"){
     if(!is.list(prior))
       stop(paste(fct,": argument prior only takes a list or an output of the function prior.glm.control"))
     else{
@@ -262,27 +262,50 @@
 }
 
 
-### The cases where some of the parameter are fixed are not implemented yet.
+### The cases where some of the parameters are fixed are not implemented yet.
 
 "hist.glm.krige.bayes" <-
   function(x, pars, density.est = TRUE,
            histogram = TRUE, ...)
 {
+  ## we need to construct the object such that it fits into geoR function hist.krige.bayes
   kb <- list(posterior=list(),prior=list())
-  kb$prior$tausq.rel <- list(status="fixed")
-  kb$prior$phi <- list(status="random")
-  kb$prior$sigmasq <- list(status="random")
+  kb$prior$tausq.rel <- list(status="fixed") 
+  kb$prior$phi <- list(status=ifelse(!is.null(x$prior$phi$status), x$prior$phi$status, "random"))
+  kb$prior$sigmasq <- list(status=ifelse(!is.null(x$prior$sigmasq$status),x$prior$sigmasq$status, "random"))
   if(is.vector(x$posterior$beta$sample)){
-    kb$posterior$sample <- as.data.frame(cbind(x$posterior$beta$sample,
-                                               x$posterior$sigmasq$sample, x$posterior$phi$sample)) 
+    n.sim <- length(x$posterior$beta$sample)
+    if(kb$prior$phi$status =="random"){
+      kb$posterior$sample <- as.data.frame(cbind(x$posterior$beta$sample,
+                                                 x$posterior$sigmasq$sample, x$posterior$phi$sample)) 
+    }
+    else{
+      if(kb$prior$sigmasq$status =="random"){
+        kb$posterior$sample <- as.data.frame(cbind(x$posterior$beta$sample,
+                                                   x$posterior$sigmasq$sample, rep(9999,n.sim))) 
+      }
+      else kb$posterior$sample <- as.data.frame(cbind(x$posterior$beta$sample,
+                                                      rep(-99,n.sim), rep(9999,n.sim))) 
+    }
     names(kb$posterior$sample) <- c("beta", "sigmasq", "phi")
   }
   else{
-    kb$posterior$sample <- as.data.frame(cbind(t(x$posterior$beta$sample),
-                                               x$posterior$sigmasq$sample, x$posterior$phi$sample))
+    n.sim <- nrow(x$posterior$beta$sample)
+    if(kb$prior$phi$status =="random"){
+      kb$posterior$sample <- as.data.frame(cbind(t(x$posterior$beta$sample),
+                                                 x$posterior$sigmasq$sample, x$posterior$phi$sample))
+    }
+    else{
+      if(kb$prior$sigmasq$status =="random"){
+        kb$posterior$sample <- as.data.frame(cbind(t(x$posterior$beta$sample),
+                                                   x$posterior$sigmasq$sample, rep(9999,n.sim)))
+      }
+      else kb$posterior$sample <- as.data.frame(cbind(t(x$posterior$beta$sample),
+                                                      rep(-99,n.sim), rep(9999,n.sim)))
+    }
     names(kb$posterior$sample) <- c(names(x$posterior$beta$mean), "sigmasq", "phi")
   }
-  kb$posterior$sample$tausq.rel <- rep(-99,length(x$posterior$phi$sample))
+  kb$posterior$sample$tausq.rel <- rep(-99,n.sim)
   hist.krige.bayes(x=kb, pars=pars, density.est = density.est, histogram = histogram)
   return(invisible())
 }

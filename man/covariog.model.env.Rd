@@ -86,8 +86,8 @@ covariog.model.env(geodata, coords = geodata$coords, units.m = "default",
 \seealso{\code{\link{covariog}} for covariogram calculation and \code{\link{plot.covariogram}} for graphical output.  }
 
 \examples{
-\testonly{library(geoR)}
-if(is.R()) data(p50)
+\dontshow{library(geoR)}
+data(p50)
 covar <- covariog(p50, uvec = c(1:10))
 parmval <- list(cov.model = "exponential", cov.pars = c(0.8,0.1), 
                 beta = 1)

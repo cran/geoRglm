@@ -1,15 +1,15 @@
 "asympvar" <- 
-  function(timeseries, type = "mon", lag.max = 100)
+  function(timeseries, type = "mon", lag.max = 100, messages.screen=TRUE)
 {
   if(is.R()) require(ts) 
   if(is.vector(timeseries)) n.series <- 1
   else n.series <- nrow(timeseries) 
   if(type == "mon" | type == "all" | type == "pos") {
-    if(type == "mon")
+    if(messages.screen & type == "mon")
       cat(paste("calculating the initial monotone sequence estimate \n"))
-    if(type == "pos") 
+    if(messages.screen & type == "pos") 
       cat(paste("calculating the initial positive sequence estimate \n"))
-    if(type == "all") 
+    if(messages.screen & type == "all") 
       cat(paste("calculating the initial positive sequence estimate, and the initial monotone sequence estimate \n"))      
   }
   else stop("Must specify type as either: mon, pos or all")

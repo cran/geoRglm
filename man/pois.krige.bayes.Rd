@@ -236,13 +236,14 @@ Further information about \bold{geoRglm} can be found at:\cr
 
 \examples{
 data(p50)
-\testonly{library(geoR)}
+\dontshow{library(geoR)}
 if(!exists(".Random.seed", envir=.GlobalEnv, inherits = FALSE)) set.seed(1234)
 ## MCMC with fixed phi
 prior.5 <- prior.glm.control(phi.prior = "fixed", phi = 0.1)
 mcmc.5 <- mcmc.control(S.scale = 0.01, thin = 1)
 test.5 <- pois.krige.bayes(p50, prior = prior.5, mcmc.input = mcmc.5)
-##hist(test.5) - does not work at the moment
+par(mfrow=c(1,2))
+hist(test.5)
 \dontrun{
 ## Now chose S.scale (Acc-rate=0.60 is preferable).
 mcmc.5.new <- mcmc.control(S.scale = 0.08, thin = 100)
@@ -269,7 +270,7 @@ test.6.new <- pois.krige.bayes(p50,
 par(mfrow=c(3,1))
 hist(test.6.new)
 }
-\testonly{
+\dontshow{
 y9 <- list(data=p50$data[c(1:4,10:14)],coords=p50$coords[c(1:4,10:14),],units.m=p50$units.m[c(1:4,10:14)])
 class(y9) <- "geodata"
 mcmc5 <- mcmc.control(S.scale = 0.1, thin = 1, n.iter=10)

@@ -199,8 +199,7 @@
   if(burn.in > 0) acc.rate <- as.data.frame(rbind(acc.rate.burn.in,acc.rate))
   else acc.rate <- as.data.frame(acc.rate)
   names(acc.rate) <- c("iter.numb", "Acc.rate")
-  if(is.R()) remove("z")
-  else remove(list = c("z"), frame = sys.nframe())
+  remove("z")
 #########
   return(list(Sdata=Sdata, acc.rate=acc.rate))
 }
@@ -251,7 +250,7 @@
       stop(" trend.d and trend.l must have similar specification")
   }
   else{
-    if((!is.null(class(trend.d)) && class(trend.d)=="trend.spatial") & (!is.null(class(trend.l)) && class(trend.l)=="trend.spatial")){
+    if((class(trend.d)=="trend.spatial") & (class(trend.l)=="trend.spatial")){
       if(ncol(trend.d) != ncol(trend.l))
         stop("pois.krige: trend.d and trend.l do not have the same number of columns")
     }
@@ -282,7 +281,7 @@
 "krige.glm.check.aux" <-
   function(krige,fct)
 {
-  if(is.null(class(krige)) || class(krige) != "krige.geoRglm"){
+  if(class(krige) != "krige.geoRglm"){
     if(!is.list(krige))
       stop(paste(fct,": the argument krige only takes a list or an output of the function krige.glm.control"))
     else{
@@ -397,9 +396,8 @@ function(geodata, coords = geodata$coords, data = geodata$data, units.m = "defau
 ########################----- MCMC ------#####################
   ##
   if(beta.prior == "flat") {
-    ivtt <- invcov%*%trend.data    
-    ittivtt <- solve.geoR(crossprod(trend.data, ivtt))
-    invcov <- invcov-ivtt%*%ittivtt%*%t(ivtt)
+    ivtt <- invcov%*%trend.data
+    invcov <- invcov-ivtt%*%solve.geoR(crossprod(trend.data, ivtt),t(ivtt))
   }
   if(lambda == 0){ 
     intensity <- mcmc.pois.log(data = data, units.m = units.m, meanS = mean.d, invcov=invcov, mcmc.input = mcmc.input, messages.screen)
@@ -440,8 +438,9 @@ function(geodata, coords = geodata$coords, data = geodata$data, units.m = "defau
   }
   else{
     if(beta.prior == "flat") {
-      beta.est <- (ittivtt %*% t(ivtt))%*%log(intensity)
-      kpl.result <- list(intensity=intensity, beta.est = rowMeans(beta.est), acc.rate=acc.rate)
+      ## GLS
+      beta.est <- solve.geoR(crossprod(trend.data, ivtt),t(ivtt))%*%rowMeans(log(intensity))
+      kpl.result <- list(intensity=intensity, beta.est = beta.est, acc.rate=acc.rate)
     }
     else kpl.result <- list(intensity=intensity, acc.rate=acc.rate)
   }

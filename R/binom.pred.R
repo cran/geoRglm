@@ -39,12 +39,14 @@
   n <- length(data)
   S.scale <- mcmc.input$S.scale
   fisher.l <- data*(1-data/units.m)
-  QQ <- t(chol(solve(invcov + diag(fisher.l)))) 
+  ## gives a singular matrix when : beta.prior="flat", data are binary and all units.m=1. Therefore a fix.
+  if(all(round(fisher.l)==0)) fisher.l <- data*0.025
+  QQ <- t(chol(solve(invcov + diag(fisher.l))))
   sqrtfiQ <- sqrt(fisher.l)*QQ 
   QtivQ <- diag(n)-crossprod(sqrtfiQ)  
-  if(any(mcmc.input$S.start=="default")) {
+  if(any(mcmc.input$S.start=="default")){
     signum <- round(2*data/units.m) -1
-    S <- as.vector(ifelse(data > 0 & data < units.m, qlogis(data/units.m), signum*1.96) - meanS )
+    S <- as.vector(ifelse(data > 0 & data < units.m, qlogis(data/units.m), signum*1.96) - meanS)
     z <- as.vector(solve(QQ,S))
   }
   else{
@@ -172,9 +174,8 @@
 ########################----- MCMC ------#####################
   ##
   if(beta.prior == "flat") {
-    ivtt <- invcov%*%trend.data    
-    ittivtt <- solve.geoR(crossprod(trend.data, ivtt))
-    invcov <- invcov-ivtt%*%ittivtt%*%t(ivtt)
+    ivtt <- invcov%*%trend.data
+    invcov <- invcov-ivtt%*%solve.geoR(crossprod(trend.data, ivtt),t(ivtt))
   }
   res.mcmc <- mcmc.binom.logit(data = data, units.m = units.m, meanS= mean.d, invcov=invcov, mcmc.input = mcmc.input, messages.screen=messages.screen)
   acc.rate <- res.mcmc$acc.rate
@@ -208,8 +209,9 @@
   }
   else{
     if(beta.prior == "flat") {
-      beta.est <- (ittivtt %*% t(ivtt)) %*% res.mcmc$Sdata
-      kpl.result <- list(prevalence=plogis(res.mcmc$Sdata), beta.est = rowMeans(beta.est), acc.rate=acc.rate)
+      ## GLS
+      beta.est <- solve.geoR(crossprod(trend.data, ivtt),t(ivtt))%*%rowMeans(res.mcmc$Sdata)
+      kpl.result <- list(prevalence=plogis(res.mcmc$Sdata), beta.est = beta.est, acc.rate=acc.rate)
     }
     else kpl.result <- list(prevalence=plogis(res.mcmc$Sdata), acc.rate=acc.rate)
   }
@@ -219,7 +221,6 @@
   if(!is.null(locations)) attr(kpl.result, 'sp.dim') <- ifelse(krige1d, "1d", "2d")
   if(!is.null(call.fc$borders)) attr(kpl.result, "borders") <- call.fc$borders
   class(kpl.result) <- "kriging"
-  ##class(kpl.result) <- "binom.kriging"
   return(kpl.result)
 }
 
@@ -231,18 +232,12 @@ function(data, coords, locations, krige, output)
   kc.result <- krige.conv.extnd(data = data, coords = coords, locations = locations, krige = krige, output = output)	
   ##
   ##################### Back-transforming predictions
-  ##
-  predict.transf <- kc.result$predict
   ## using second order taylor-expansion + facts for N(0,1) [third moment = 0 ; fourth moment = 12].
   if(output$messages.screen) cat("binom.krige: back-transforming predictions using 2. order Taylor expansion for g^{-1}() \n")
-  ivlogit <- plogis(predict.transf)
-  ivlogit1 <- exp(predict.transf)/(1+exp(predict.transf))^2
-  ivlogit2 <- exp(predict.transf)*(1-exp(predict.transf))/(1+exp(predict.transf))^3
-  ivlogit1[predict.transf>700] <- 0
-  ivlogit2[predict.transf>700] <- 0
-  kc.result$predict <- ivlogit + 0.5*ivlogit2*kc.result$krige.var
-  kc.result$krige.var <- ivlogit1^2*kc.result$krige.var + (11/4)*ivlogit2^2*kc.result$krige.var^2
-  remove("predict.transf")
+  ivlogit2 <- ifelse(kc.result$predict<700, exp(kc.result$predict)*(-expm1(kc.result$predict))/(1+exp(kc.result$predict))^3, 0)
+  kc.result$predict <- plogis(kc.result$predict) + 0.5*ivlogit2*kc.result$krige.var
+  kc.result$krige.var <- ifelse(kc.result$predict<700, exp(kc.result$predict)/(1+exp(kc.result$predict))^2, 0)^2*kc.result$krige.var+(11/4)*ivlogit2^2*kc.result$krige.var^2
+  remove(list = c("ivlogit2"))
   if(output$n.predictive > 0) {
     kc.result$simulations <- plogis(kc.result$simulations)
   }

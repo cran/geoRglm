@@ -42,7 +42,7 @@
 "model.glm.check.aux" <-
   function(model, fct)
 {
-  if(is.null(class(model)) || class(model) != "model.geoRglm"){
+  if(class(model) != "model.geoRglm"){
     if(!is.list(model))
       stop(paste(fct,": the argument model only takes a list or an output of the function model.glm.control"))
     else{
@@ -102,7 +102,7 @@
 "mcmc.check.aux" <-
   function(mcmc.input, fct)
 {
-  if(is.null(class(mcmc.input)) || class(mcmc.input) != "mcmc.geoRglm"){
+  if(class(mcmc.input) != "mcmc.geoRglm"){
     if(!is.list(mcmc.input))
       stop(paste(fct,": the argument mcmc.input only takes a list or an output of the function mcmc.control"))
     else{
@@ -181,7 +181,7 @@
 "output.glm.check.aux" <-
   function(output, fct)
 {
-  if(is.null(class(output)) || class(output) != "output.geoRglm"){
+  if(class(output) != "output.geoRglm"){
     if(!is.list(output))
       stop(paste(fct,": the argument output only takes a list or an output of the function output.glm.control"))
     else{

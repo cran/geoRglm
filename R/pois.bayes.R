@@ -731,7 +731,7 @@
         stop("trend.d and trend.l must have similar specification\n")
     }
     else{
-      if((!is.null(class(trend.d)) && class(trend.d)=="trend.spatial") & (!is.null(class(trend.l)) && class(trend.l)=="trend.spatial")){
+      if((class(trend.d)=="trend.spatial") & (class(trend.l)=="trend.spatial")){
         if(ncol(trend.d) != ncol(trend.l))
           stop("trend.d and trend.l do not have the same number of columns")
       }
@@ -761,7 +761,7 @@
   else df.model <- Inf
   if(beta.prior == "normal"){
     if(beta.size > 1) ttvbetatt <- trend.data%*%beta.var%*%t(trend.data)
-    else ttvbetatt <- trend.data%*%t(trend.data)*beta.var
+    else ttvbetatt <- crossprod(t(trend.data))*beta.var
   }  
   else ttvbetatt <- 0
   if(sigmasq.prior == "fixed") {     ### implies that phi is fixed !
@@ -769,10 +769,9 @@
                                cov.pars = c(sigmasq,phi), inv = TRUE, func.inv = "cholesky",
                                try.another.decomposition = FALSE)$inverse
     if(beta.prior != "fixed"){
-      ivtt <- invcov%*%trend.data     
-      if(beta.prior == "normal") ittivtt <- solve.geoR(crossprod(trend.data, ivtt) + solve(beta.var))
-      else ittivtt <- solve.geoR(crossprod(trend.data, ivtt))
-      invcov <- invcov-ivtt%*%ittivtt%*%t(ivtt)
+      ivtt <- invcov%*%trend.data
+      if(beta.prior == "normal") invcov <- invcov-ivtt%*%solve.geoR(crossprod(trend.data, ivtt) + solve(beta.var), t(ivtt))
+      else invcov <- invcov-ivtt%*%solve.geoR(crossprod(trend.data, ivtt), t(ivtt))
     }
   }
   if((phi.prior == "fixed") & (sigmasq.prior != "fixed")){
@@ -876,8 +875,7 @@
           }
         }
       }
-      if(is.R()) remove("temp.pred")
-      else remove("temp.pred", frame = sys.nframe())
+      remove("temp.pred")
       ## 
       if(messages.screen) cat("pois.krige.bayes: Prediction performed \n")
     }
@@ -939,8 +937,7 @@
         }
       }
     }
-    if(is.R()) remove("temp.post")
-    else remove("temp.post", frame = sys.nframe())
+    remove("temp.post")
   }
   if(output$keep.mcmc.sim) kb.results$posterior$simulations <- BC.inv(gauss.post, lambda)
   kb.results$model <- model

@@ -11,7 +11,7 @@ Useful for estimation of the variance of a Markov Chain Monte Carlo estimate.
 }
 
 \usage{
-asympvar(timeseries, type="mon", lag.max = 100)
+asympvar(timeseries, type="mon", lag.max = 100, messages.screen=TRUE)
 }
 
 
@@ -19,7 +19,10 @@ asympvar(timeseries, type="mon", lag.max = 100)
   \item{timeseries}{a vector with a timeseries, or a matrix where the rows are different timeseries.}
   \item{type}{\code{"pos"} and \code{"mon"} gives the monotone and the positive sequence estimator, respectively, and
   \code{"all"} gives both. Default is \code{type="mon"}.  }
-  \item{lag.max}{maximum lag at which to calculate the asymptotic variance.  Default is \code{lag.max = 100}.  }
+\item{lag.max}{maximum lag at which to calculate the asymptotic
+  variance.  Default is \code{lag.max = 100}.  }
+\item{messages.screen}{logical. If \code{TRUE}, the default, status messages
+    are printed while the function is running.  }
 }
 
 
@@ -43,7 +46,7 @@ asympvar(timeseries, type="mon", lag.max = 100)
 
 
 \examples{
-\testonly{library(geoR)}
+\dontshow{library(geoR)}
 data(p50)
 test <- pois.krige(p50, krige = krige.glm.control(cov.pars = c(1,1), beta = 1),
       mcmc.input = mcmc.control(S.scale = 0.5, n.iter = 1000, thin = 1))

@@ -2,7 +2,7 @@
 
 \alias{rongelap}
 
-\non_function{rongelap}
+\docType{data}
 
 \title{Radionuclide Concentrations on Rongelap Island}
 

@@ -55,10 +55,6 @@
   Paulo J. Ribeiro Jr. \email{Paulo.Ribeiro@est.ufpr.br}.
 }
 
-%\note{ ~~further notes~~ }
-
-% ~Make other sections like WARNING with \section{WARNING }{....} ~
-
 \seealso{
   \code{\link{covariog}} for covariogram calculations, \code{\link{lines.covariomodel}} for
   adding lines to the current plot,
@@ -67,7 +63,7 @@
 }
 
 \examples{
-if(is.R()) data(p50)
+data(p50)
 covario <- covariog(p50, uvec = c(1:10))  # sample covariogram
 plot(covario)                      
 }

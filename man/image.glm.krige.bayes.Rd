@@ -74,7 +74,7 @@
   a column number must be provided using the argument \code{number.col}.
 
   The documentation for the functions \code{\link{binom.krige.bayes}} and
-  \code{\link{pois.krige.bayes}}provide
+  \code{\link{pois.krige.bayes}} provide
   further details about these options.
 
 }
@@ -99,7 +99,7 @@
 \seealso{\code{\link[geoR]{image.krige.bayes}} for plotting output from \code{\link[geoR]{krige.bayes}}}
 
 \examples{
-#See examples in the documentation for the function \code{binom.krige.bayes} and \code{pois.krige.bayes} .
+#See examples in the documentation for the functions binom.krige.bayes and pois.krige.bayes .
 }
 
 \keyword{spatial}

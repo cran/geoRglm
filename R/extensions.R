@@ -24,7 +24,7 @@
   if(missing(model))
     model <- model.control()
   else{
-    if(is.null(class(model)) || class(model) != "model.geoR"){
+    if(class(model) != "model.geoR"){
       if(!is.list(model))
         stop("krige.bayes.extnd: the argument model only takes a list or an output of the function model.control")
       else{
@@ -61,7 +61,7 @@
   if(missing(prior))
     prior <- prior.control()
   else{
-    if(is.null(class(prior)) || class(prior) != "prior.geoR"){
+    if(class(prior) != "prior.geoR"){
       if(!is.list(prior))
         stop("krige.bayes.extnd: the argument prior only takes a list or an output of the function prior.control")
       else{
@@ -157,7 +157,7 @@
   if(missing(output))
     output <- output.control()
   else{
-    if(is.null(class(output)) || class(output) != "output.geoR"){
+    if(class(output) != "output.geoR"){
       if(!is.list(output))
         stop("krige.bayes.extnd: the argument output only takes a list or an output of the function output.control")
       else{
@@ -244,8 +244,7 @@
         stop("krige.bayes.extnd: model$trend.d and model$trend.l must have similar specification\n")
     }
     else{
-      if((!is.null(class(model$trend.d)) && class(model$trend.d) == "trend.spatial") &
-         (!is.null(class(model$trend.l)) && class(model$trend.l) == "trend.spatial")){
+      if((class(model$trend.d) == "trend.spatial") & (class(model$trend.l) == "trend.spatial")){
         if(ncol(model$trend.d) != ncol(model$trend.l))
           stop("krige.bayes.extnd: trend.d and trend.l do not have the same number of columns")
       }
@@ -278,8 +277,7 @@
       if(messages.screen) cat("krige.bayes.extnd: anisotropy parameters provided and assumed to be constants\n")
       coords <- coords.aniso(coords = coords, aniso.pars = model$aniso.pars)
       if(do.prediction) locations <- coords.aniso(coords = locations, aniso.pars = model$aniso.pars)
-      if(is.R()) remove(dists.env)
-      else stop("environments not implemented for Splus ! ")
+      remove("dists.env")
       dists.env <- new.env()
       assign("data.dist", as.vector(dist(coords)), envir=dists.env)
     }
@@ -497,7 +495,7 @@ function(geodata, coords = geodata$coords, data = geodata$data, locations, krige
   if(missing(krige))
     krige <- krige.control()
   else{
-    if(is.null(class(krige)) || class(krige) != "krige.geoR"){
+    if(class(krige) != "krige.geoR"){
       if(!is.list(krige))
         stop("krige.conv.extnd: the argument krige only takes a list or an output of the function krige.control")
       else{
@@ -550,7 +548,7 @@ function(geodata, coords = geodata$coords, data = geodata$data, locations, krige
   if(missing(output))
     output <- output.control()
   else{
-    if(is.null(class(output)) || class(output) != "output.geoR"){
+    if(class(output) != "output.geoR"){
       if(!is.list(output))
         stop("krige.conv.extnd: the argument output only takes a list or an output of the function output.control")
       else{
@@ -679,13 +677,11 @@ function(geodata, coords = geodata$coords, data = geodata$data, locations, krige
                            inv = TRUE, only.inv.lower.diag = TRUE)
   temp <- bilinearformXAY(trend.data, invcov$lower.inverse, invcov$diag.inverse, trend.data)
   ittivtt <- solve.geoR(temp)
-  temp <- NULL
   if(beta.prior == "flat") {
     temp <- bilinearformXAY(trend.data, invcov$lower.inverse, invcov$diag.inverse, data)
     beta.flat <- ittivtt %*% temp
-    if(is.R()) remove("temp")
-    else remove(list = c("temp"), frame = sys.nframe())
   }
+  temp <- NULL
   d0mat <- loccoords(coords, locations)
   if(krige$micro.scale != 0) {
     v0 <- ifelse(d0mat < krige$dist.epsilon, sill.partial, 
@@ -766,20 +762,21 @@ function(geodata, coords = geodata$coords, data = geodata$data, locations, krige
   }
 ######################	Back-transforming predictions ############
   if(lambda != 1) {
-    predict.transf <- kc.result$predict
     if(lambda == 0){
+      predict.transf <- kc.result$predict
       if(messages.screen) cat("krige.conv.extnd: back-transforming the predictions using formula for EXP() \n")
       kc.result$predict <- exp(predict.transf + 0.5 * kc.result$krige.var)
-      kc.result$krige.var <- (exp(2 * predict.transf - kc.result$krige.var)) * (exp(kc.result$krige.var) - 1)
+      kc.result$krige.var <- (exp(2 * predict.transf - kc.result$krige.var))*expm1(kc.result$krige.var)
+      remove("predict.transf")
     }
     if(lambda > 0){
       ## using second order taylor-expansion + facts for N(0,1) [third moment = 0 ; fourth moment = 12].
       if(messages.screen) cat("krige.conv.extnd: back-transforming predictions using 2. order Taylor expansion for g^{-1}() \n")
-      ivBC <- BC.inv(predict.transf,lambda)
+      ivBC <- BC.inv(kc.result$predict,lambda)
       kc.result$predict <- ivBC + 0.5 * ((1-lambda)*ivBC^(1-2*lambda))*kc.result$krige.var
       kc.result$krige.var <- (ivBC^(1-lambda))^2*kc.result$krige.var + (11/4)*((1-lambda)*ivBC^(1-2*lambda))^2*kc.result$krige.var^2
+      remove("ivBC")
     }
-    remove("predict.transf")
     if(lambda < 0){
       cat("krige.conv.extnd: resulting distribution has no mean for lambda < 0 - back transformation not performed\n")
     }

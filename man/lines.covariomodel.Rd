@@ -49,7 +49,7 @@
 \seealso{\code{\link{plot.covariogram}}, \code{\link{lines}}.}
 
 \examples{
-\testonly{library(geoR)}
+\dontshow{library(geoR)}
 sim <- grf(100, cov.pars = c(0.1, 0.2))
 sim$data <- rpois(100, lambda = exp(sim$data+1))
 # data generated from the poisson-log normal model

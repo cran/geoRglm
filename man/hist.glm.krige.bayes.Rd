@@ -32,7 +32,7 @@
 
 \value{
   Produces a plot in the currently graphics device.\cr
-  Returns a \code{\link{invisible}} list with the components:
+  Returns an \code{\link{invisible}} list with the components:
   
   \item{histogram}{with the output of the function \code{\link{hist}} for 
     each parameter}
@@ -48,11 +48,11 @@
 }
 
 \seealso{
-  \code{\link{binom.krige.bayes}}, \code{\link{pois.krige.bayes}},\code{\link[geoR]{hist.krige.bayes}}.
+  \code{\link{binom.krige.bayes}}, \code{\link{pois.krige.bayes}}, \code{\link[geoR]{hist.krige.bayes}}.
 }
 
 \examples{
-## See documentation for \code{binom.krige.bayes} and \code{pois.krige.bayes}
+## See documentation for binom.krige.bayes and pois.krige.bayes
 }
 
 \keyword{spatial}

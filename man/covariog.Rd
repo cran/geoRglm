@@ -89,7 +89,7 @@ covariog(geodata, coords = geodata$coords, data = geodata$data,
   \item{n }{number of pairs in each bin. When \code{estimator.type = "poisson"}, the first value in \code{n} is \code{v0}.  }
   \item{v0}{the estimate of \eqn{\sigma^2}{sigma^2}, \eqn{\hat{C}(0)}.  }
   \item{bins.lim}{Separating values for the binning provided in the function call.  }
-  \item{estimator.type }{echoes the type of estimator used.  }
+  \item{estimator.type}{echoes the type of estimator used.  }
   \item{call}{The function call.  }  
 }
 
@@ -113,7 +113,7 @@ and Langevin-type Markov chain Monte Carlo.
 }
 
 \examples{
-if(is.R()) data(p50)
+data(p50)
 covar <- covariog(p50, uvec=c(1:10))
 plot(covar)
 ## Now excluding the bin at zero (only assuming log-link).
