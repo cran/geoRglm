@@ -145,7 +145,7 @@ We also need to study how well the chain is mixing.
 test2.tune <- pois.krige(p50, krige = model2, mcmc.input = list(S.scale = 0.5, thin = 1))
 par(mfrow=c(1,2))
 plot(log(test2.tune$intensity[45,]), type = "l")
-require(ts)
+if(!("package:stats" %in% search())) require("ts")
 acf(log(test2.tune$intensity[45,]), type = "correlation", plot = TRUE)
 @ 
 \label{fig:pois.krige}

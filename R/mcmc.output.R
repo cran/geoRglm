@@ -5,7 +5,7 @@
     messages.screen <- ifelse(is.null(getOption("geoR.messages")), TRUE, getOption("geoR.messages"))
   else messages.screen <- messages
   ##
-  require(ts)
+  if(!("package:stats" %in% search())) require("ts")
   if(is.vector(timeseries)) n.series <- 1
   else n.series <- nrow(timeseries) 
   if(type == "mon" | type == "all" | type == "pos") {

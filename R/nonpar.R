@@ -1,9 +1,9 @@
 
 
 "covariog" <-  function(geodata, coords = geodata$coords, data = geodata$data, units.m = "default", uvec = "default", bins.lim = "default",
-           estimator.type = c("poisson", "not-poisson"), max.dist = NULL, pairs.min = 2)
+                        estimator.type = c("poisson", "not-poisson"), max.dist = NULL, pairs.min = 2)
 {
-  require(mva)
+  if(!("package:stats" %in% search())) require("mva")
   call.fc <- match.call()
   estimator.type <- match.arg(estimator.type)
   coords <- as.matrix(coords)
