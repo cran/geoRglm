@@ -387,6 +387,7 @@
   prior.temp <- prior
   prior.temp$phi.prior <- "fixed"
   prior.temp$phi.discrete <- NULL
+  prior.temp$tausq.rel.prior <- "fixed"
   prior.temp$priors.info <- NULL
   if(phi.posterior$phi.prior == "fixed" || length(phi.posterior$phi.discrete) == 1) {
     if(phi.posterior$phi.prior == "fixed") prior.temp$phi <- phi.posterior$phi
