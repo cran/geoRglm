@@ -22,7 +22,7 @@
      ##--------- initial monotone sequence estimate -----------#
      varest <- asy.gamma[1] + 2 * asy.gamma[2]
      kmax <- 2
-     while(asy.Gamma[kmax] > asy.Gamma[kmax + 1] & (asy.Gamma[kmax] > 0) & kmax < len.Gamma) {
+     while((asy.Gamma[kmax] > asy.Gamma[kmax + 1]) & (asy.Gamma[kmax] > 0) & (kmax < len.Gamma)) {
        varest <- varest + 2 * asy.Gamma[kmax]
        kmax <- kmax + 1
        if (kmax == len.Gamma) warning("value of argument lag.max is not suffiently long")
@@ -31,7 +31,7 @@
        ##--------- initial positive sequence estimate -----------#
        cat(paste("calculating the initial positive sequence estimate"))
        posvarest <- asy.gamma[1] + 2 * asy.gamma[2]
-       while((asy.Gamma[kmax] > 0) & kmax < len.Gamma) {
+       while((asy.Gamma[kmax] > 0) & (kmax < len.Gamma)) {
          posvarest <- posvarest + 2 * asy.Gamma[kmax]
          kmax <- kmax + 1
          if (kmax == len.Gamma) warning("value of argument lag.max is not suffiently long")

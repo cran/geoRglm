@@ -240,7 +240,7 @@
     if(is.numeric(quantile.estimator))
       if(any(quantile.estimator) < 0 | any(quantile.estimator) > 1)
         stop("quantiles indicators must be numbers in the interval [0,1]\n")
-    if(any(quantile.estimator)) quantile.estimator <- c(0.025, 0.5, 0.975)
+    if(quantile.estimator == TRUE) quantile.estimator <- c(0.025, 0.5, 0.975)
     if(!inference) {
       warning("prediction not performed; quantile.estimator is set to NULL \n")
       quantile.estimator <- NULL

@@ -484,7 +484,7 @@
     if(!is.null(geodata$units.m)) units.m <- geodata$units.m
     else units.m <- rep(1, n)
   }
-  ####
+  ##
   ## reading model input
   ##
   if(missing(model))
@@ -521,7 +521,7 @@
   kappa <- model$kappa
   tausq.rel <- prior$tausq.rel
   lambda <- model$lambda
-  if(lambda < 0) stop ("lambda < 0 is not allowed")
+  if(lambda < 0) stop("lambda < 0 is not allowed")
   ## reading prior input
   ##
   if(missing(prior)) stop("pois.krige.bayes: argument prior must be given")
@@ -962,7 +962,7 @@
             while(any(not.accurate)) {
               parms.temp$mean <-temp.pred$mean[not.accurate,,drop=FALSE]
               parms.temp$var <-temp.pred$var[not.accurate,,drop=FALSE]
-              diffe[not.accurate] <- pmixed(temp.quan.new,parms.temp,df.model)-quantile.estimator[i]
+              diffe.new <- pmixed(temp.quan.new,parms.temp,df.model)-quantile.estimator[i]
               inv.sl[not.accurate] <- (temp.quan.new-temp.quan[not.accurate, i])/(diffe.new-diffe[not.accurate])
               temp.quan[not.accurate, i] <- ifelse(abs(diffe[not.accurate]) > abs(diffe.new), temp.quan.new,temp.quan[not.accurate, i])
               diffe[not.accurate] <- ifelse(abs(diffe[not.accurate]) > abs(diffe.new), diffe.new, diffe[not.accurate])
@@ -987,7 +987,7 @@
           while(any(not.accurate)) {
             parms.temp$mean <-temp.pred$mean[not.accurate,,drop=FALSE]
             parms.temp$var <-temp.pred$var[not.accurate,,drop=FALSE]
-            diffe[not.accurate] <- pmixed(temp.quan.new,parms.temp,df.model)-quantile.estimator
+            diffe.new <- pmixed(temp.quan.new,parms.temp,df.model)-quantile.estimator
             inv.sl[not.accurate] <- (temp.quan.new-temp.quan[not.accurate])/(diffe.new-diffe[not.accurate])
             temp.quan[not.accurate] <- ifelse(abs(diffe[not.accurate]) > abs(diffe.new), temp.quan.new,temp.quan[not.accurate])
             diffe[not.accurate] <- ifelse(abs(diffe[not.accurate]) > abs(diffe.new), diffe.new, diffe[not.accurate])
@@ -1018,11 +1018,16 @@
       ##
       if(!is.null(probability.estimator)) {
         if(lambda == 0) transf.probab <- ifelse(probability.estimator > 0, log(probability.estimator), -1e+17)
-        else transf.probab <- ifelse(probability.estimator > 0, (probability.estimator^lambda-1)/lambda, -1e+17)
-        if(length(transf.probab) == 1) transf.probab <- as.vector(transf.probab)
-        for (ii in 1:length(transf.probab)){
-          thresh.vec <- rep(transf.probab[ii],ni)
-          kb.results$predictive$probability <- round(pmixed(thresh.vec, temp.pred, df.model), digits = 3) 
+          else transf.probab <- ifelse(probability.estimator > 0, (probability.estimator^lambda-1)/lambda, -1e+17)
+        len.p <- length(probability.estimator)
+        if(len.p== 1){
+          kb.results$predictive$probability <- round(pmixed(transf.probab, temp.pred, df.model), digits = 3)
+        }
+        else{
+          kb.results$predictive$probability <- matrix(NA,ni,len.p)
+          for(ii in 1:len.p){
+            kb.results$predictive$probability[,ii] <- round(pmixed(transf.probab[ii], temp.pred, df.model), digits = 3)
+          }
         }
       }
       if(is.R()) remove("temp.pred")

@@ -75,8 +75,7 @@ krige.glm.control(type.krige = "ok", trend.d = "cte", trend.l = "cte",
     locations. It must be of the same type as for \code{trend.d}.
     Only used if prediction locations are provided in the argument
     \code{locations}.  }
-  \item{obj.model}{a list with the model parameters. Could be an
-    output from \code{\link{pois.likfit.sim}}.  }
+  \item{obj.model}{a list with the model parameters.  }
   \item{beta}{numerical value of the mean (vector) parameter.
     Only used if \code{type.krige="sk"}.  }
   \item{cov.model}{string indicating the name of the model for the
@@ -201,7 +200,7 @@ if(is.R()) data(y50)
 if(!exists(".Random.seed")) set.seed(1234)
 # First we scale the algorithm, and study how well the chain is mixing.
 test <- pois.log.krige(y50, krige = list(cov.pars = c(1,1), beta = 1),
-      mcmc.input = mcmc.control(S.scale = 0.09, thin = 1))
+      mcmc.input = mcmc.control(S.scale = 0.07, thin = 1))
 plot(log(test$intensity[45,]), type = "l")
 if(is.R()) require(ts)
 acf(log(test$intensity[45,]), type = "correlation", plot = TRUE)

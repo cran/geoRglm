@@ -237,13 +237,13 @@ mcmc.5 <- mcmc.control(S.scale = 0.01, thin = 1)
 test.5 <- pois.krige.bayes(y50, prior = prior.5, mcmc.input = mcmc.5)
 \dontrun{
 ## Now chose S.scale (Acc-rate=0.60 is preferable).
-mcmc.5.new <- mcmc.control(S.scale = 0.13, thin = 100)
+mcmc.5.new <- mcmc.control(S.scale = 0.08, thin = 100)
 test.5.new <- pois.krige.bayes(y50, locations = t(cbind(c(2.5,3), c(-6050,-3270))), 
                prior = prior.5, mcmc.input = mcmc.5.new, 
-               output = list(threshold = 10, quantile = c(0.49999, 0.99)))
+               output = list(threshold = 10, quantile = c(0.2, 0.99)))
 ## MCMC with random phi.
 ## Note here that we can start with the S.scale from above.
-mcmc.6 <- mcmc.control(S.scale = 0.13, n.iter = 2000, thin = 100, 
+mcmc.6 <- mcmc.control(S.scale = 0.08, n.iter = 2000, thin = 100, 
                        phi.scale = 0.01)
 prior.6 <- prior.glm.control(phi.discrete = seq(0.02, 1, 0.02))
 test.6 <- pois.krige.bayes(y50, prior = prior.6, mcmc.input = mcmc.6)
@@ -260,9 +260,9 @@ test.6.new <- pois.krige.bayes(y50,
 y9 <- list(data=y50$data[c(1:4,10:14)],coords=y50$coords[c(1:4,10:14),],units.m=y50$units.m[c(1:4,10:14)])
 class(y9) <- "geodata"
 mcmc5 <- mcmc.control(S.scale = 0.1, thin = 1, n.iter=10)
-test5 <- pois.krige.bayes(y9, locations = t(cbind(c(2,1),c(-6050,-3270))),
+test5 <- pois.krige.bayes(y9, locations = t(cbind(c(2,1),c(-6050,-3270),c(2.1,1.1))),
 prior = list(phi.prior = "fixed", phi= 1), mcmc.input = mcmc5,
-output = list(threshold = 10, quantile = c(0.05,0.99))) 
+output = list(threshold = c(9,10), quantile = c(0.05,0.99))) 
 prior6 <- prior.glm.control(phi.prior = "uniform", phi.discrete = c(0.98,1.02), tausq.rel = 0.05)
 mcmc6 <- list(S.scale = 0.1, thin = 1, n.iter=10, burn.in = 1, phi.scale = 0.01, phi.start = 1) 
 test6 <- pois.krige.bayes(y9, locations =t(cbind(c(2.5,3.5),c(-60,-37))), prior = prior6, mcmc.input = mcmc6)

@@ -819,7 +819,7 @@
             while(any(not.accurate)) {
               parms.temp$mean <-temp.pred$mean[not.accurate,,drop=FALSE]
               parms.temp$var <-temp.pred$var[not.accurate,,drop=FALSE]
-              diffe[not.accurate] <- pmixed(temp.quan.new,parms.temp,df.model)-quantile.estimator[i]
+              diffe.new <- pmixed(temp.quan.new,parms.temp,df.model)-quantile.estimator[i]
               inv.sl[not.accurate] <- (temp.quan.new-temp.quan[not.accurate, i])/(diffe.new-diffe[not.accurate])
               temp.quan[not.accurate, i] <- ifelse(abs(diffe[not.accurate]) > abs(diffe.new), temp.quan.new,temp.quan[not.accurate, i])
               diffe[not.accurate] <- ifelse(abs(diffe[not.accurate]) > abs(diffe.new), diffe.new, diffe[not.accurate])
@@ -844,7 +844,7 @@
           while(any(not.accurate)) {
             parms.temp$mean <-temp.pred$mean[not.accurate,,drop=FALSE]
             parms.temp$var <-temp.pred$var[not.accurate,,drop=FALSE]
-            diffe[not.accurate] <- pmixed(temp.quan.new,parms.temp,df.model)-quantile.estimator
+            diffe.new <- pmixed(temp.quan.new,parms.temp,df.model)-quantile.estimator
             inv.sl[not.accurate] <- (temp.quan.new-temp.quan[not.accurate])/(diffe.new-diffe[not.accurate])
             temp.quan[not.accurate] <- ifelse(abs(diffe[not.accurate]) > abs(diffe.new), temp.quan.new,temp.quan[not.accurate])
             diffe[not.accurate] <- ifelse(abs(diffe[not.accurate]) > abs(diffe.new), diffe.new, diffe[not.accurate])
@@ -874,13 +874,19 @@
       ## ------ probability estimators
       ##
       if(!is.null(probability.estimator)) {
-        logit.probab <- ifelse((probability.estimator > 0 & probability.estimator < 1), log(probability.estimator) - log(1-probability.estimator), 1e+17)
-        if(length(logit.probab) == 1) logit.probab <- as.vector(logit.probab)
-        for (ii in 1:length(logit.probab)){
-          thresh.vec <- rep(logit.probab[ii],ni)
-          kb.results$predictive$probability <- round(pmixed(thresh.vec, temp.pred, df.model), digits = 3) 
+        logit.probab <- ifelse(probability.estimator < 1, log(probability.estimator) - log(1-probability.estimator), 1e+17)
+        logit.probab <- ifelse(probability.estimator > 0, logit.probab, 1e-17)
+        len.p <- length(probability.estimator)
+        if(len.p== 1){
+          kb.results$predictive$probability <- round(pmixed(logit.probab, temp.pred, df.model), digits = 3)
         }
-      } 
+        else{
+          kb.results$predictive$probability <- matrix(NA,ni,len.p)
+          for(ii in 1:len.p){
+            kb.results$predictive$probability[,ii] <- round(pmixed(logit.probab[ii], temp.pred, df.model), digits = 3)
+          }
+        }
+      }
       if(is.R()) remove("temp.pred")
       else remove("temp.pred", frame = sys.nframe())
       ## 
