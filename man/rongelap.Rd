@@ -42,4 +42,3 @@ For further details on the radionuclide concentration data, see Diggle, Harper a
 }
 
 \keyword{datasets}
-\keyword{spatial}

@@ -39,4 +39,3 @@ data(y50)
 }
 
 \keyword{datasets}
-\keyword{spatial}
