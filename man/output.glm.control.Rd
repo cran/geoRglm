@@ -1,7 +1,6 @@
 \name{output.glm.control}
 
 \alias{output.glm.control}
-\alias{output.glm.check.aux}
 
 \title{ Defines output options }
 
@@ -68,6 +67,10 @@ output.glm.control(sim.posterior, sim.predict, keep.mcmc.sim, quantile,
   A list with processed arguments to be passed to the main function.
 }
 
+\references{ 
+  Further information about \bold{geoRglm} can be found at:\cr
+  \url{http://www.maths.lancs.ac.uk/~christen/geoRglm}.
+}
 
 \author{
   Ole F. Christensen \email{olefc@birc.dk}, \cr

@@ -1,7 +1,6 @@
 \name{covariog.model.env}
 
 \alias{covariog.model.env}
-\alias{pois.log.grf}
 
 %- Also NEED an `\alias' for EACH other topic documented here.
 

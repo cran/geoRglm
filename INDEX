@@ -1,5 +1,5 @@
 asympvar                Asymptotic Variance
-b50, p50 and b64        Simulated Data sets which Illustrate the Usage
+b50                     Simulated Data sets which Illustrate the Usage
                         of the Package geoRglm
 binom.krige             Conditional Simulation and Prediction for the
                         Binomial-logit Spatial model
@@ -10,10 +10,17 @@ covariog                Empirical Covariogram for a Model with
                         log-link and an Underlying Gaussian Field
 covariog.model.env      Envelope for Empirical Covariogram for the
                         Poisson-log normal model
-geoRglm-defunct         Defunct Functions in the Package geoRglm
+create.mcmc.coda        Create an mcmc object for the CODA package
+geoRglmdefunct          Defunct Functions in the Package geoRglm
+glsm.krige              Prediction for a Generalised Linear Spatial
+                        Model
+glsm.mcmc               Conditional Simulation for a generalised
+                        linear spatial model
 hist.glm.krige.bayes    Plots Sample from Posterior Distributions
 image.glm.krige.bayes   Plots Results of the Predictive Distribution
-krige.gkm.control       Defines options and model for prediction
+krige.glm.control       Defines options and model for prediction
+likfit.glsm             Monte Carlo Maximum Likelihood Estimation in a
+                        Generalised Linear Spatial Model
 lines.covariomodel      Line with a Covariogram Model
 mcmc.control            Defines options for the MCMC-algorithm
 model.glm.control       Defines model options
@@ -24,5 +31,10 @@ pois.krige              Conditional Simulation and Prediction for the
                         from the Box-Cox class
 pois.krige.bayes        Bayesian Posterior Simulation and Prediction
                         for the Poisson Spatial model
+prepare.likfit.glsm     Prepare for Monte Carlo MLE
 prior.glm.control       Defines prior options
+proflik.glsm            Computes Profile Likelihood for generalised
+                        linear spatial models
 rongelap                Radionuclide Concentrations on Rongelap Island
+summary.likGLSM         Summarizes Parameter Estimation Results for
+                        Generalised linear Spatial Models

@@ -3,7 +3,6 @@
 "covariog" <-  function(geodata, coords = geodata$coords, data = geodata$data, units.m = "default", uvec = "default", bins.lim = "default",
                         estimator.type = c("poisson", "not-poisson"), max.dist = NULL, pairs.min = 2)
 {
-  if(!("package:stats" %in% search())) require("mva")
   call.fc <- match.call()
   estimator.type <- match.arg(estimator.type)
   coords <- as.matrix(coords)
@@ -29,8 +28,8 @@
     if(all(uvec == "default"))
       uvec <- seq(0, umax, l = 15)
     nvec <- length(uvec)
-    d <- 0.5 * diff(uvec[1:nvec])
-    bins.lim <- c(0, (uvec[1:(nvec - 1)] + d), (d[nvec - 1] + uvec[nvec]))
+    d <- 0.5 * diff(uvec[seq(length=nvec)])
+    bins.lim <- c(0, (uvec[seq(length=(nvec - 1))] + d), (d[nvec - 1] + uvec[nvec]))
     if(uvec[1] == 0)
       uvec[1] <- (bins.lim[1] + bins.lim[2])/2
   }
@@ -173,7 +172,7 @@ function(x, max.dist = max(x$u), ylim = "default", type = "b", envelope.obj = NU
 	else plot(u, v, xlim = c(0, max.dist), ylim = c(ymin, ymax), xlab = "Distance", ylab = "Covariance", type = type, ...)
 	abline(h = 0, lty = 3)
 	if(is.matrix(x$v)) {
-		for(k in 2:ncol(x$v)) {
+		for(k in seq(2,ncol(x$v))) {
 			v <- x$v[x$u <= max.dist, k]
 			lines(u, v, type = "b")
 		}

@@ -1,7 +1,6 @@
 \name{model.glm.control}
 
 \alias{model.glm.control}
-\alias{model.glm.check.aux}
 
 \title{ Defines model options }
 
@@ -46,6 +45,10 @@ model.glm.control(trend.d = "cte", trend.l = "cte", cov.model = "matern",
   A list with processed arguments to be passed to the main function.
 }
 
+\references{ 
+  Further information about \bold{geoRglm} can be found at:\cr
+  \url{http://www.maths.lancs.ac.uk/~christen/geoRglm}.
+}
 
 \author{
   Ole F. Christensen \email{olefc@birc.dk}, \cr

@@ -1,7 +1,7 @@
 \name{prior.glm.control}
 
 \alias{prior.glm.control}
-\alias{prior.glm.check.aux}
+
 
 \title{Defines prior options}
 
@@ -63,6 +63,10 @@ prior.glm.control(beta.prior = c("flat", "normal", "fixed"),
   A list with processed arguments to be passed to the main function.
 }
 
+\references{ 
+  Further information about \bold{geoRglm} can be found at:\cr
+  \url{http://www.maths.lancs.ac.uk/~christen/geoRglm}.
+}
 
 \author{
   Ole F. Christensen \email{olefc@birc.dk}, \cr

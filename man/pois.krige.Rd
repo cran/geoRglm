@@ -1,7 +1,6 @@
 \name{pois.krige}
 
 \alias{pois.krige}
-\alias{krige.conv.extnd}
 \alias{mcmc.aux}
 \alias{mcmc.boxcox.aux}
 \alias{mcmc.pois.log}
@@ -111,9 +110,8 @@ instead of the Taylor approximation.
   data augmentation. \emph{Bayesian statistics 7} (eds. J. M. Bernardo,
   S. Bayarri, J. O. Berger, A. P. Dawid, D. Heckerman, A. F. M. Smith
   and M. West), Oxford University Press, 307-326.
-}
 
-Further information about \bold{geoRglm} can be found at:\cr
+  Further information about \bold{geoRglm} can be found at:\cr
   \url{http://www.maths.lancs.ac.uk/~christen/geoRglm}.
 }
 

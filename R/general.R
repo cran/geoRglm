@@ -20,8 +20,7 @@
 "model.glm.control" <- 
   function(trend.d = "cte", trend.l = "cte", cov.model = "matern", kappa = 0.5, aniso.pars = NULL, lambda = 0)
 {
-  cov.model <-
-    match.arg(cov.model,
+  cov.model <- match.arg(cov.model,
               choices = c("matern", "exponential", "gaussian",
                 "spherical", "circular", "cubic", "wave", "power",
                 "powered.exponential", "cauchy", "gneiting",
@@ -47,14 +46,7 @@
       stop(paste(fct,": the argument model only takes a list or an output of the function model.glm.control"))
     else{
       model.names <- c("trend.d", "trend.l", "cov.model", "kappa", "aniso.pars", "lambda")
-      model.user <- model
-      model <- list()
-      if(length(model.user) > 0){
-        for(i in 1:length(model.user)){
-          n.match <- match.arg(names(model.user)[i], model.names)
-          model[[n.match]] <- model.user[[i]]
-        }
-      }    
+      model <- object.match.names(model,model.names)
       if(is.null(model$trend.d)) model$trend.d <- "cte"  
       if(is.null(model$trend.l)) model$trend.l <- "cte"  
       if(is.null(model$cov.model)) model$cov.model <- "matern"  
@@ -106,15 +98,8 @@
     if(!is.list(mcmc.input))
       stop(paste(fct,": the argument mcmc.input only takes a list or an output of the function mcmc.control"))
     else{
-      mcmc.input.names <- c("S.scale", "Htrunc", "S.start", "burn.in", "thin", "n.iter", "phi.start", "phi.scale")    
-      mcmc.input.user <- mcmc.input
-      mcmc.input <- list()
-      if(length(mcmc.input.user) > 0){
-        for(i in 1:length(mcmc.input.user)){
-          n.match <- match.arg(names(mcmc.input.user)[i], mcmc.input.names)
-          mcmc.input[[n.match]] <- mcmc.input.user[[i]]
-        }
-      }
+      mcmc.input.names <- c("S.scale", "Htrunc", "S.start", "burn.in", "thin", "n.iter", "phi.start", "phi.scale")  
+      mcmc.input <- object.match.names(mcmc.input,mcmc.input.names)
       if(fct=="pois.krige.bayes" | fct=="binom.krige.bayes"){
         if(is.null(mcmc.input$phi.start)) mcmc.input$phi.start <- "default"
       }
@@ -177,6 +162,7 @@
   return(res)
 }
 
+
 "output.glm.check.aux" <-
   function(output, fct)
 {
@@ -184,15 +170,8 @@
     if(!is.list(output))
       stop(paste(fct,": the argument output only takes a list or an output of the function output.glm.control"))
     else{
-      output.names <- c("sim.posterior","sim.predict", "keep.mcmc.sim","quantile","threshold","inference","messages.screen")      
-      output.user <- output
-      output <- list()
-      if(length(output.user) > 0){
-        for(i in 1:length(output.user)){
-          n.match <- match.arg(names(output.user)[i], output.names)
-          output[[n.match]] <- output.user[[i]]
-        }
-      }
+      output.names <- c("sim.posterior","sim.predict", "keep.mcmc.sim","quantile","threshold","inference","messages.screen")
+      output <- object.match.names(output,output.names)
       if(is.null(output$sim.predict)) output$sim.predict <- FALSE
       if(is.null(output$messages.screen)) output$messages.screen <- TRUE        
       output <- output.glm.control(sim.posterior = output$sim.posterior,
@@ -203,4 +182,16 @@
     }
   }
   return(output)
+}
+
+
+"object.match.names" <- function(obj,names)
+{
+  obj.names <- names(obj)
+  new.obj <- list()
+  for(i in seq(along=obj)){
+    n.match <- match.arg(obj.names[i], names)
+    new.obj[[n.match]] <- obj[[i]]
+  }
+  return(new.obj)
 }

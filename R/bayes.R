@@ -147,14 +147,7 @@
     else{
       prior.names <- c("beta.prior", "beta", "beta.var.std", "sigmasq.prior",
                        "sigmasq", "df.sigmasq", "phi.prior", "phi", "phi.discrete", "tausq.rel") 
-      prior.user <- prior
-      prior <- list()
-      if(length(prior.user) > 0){
-        for(i in 1:length(prior.user)){
-          n.match <- match.arg(names(prior.user)[i], prior.names)
-          prior[[n.match]] <- prior.user[[i]]
-        }
-      } 
+      prior <- object.match.names(prior,prior.names)
       if(is.null(prior$beta.prior)) prior$beta.prior <- "flat"
       if(is.null(prior$sigmasq.prior)) prior$sigmasq.prior <- "uniform"
       if(is.null(prior$phi.prior)) prior$phi.prior <- "uniform"

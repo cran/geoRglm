@@ -78,9 +78,9 @@
   n.sim <- n.turn * n.temp
   Sdata <- matrix(NA, n, n.sim)
   acc.rate <- matrix(NA, n.turn, 2)
-  for(i in 1:n.turn) {
+  for(i in seq(length=n.turn)) {
     mcmc.output <- mcmc.aux(mcmc.output$z, data, meanS + log(units.m), QQ, Htrunc, S.scale, n.temp, thin, QtivQ)
-    Sdata[, (n.temp * (i - 1) + 1):(n.temp * i)] <- mcmc.output$S+meanS
+    Sdata[, seq((n.temp * (i - 1) + 1),(n.temp * i))] <- mcmc.output$S+meanS
     if(messages.screen) cat(paste("iter. numb.", i * n.temp * thin+burn.in, " : Acc.-rate = ", round(mcmc.output$acc.rate, digits=3), "\n"))
     acc.rate[i,1] <-  i * n.temp * thin
     acc.rate[i,2] <- mcmc.output$acc.rate
@@ -175,9 +175,9 @@
   n.sim <- n.turn * n.temp
   Sdata <- matrix(NA, n, n.sim)
   acc.rate <- matrix(NA, n.turn, 2)
-  for(i in 1:n.turn) {
+  for(i in seq(length=n.turn)){
     mcmc.output <- mcmc.boxcox.aux(mcmc.output$z, data, units.m, meanS, QQ, Htrunc, S.scale, n.temp, thin, QtivQ, lambda)
-    Sdata[, (n.temp * (i - 1) + 1):(n.temp * i)] <- mcmc.output$S+meanS
+    Sdata[, seq((n.temp * (i - 1) + 1),(n.temp * i))] <- mcmc.output$S+meanS
     if(messages.screen) cat(paste("iter. numb.", i * n.temp * thin+burn.in, " : Acc.-rate = ", round(mcmc.output$acc.rate, digits=3), "\n"))
     acc.rate[i,1] <-  i * n.temp * thin
     acc.rate[i,2] <- mcmc.output$acc.rate
@@ -274,14 +274,7 @@
     else{
       krige.names <-c("type.krige","trend.d","trend.l","obj.model","beta","cov.model",
                       "cov.pars","kappa","nugget","micro.scale","dist.epsilon","lambda","aniso.pars")
-      krige.user <- krige
-      krige <- list()
-      if(length(krige.user) > 0){
-        for(i in 1:length(krige.user)){
-          n.match <- match.arg(names(krige.user)[i], krige.names)
-          krige[[n.match]] <- krige.user[[i]]
-        }
-      }
+      krige <- object.match.names(krige,krige.names)
       if(is.null(krige$type.krige)) krige$type.krige <- "sk"  
       if(is.null(krige$trend.d)) krige$trend.d <-  "cte"
       if(is.null(krige$trend.l)) krige$trend.l <-  "cte"
@@ -415,7 +408,7 @@ function(geodata, coords = geodata$coords, data = geodata$data, units.m = "defau
     remove(list = c("intensity"))
     kpl.result$krige.var <- rowMeans(kpl.result$krige.var) + apply(kpl.result$predict, 1, var) 
     if(nrow(locations) > 1) kpl.result$mcmc.error <- sqrt(asympvar(kpl.result$predict)/ncol(kpl.result$predict))
-    else kpl.result$mcmc.error <- sqrt(asympvar(as.vector(kpl.result$predict))/length(as.vector(kpl.result$predict)))
+    else kpl.result$mcmc.error <- sqrt(asympvar(as.vector(kpl.result$predict), messages = FALSE)/length(as.vector(kpl.result$predict)))
     kpl.result$predict <- rowMeans(kpl.result$predict)
     if(beta.prior == "flat") {
       kpl.result$beta.est <- rowMeans(kpl.result$beta)
@@ -437,6 +430,5 @@ function(geodata, coords = geodata$coords, data = geodata$data, units.m = "defau
   if(!is.null(locations)) attr(kpl.result, 'sp.dim') <- ifelse(krige1d, "1d", "2d")
   if(!is.null(call.fc$borders)) attr(kpl.result, "borders") <- call.fc$borders
   class(kpl.result) <- "kriging"
-  ##class(kpl.result) <- "pois.kriging"
   return(kpl.result)
 }

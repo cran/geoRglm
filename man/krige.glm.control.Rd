@@ -2,7 +2,6 @@
 
 
 \alias{krige.glm.control}
-\alias{krige.glm.check.aux}
 
 
 
@@ -82,7 +81,7 @@ krige.glm.control(type.krige = "sk", trend.d = "cte", trend.l = "cte",
   function. 
 }
 
-
+\references{
 Further information about \bold{geoRglm} can be found at:\cr
   \url{http://www.maths.lancs.ac.uk/~christen/geoRglm}.
 }

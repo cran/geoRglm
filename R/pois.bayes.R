@@ -413,54 +413,35 @@
     len.phi.discrete <- length(phi.discrete)      
     step.phi.discrete <- phi.discrete[2] - phi.discrete[1]
     phi.table <- rep(0,len.phi.discrete)
-    for(i in 1:len.phi.discrete){
+    for(i in seq(length=len.phi.discrete)){
       phi.table[i] <- sum(ifelse(abs(phi.posterior$sample-phi.discrete[i])<0.5*step.phi.discrete,1,0))
     }
     phi.sample.unique <- phi.discrete[phi.table>0]
     phi.table <- phi.table[phi.table>0]
     len.phi.un <- length(phi.sample.unique)
     indic.phi <- array(rep(0, len.phi.un * max(phi.table)), dim = c(len.phi.un, max(phi.table)))
-    numbers <- 1:length(phi.posterior$sample)
-    for(i in 1:len.phi.un) {
-      temp.num <- numbers[abs(phi.posterior$sample-phi.sample.unique[i])<0.5*step.phi.discrete]
-      indic.phi[i, 1:length(temp.num)] <- temp.num
+    for(i in seq(length=len.phi.un)){
+      temp.num <- which(abs(phi.posterior$sample-phi.sample.unique[i])<0.5*step.phi.discrete)
+      indic.phi[i, seq(along=temp.num)] <- temp.num
     }
-    for(i in 1:len.phi.un){
-      if(phi.table[i] == 1){
-        prior.temp$phi <- phi.sample.unique[i]
-        temp.result <- krige.bayes(data = S[, indic.phi[i,1]], coords = coords, locations = locations, 
-                                   model = model.temp, prior = prior.temp, output = output.temp)
-        temp.post$beta.mean[, indic.phi[i,1]] <- temp.result$posterior$beta$pars$mean
-        temp.post$beta.var[,  , indic.phi[i,1]] <- temp.result$posterior$beta$pars$var
-        temp.post$S2[indic.phi[i,1]] <- temp.result$posterior$sigmasq$pars$S2
-        if(do.prediction) {            
-          temp.pred$mean[, indic.phi[i, 1]] <- temp.result$predictive$mean
-          temp.pred$var[, indic.phi[i, 1]] <- temp.result$predictive$variance
-          if(output$sim.predict) {
-            if(link=="logit") pred.simulations[, indic.phi[i, 1]] <- plogis(temp.result$predictive$simulations)
-            else{
-              if(lambda==0) pred.simulations[, indic.phi[i, 1]] <- exp(temp.result$predictive$simulations)
-              else pred.simulations[, indic.phi[i, 1]] <- BC.inv(temp.result$predictive$simulations, lambda)
-            }
-          }
-        }
-      }
-      else { 
-        prior.temp$phi <- phi.sample.unique[i]
-        temp.result <- krige.bayes.extnd(data = S[, indic.phi[i,1:phi.table[i]]], coords = coords, locations = locations, 
-                                         model = model.temp, prior = prior.temp, output = output.temp)  
-        temp.post$beta.mean[, indic.phi[i,1:phi.table[i]]] <- temp.result$posterior$beta$pars$mean         
-        temp.post$beta.var[,  , indic.phi[i,1:phi.table[i]]] <- temp.result$posterior$beta$pars$var
-        temp.post$S2[indic.phi[i,1:phi.table[i]]] <- temp.result$posterior$sigmasq$pars$S2       
-        if(do.prediction) {
-          temp.pred$mean[, indic.phi[i, 1:phi.table[i]]] <- temp.result$predictive$mean
-          temp.pred$var[, indic.phi[i, 1:phi.table[i]]] <- temp.result$predictive$variance
-          if(output$sim.predict) {
-            if(link=="logit") pred.simulations[ , indic.phi[i, 1:phi.table[i]]] <- plogis(temp.result$predictive$simulations)
-            else{
-              if(lambda==0) pred.simulations[ , indic.phi[i, 1:phi.table[i]]] <- exp(temp.result$predictive$simulations)
-              else pred.simulations[ , indic.phi[i, 1:phi.table[i]]] <- BC.inv(temp.result$predictive$simulations, lambda)
-            }
+    for(i in seq(length=len.phi.un)){
+      id.phi.i <- indic.phi[i, seq(length=phi.table[i])]
+      prior.temp$phi <- phi.sample.unique[i]
+      if(phi.table[i]==1)
+        temp.result <- krige.bayes(data = S[, id.phi.i], coords = coords, locations = locations, model = model.temp, prior = prior.temp, output = output.temp)
+      else temp.result <- krige.bayes.extnd(data = S[, id.phi.i], coords = coords, locations = locations, 
+                                            model = model.temp, prior = prior.temp, output = output.temp)
+      temp.post$beta.mean[, id.phi.i] <- temp.result$posterior$beta$pars$mean         
+      temp.post$beta.var[,  , id.phi.i] <- temp.result$posterior$beta$pars$var
+      temp.post$S2[id.phi.i] <- temp.result$posterior$sigmasq$pars$S2       
+      if(do.prediction) {
+        temp.pred$mean[, id.phi.i] <- temp.result$predictive$mean
+        temp.pred$var[, id.phi.i] <- temp.result$predictive$variance
+        if(output$sim.predict) {
+          if(link=="logit") pred.simulations[ , id.phi.i] <- plogis(temp.result$predictive$simulations)
+          else{
+            if(lambda==0) pred.simulations[ , id.phi.i] <- exp(temp.result$predictive$simulations)
+            else pred.simulations[ , id.phi.i] <- BC.inv(temp.result$predictive$simulations, lambda)
           }
         }
       }
@@ -536,7 +517,7 @@
     if(nmq > 1) {
       temp.quan <- matrix(NA, ni, nmq)
       dig <- rep(3, nmq)
-      for(i in 1:nmq) {
+      for(i in seq(length=nmq)) {
         while(quantile.estimator[i] != round(quantile.estimator[i], digits = dig[i])) dig[i] <-dig[i] + 1
         temp.quan[, i] <- qnorm(rep(quantile.estimator[i], ni), mean = temp.med, sd = temp.unc)
         if(any(loc.coincide)) temp.quan[loc.coincide, i] <- temp.med[loc.coincide]
@@ -595,7 +576,7 @@
   }
   if(is.numeric(quantile.estimator) && nmq > 1) {
     qname <- rep(0, length(quantile.estimator))
-    for(i in 1:length(quantile.estimator))
+    for(i in seq(along=quantile.estimator))
       qname[i] <- paste("q", 100 * quantile.estimator[i], sep = "")
     names(temp.quan) <- qname
   }
@@ -610,7 +591,6 @@
 ###########
   if(missing(geodata))
     geodata <- list(coords=coords, data=data, units.m=units.m)
-  if(!("package:stats" %in% search())) require("mva")
   call.fc <- match.call()
   seed <- get(".Random.seed", envir=.GlobalEnv, inherits = FALSE)
   do.prediction <- ifelse(all(locations == "no"), FALSE, TRUE)
@@ -858,7 +838,7 @@
         }
         else{
           kb.results$predictive$probability <- matrix(NA, ni,len.p)
-          for(ii in 1:len.p){
+          for(ii in seq(length=len.p)){
             kb.results$predictive$probability[,ii] <- round(pmixed(transf.probab[ii], temp.pred, df.model), digits = 3)
           }
         }
@@ -937,6 +917,5 @@
   if(do.prediction) attr(kb.results, 'sp.dim') <- ifelse(krige1d, "1d", "2d")
   if(!is.null(call.fc$borders)) attr(kb.results, "borders") <- call.fc$borders
   class(kb.results) <- "glm.krige.bayes"
-  if(messages.screen) cat("pois.krige.bayes: done!\n")
   return(kb.results)
 }

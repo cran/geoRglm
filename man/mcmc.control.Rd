@@ -1,7 +1,7 @@
 \name{mcmc.control}
 
 \alias{mcmc.control}
-\alias{mcmc.check.aux}
+
 
 \title{Defines options for the MCMC-algorithm }
 
@@ -35,6 +35,11 @@ in the algorithm.  }
 
 \value{
   A list with processed arguments to be passed to the main function.
+}
+
+\references{ 
+  Further information about \bold{geoRglm} can be found at:\cr
+  \url{http://www.maths.lancs.ac.uk/~christen/geoRglm}.
 }
 
 \author{

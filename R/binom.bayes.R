@@ -170,7 +170,6 @@
 ###########
   if(missing(geodata))
     geodata <- list(coords=coords, data=data, units.m=units.m)
-  if(!("package:stats" %in% search())) require("mva")
   call.fc <- match.call()
   seed <- get(".Random.seed", envir=.GlobalEnv, inherits = FALSE)
   do.prediction <- ifelse(all(locations == "no"), FALSE, TRUE)
@@ -398,7 +397,7 @@
         }
         else{
           kb.results$predictive$probability <- matrix(NA,ni,len.p)
-          for(ii in 1:len.p){
+          for(ii in seq(length=len.p)){
             kb.results$predictive$probability[,ii] <- round(pmixed(logit.probab[ii], temp.pred, df.model), digits = 3)
           }
         }
@@ -478,7 +477,6 @@
   if(do.prediction) attr(kb.results, 'sp.dim') <- ifelse(krige1d, "1d", "2d")
   if(!is.null(call.fc$borders)) attr(kb.results, "borders") <- call.fc$borders
   class(kb.results) <- "glm.krige.bayes"
-  if(messages.screen) cat("binom.krige.bayes: done!\n")
   return(kb.results)
 }
 

@@ -76,9 +76,9 @@
   n.sim <- n.turn * n.temp
   Sdata <- matrix(NA, n, n.sim)
   acc.rate <- matrix(NA, n.turn, 2)
-  for(i in 1:n.turn) {
+  for(i in seq(length=n.turn)) {
     mcmc.output <- mcmc.binom.aux(mcmc.output$z, data, units.m, meanS, QQ, S.scale, n.temp, thin, QtivQ)
-    Sdata[, (n.temp * (i - 1) + 1):(n.temp * i)] <- mcmc.output$S+meanS    
+    Sdata[, seq((n.temp * (i - 1) + 1),(n.temp * i))] <- mcmc.output$S+meanS    
     if(messages.screen) cat(paste("iter. numb.", i * n.temp * thin+burn.in, " : Acc.-rate = ", round(mcmc.output$acc.rate, digits=3), "\n"))
     acc.rate[i,1] <-  i * n.temp * thin
     acc.rate[i,2] <- mcmc.output$acc.rate
@@ -192,7 +192,7 @@
     remove(list = c("res.mcmc"))
     kpl.result$krige.var <- rowMeans(kpl.result$krige.var) + apply(kpl.result$predict, 1, var)
     if(nrow(locations) > 1) kpl.result$mcmc.error <- sqrt(asympvar(kpl.result$predict)/ncol(kpl.result$predict))
-    else kpl.result$mcmc.error <- sqrt(asympvar(as.vector(kpl.result$predict))/length(as.vector(kpl.result$predict)))
+    else kpl.result$mcmc.error <- sqrt(asympvar(as.vector(kpl.result$predict), messages = FALSE)/length(as.vector(kpl.result$predict)))
     kpl.result$predict <- rowMeans(kpl.result$predict)
     if(beta.prior == "flat") {
       kpl.result$beta.est <- rowMeans(kpl.result$beta)

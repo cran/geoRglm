@@ -11,12 +11,10 @@
   ##
   if(missing(geodata))
     geodata <- list(coords=coords, data=data)
-  if(!("package:stats" %in% search())) require("mva")
   call.fc <- match.call()
   seed <- get(".Random.seed", envir=.GlobalEnv, inherits = FALSE)
   do.prediction <- ifelse(all(locations == "no"), FALSE, TRUE)
-  if(is.R()) base.env <- sys.frame(sys.nframe())
-  else stop("environments not implemented for Splus ! ")
+  base.env <- sys.frame(sys.nframe())
   message.prediction <- character()
   ##
   ## reading model input
@@ -29,14 +27,7 @@
         stop("krige.bayes.extnd: the argument model only takes a list or an output of the function model.control")
       else{
         model.names <- c("trend.d", "trend.l", "cov.model", "kappa", "aniso.pars", "lambda") 
-        model.user <- model
-        model <- list()
-        if(length(model.user) > 0){
-          for(i in 1:length(model.user)){
-            n.match <- match.arg(names(model.user)[i], model.names)
-            model[[n.match]] <- model.user[[i]]
-          }
-        }    
+        model <- object.match.names(model,model.names)
         if(is.null(model$trend.d)) model$trend.d <- "cte"  
         if(is.null(model$trend.l)) model$trend.l <- "cte"  
         if(is.null(model$cov.model)) model$cov.model <- "matern"  
@@ -65,17 +56,10 @@
       if(!is.list(prior))
         stop("krige.bayes.extnd: the argument prior only takes a list or an output of the function prior.control")
       else{
-         prior.names <- c("beta.prior", "beta", "beta.var.std", "sigmasq.prior",
+        prior.names <- c("beta.prior", "beta", "beta.var.std", "sigmasq.prior",
                          "sigmasq", "df.sigmasq", "phi.prior", "phi", "phi.discrete",
                          "tausq.rel.prior", "tausq.rel", "tausq.rel.discrete") 
-        prior.user <- prior
-        prior <- list()
-        if(length(prior.user) > 0){
-          for(i in 1:length(prior.user)){
-            n.match <- match.arg(names(prior.user)[i], prior.names)
-            prior[[n.match]] <- prior.user[[i]]
-          }
-        }
+        prior <- object.match.names(prior,prior.names)
         ## DO NOT CHANGE ORDER OF THE NEXT 3 LINES
         if(is.null(prior$beta)) prior$beta <-  NULL
         if(is.null(prior$beta.prior)) prior$beta.prior <-  c("flat", "normal", "fixed")
@@ -111,9 +95,9 @@
   kb <- list(posterior = list(beta=list(), sigmasq=list(), phi=list(), tausq.rel=list()),
              predictive=list(mean = NULL, variance = NULL, distribution = NULL),
              prior = prior$priors.info, model = model) 
-  class(kb$posterior) <- "krige.bayes.posterior"
-  class(kb$predictive) <- "krige.bayes.predictive"
-  class(kb$prior) <- "krige.bayes.prior"
+  ##class(kb$posterior) <- "krige.bayes.posterior"
+  ##class(kb$predictive) <- "krige.bayes.predictive"
+  ##class(kb$prior) <- "krige.bayes.prior"
   pred.env <- new.env()
   ##
   beta <- prior$beta
@@ -163,14 +147,7 @@
       else{
         output.names <- c("n.posterior","n.predictive","moments","n.back.moments","simulations.predictive",
                           "mean.var","quantile","threshold","signal","messages.screen")
-        output.user <- output
-        output <- list()
-        if(length(output.user) > 0){
-          for(i in 1:length(output.user)){
-            n.match <- match.arg(names(output.user)[i], output.names)
-            output[[n.match]] <- output.user[[i]]
-          }
-        }
+        output <- object.match.names(output,output.names)
         if(is.null(output$n.posterior)) output$n.posterior <- 1000 
         if(is.null(output$n.predictive)) output$n.predictive <- NULL
         if(is.null(output$moments)) output$moments <- TRUE
@@ -293,13 +270,13 @@
     ##
     loc.coincide <- apply(get("d0", envir=pred.env), 2, function(x){any(x < 1e-10)})
     if(any(loc.coincide))
-      loc.coincide <- (1:ni)[loc.coincide]
+      loc.coincide <- which(loc.coincide)
     else
       loc.coincide <- NULL
     if(!is.null(loc.coincide)){
       temp.f <- function(x, data){return(data[x < 1e-10,])}
       data.coincide <- t(apply(get("d0", envir=pred.env)[,loc.coincide, drop=FALSE],
-                             2,temp.f, data=data))
+                               2,temp.f, data=data))
     }
     else data.coincide <- NULL
     n.loc.coincide <- length(loc.coincide)    
@@ -337,7 +314,8 @@
   xiRy.x <- bilinearformXAY(X = trend.data, lowerA = iR$lower.inverse,
                             diagA = iR$diag.inverse, Y = cbind(data, trend.data))
   if(!is.matrix(xiRy.x)) xiRy.x <- is.matrix(xiRy.x, 1, n.datasets+beta.size)
-  xiRx <- xiRy.x[,-(1:n.datasets), drop = FALSE]
+  ind.datasets <- seq(length=n.datasets)
+  xiRx <- xiRy.x[,-ind.datasets, drop = FALSE]
   ## 1. Computing parameters of posterior for beta
   ##
   if(any(beta.info$iv == Inf)){ 
@@ -348,7 +326,7 @@
   else{
     inv.beta.var.std.post <- as.matrix(beta.info$iv + xiRx)    
     beta.var.std.post <- solve.geoR(inv.beta.var.std.post)
-    beta.post <- beta.var.std.post %*% (beta.info$ivm + xiRy.x[,(1:n.datasets)])
+    beta.post <- beta.var.std.post %*% (beta.info$ivm + xiRy.x[,ind.datasets])
   }
   ##
   ## 2. Computing parameters of posterior for sigmasq
@@ -361,7 +339,7 @@
     df.post <- n + sigmasq.info$df.sigmasq - beta.info$p
     ##
     if(any(beta.info$iv == Inf)){
-      S2.post <- sigmasq.info$n0S0 + yiRy - 2*crossprod(beta.post,xiRy.x[,(1:n.datasets),drop = FALSE]) + as.vector(t(beta.post)%*%xiRx%*%beta.post)
+      S2.post <- sigmasq.info$n0S0 + yiRy - 2*crossprod(beta.post,xiRy.x[,ind.datasets,drop = FALSE]) + as.vector(t(beta.post)%*%xiRx%*%beta.post)
     }
     else{
       S2.post <- sigmasq.info$n0S0 + beta.info$mivm + yiRy - diagquadraticformXAX(beta.post, inv.beta.var.std.post[lower.tri(inv.beta.var.std.post)], diag(inv.beta.var.std.post))     
@@ -393,8 +371,8 @@
                          lowerA = as.vector(iR$lower.inverse),
                          diagA = as.vector(iR$diag.inverse), 
                          Y = as.vector(v0))    
-    tv0ivdata <- t(b[(1:n.datasets), , drop=FALSE])
-    b <- t(get("trend.loc", envir=pred.env)) - b[-(1:n.datasets), , drop=FALSE]
+    tv0ivdata <- t(b[ind.datasets, , drop=FALSE])
+    b <- t(get("trend.loc", envir=pred.env)) - b[-ind.datasets, , drop=FALSE]
     ##
     if(any(beta.info$iv == Inf)) kb$predictive$mean <- tv0ivdata + as.vector(crossprod(b, beta.post))
     else kb$predictive$mean <- tv0ivdata + crossprod(b, beta.post)
@@ -466,8 +444,6 @@
   kb$max.dist <- data.dist.max
   kb$call <- call.fc
   attr(kb, "prediction.locations") <- call.fc$locations
-  ##class(kb) <- c("krige.bayes", "kriging")
-  if(messages.screen) cat("krige.bayes.extnd: done!\n")
   return(kb)
 }
 
@@ -501,14 +477,7 @@ function(geodata, coords = geodata$coords, data = geodata$data, locations, krige
       else{
         krige.names <-c("type.krige","trend.d","trend.l","obj.model","beta","cov.model",
 "cov.pars","kappa","nugget","micro.scale","dist.epsilon","lambda","aniso.pars")
-        krige.user <- krige
-        krige <- list()
-        if(length(krige.user) > 0){
-          for(i in 1:length(krige.user)){
-            n.match <- match.arg(names(krige.user)[i], krige.names)
-            krige[[n.match]] <- krige.user[[i]]
-          }
-        }
+        krige <- object.match.names(krige,krige.names)
         if(is.null(krige$type.krige)) krige$type.krige <- "ok"  
         if(is.null(krige$trend.d)) krige$trend.d <-  "cte"
         if(is.null(krige$trend.l)) krige$trend.l <-  "cte"
@@ -523,16 +492,15 @@ function(geodata, coords = geodata$coords, data = geodata$data, locations, krige
         if(is.null(krige$dist.epsilon)) krige$dist.epsilon <-  1e-10
         if(is.null(krige$aniso.pars)) krige$aniso.pars <- NULL  
         if(is.null(krige$lambda)) krige$lambda <- 1 
-          krige <- krige.control(type.krige = krige$type.krige,
-                                 trend.d = krige$trend.d, trend.l = krige$trend.l,
-                                 obj.model = krige$obj.model,
-                                 beta = krige$beta, cov.model = krige$cov.model,
-                                 cov.pars = krige$cov.pars, kappa = krige$kappa,
-                                 nugget = krige$nugget, micro.scale = krige$micro.scale,
-                                 dist.epsilon = krige$dist.epsilon, 
-                                 aniso.pars = krige$aniso.pars,
-                                 lambda = krige$lambda)
-        
+        krige <- krige.control(type.krige = krige$type.krige,
+                               trend.d = krige$trend.d, trend.l = krige$trend.l,
+                               obj.model = krige$obj.model,
+                               beta = krige$beta, cov.model = krige$cov.model,
+                               cov.pars = krige$cov.pars, kappa = krige$kappa,
+                               nugget = krige$nugget, micro.scale = krige$micro.scale,
+                               dist.epsilon = krige$dist.epsilon, 
+                               aniso.pars = krige$aniso.pars,
+                               lambda = krige$lambda)
       }
     }
   }
@@ -554,14 +522,7 @@ function(geodata, coords = geodata$coords, data = geodata$data, locations, krige
       else{
         output.names <- c("n.posterior","n.predictive","moments","n.back.moments","simulations.predictive",
                           "mean.var","quantile","threshold","signal","messages.screen")
-        output.user <- output
-        output <- list()
-        if(length(output.user) > 0){
-          for(i in 1:length(output.user)){
-            n.match <- match.arg(names(output.user)[i], output.names)
-            output[[n.match]] <- output.user[[i]]
-          }
-        }
+        output <- object.match.names(output,output.names)
         if(is.null(output$n.posterior)) output$n.posterior <- 1000 
         if(is.null(output$n.predictive)) output$n.predictive <- NULL
         if(is.null(output$moments)) output$moments <- TRUE
@@ -722,7 +683,7 @@ function(geodata, coords = geodata$coords, data = geodata$data, locations, krige
     loc.coincide <- (colSums(d0mat < krige$dist.epsilon) == 1)
     if(any(loc.coincide)) {
       if(all(loc.coincide)) stop("locations is a subset of coords; prediction not performed")
-      loc.coincide <- (1:ni)[loc.coincide]
+      loc.coincide <- which(loc.coincide)
     }
     else loc.coincide <- NULL
     d0mat <- NULL
@@ -787,6 +748,5 @@ function(geodata, coords = geodata$coords, data = geodata$data, locations, krige
   }
   kc.result <- c(kc.result, list(message = message, call = cl))
 #######################################
-  ##class(kc.result) <- "kriging"
   return(kc.result)
 }

@@ -5,13 +5,6 @@
 \alias{mcmc.bayes.pois.boxcox}
 \alias{mcmc.bayes.conj.pois.log}
 \alias{mcmc.bayes.conj.pois.boxcox}
-\alias{krige.bayes.extnd}
-\alias{pmixed}
-\alias{pred.aux}
-\alias{pred.quan.aux}
-\alias{phi.number}
-\alias{multgauss}
-\alias{BC.inv}
 
 
 \title{Bayesian Posterior Simulation and Prediction for the Poisson

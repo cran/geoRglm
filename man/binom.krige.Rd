@@ -3,7 +3,6 @@
 \alias{binom.krige}
 \alias{mcmc.binom.aux}
 \alias{mcmc.binom.logit}
-\alias{glm.krige.aux}
 
 
 \title{Conditional Simulation and Prediction for the Binomial-logit 
@@ -107,7 +106,6 @@ logit function \eqn{g^{-1}}{g^{-1}}.
   data augmentation. \emph{Bayesian statistics 7} (eds. J. M. Bernardo,
   S. Bayarri, J. O. Berger, A. P. Dawid, D. Heckerman, A. F. M. Smith
   and M. West), Oxford University Press, 307-326.
-}
 
 Further information about \bold{geoRglm} can be found at:\cr
   \url{http://www.maths.lancs.ac.uk/~christen/geoRglm}.
