@@ -7,32 +7,20 @@
 
 
 #define FREE_ARG char*
-# define Real double
+#define Real double
 
-#if(defined(SPLUS_VERSION))
-# define Integer long
-# define UNIF unif_rand(S_evaluator)
-# define RNORM norm_rand(S_evaluator)
-#else
+
 # define Integer int
 # define UNIF unif_rand()
 # define RNORM norm_rand()
 # define Salloc(n,t) (t*)S_alloc(n,sizeof(t))
-#endif
 
-#if(defined(SPLUS_VERSION) && SPLUS_VERSION > 5100) 
-# define RANDIN seed_in((long *)NULL, S_evaluator)
-# define RANDOUT seed_out((long *)NULL, S_evaluator)
-#elif(SPLUS_VERSION > 5000)
-# define RANDIN seedin((long *)NULL, S_evaluator)
-# define RANDOUT seedout((long *)NULL, S_evaluator)
-#else
 # define RANDIN seed_in((long *)NULL)
 # define RANDOUT seed_out((long *)NULL)
-#endif
 
 
-/* to be moved latter !! */
+
+/* to be moved latter when new parametrisation-stuff  is finished !! */
 
 Real calc1_ss(Real *z, Real *Dmat, Integer dim){
 Integer l,k;
@@ -46,7 +34,7 @@ Real sumsz,temp;
 }
 
 
-void conddensity1binom(Real *S, Real *BB, Real *logfcond, Real *obsdata, Real *z, Real *meanS, Real *units, Integer dim){
+void conddensity1binom(Real *S, Real *logfcond, Real *BB, Real *z, Real *obsdata, Real *units, Real *meanS, Integer dim){
 Integer l, k;
 
   for (l=0; l<dim; l++){
@@ -106,8 +94,7 @@ Real sum;
          for (sum=inmat[ n*i - i*(i+1)/2 + j],k=0;k<i;k++) sum -= outmat[ n*k - k*(k+1)/2 + i]*outmat[ n*k - k*(k+1)/2 + j];
          if (j == i) {
             if (sum < 0.0){
-               printf("cholesky failed; inmat is not positive definite \n");  
-               exit(1);
+               error("cholesky failed; inmat is not positive definite \n");  
             }
             outmat[ n*i - i*(i+1)/2 + i]=sqrt(sum);
          }
@@ -121,6 +108,9 @@ Real trunc_u(Real mean, Real H){
   return (mean>H) ? H : mean;
 }
 
+Real trunc_l(Real mean, Real H){
+  return (mean<H) ? H : mean;
+}
 
 Real calc_ss(Real *z, Integer dim){
 Integer l;
@@ -143,8 +133,8 @@ Real logprior_phi(Real phi, Real e_mean, Integer phinum){
     return exp(-phi/e_mean);
     break;
   case 3:         /* fixed */  
-    printf("updating phi is not possible when phi is fixed \n");
-    exit(1);
+    error("updating phi is not possible when phi is fixed \n");
+    return 0;
     break;
   case 4:         /* squared.reciprocal */  
     return 1/(phi*phi);
@@ -269,7 +259,7 @@ void gradient4(Real *S, Real *gradz, Real *B, Real *DDmat, Real *z, Real *obsdat
       for (l=0; l<dim; l++){
           if(l<k+1) gradz[l]+=B[dim*l-l*(l+1)/2+k]*likeli - df*DDmat[dim*l-l*(l+1)/2+k]*z[k]/ss ; /* using symmetri of DDmat  */
           else gradz[l] -= df*DDmat[dim*k-k*(k+1)/2+l]*z[k]/ss ;
-      }  
+      }
    }
 }
 
@@ -307,8 +297,7 @@ void mcmcrun4(Integer *n, Real *data, Real *units, Real *DD, Integer *no_linpar,
   temp2 = Salloc((*no_linpar)*(*n),Real) ;      
   
   if(*nmphi>2001){
-    printf(" number of values in phi.discrete must not exceed 2001 \n");
-    exit(1);
+    error(" number of values in phi.discrete must not exceed 2001 \n");
   }
   for (l=0; l<(*n); l++) S[l]=SS[l];
   for (l=0; l<(*n); l++){
@@ -457,7 +446,7 @@ void gradient4boxcox(Real *S, Real *gradz, Real *B, Real *DDmat, Real *z, Real *
      /* this version requires B and DDmat to consist of just the entries in the lower triangular part of the matrix */    
    for (l=0; l<dim; l++) gradz[l]=0;
    for (k=0; k<dim; k++){
-      likeli=(obsdata[k]- trunc_u(units[k]*pow(lambda*S[k]+1,1/lambda),Hz[k]))*trunc_u(1/(lambda*S[k]+1),pow(Hz[k]/units[k],lambda));
+     likeli=(obsdata[k]- trunc_u(units[k]*pow(lambda*S[k]+1,1/lambda),Hz[k]))/trunc_l(lambda*S[k]+1,1/Hz[k]); /* trunc_l sufficient ? */
       for (l=0; l<dim; l++){
           if(l<k+1) gradz[l]+=B[dim*l-l*(l+1)/2+k]*likeli - df*DDmat[dim*l-l*(l+1)/2+k]*z[k]/ss ; /* using symmetri of DDmat  */
           else gradz[l] -= df*DDmat[dim*k-k*(k+1)/2+l]*z[k]/ss ; 
@@ -499,8 +488,7 @@ void mcmcrun4boxcox(Integer *n, Real *data, Real *units, Real *DD, Integer *no_l
   temp2 = Salloc((*no_linpar)*(*n),Real) ;      
 
   if(*nmphi>2001){
-       printf(" number of values in phi.discrete must not exceed 2001 \n");
-       exit(1);
+       error(" number of values in phi.discrete must not exceed 2001 \n");
   }
   for (l=0; l<(*n); l++) S[l]=SS[l];
   for (l=0; l<(*n); l++){
@@ -540,8 +528,7 @@ void mcmcrun4boxcox(Integer *n, Real *data, Real *units, Real *DD, Integer *no_l
   conddensity4boxcox(S,Q,&logf,data,z,units,(*n),(*lambda));
   for(l=0;l<(*n);l++){
      if(S[l] < -1/(*lambda)){
-        printf(" Bad starting value for MCMC \n");
-        exit(1);
+        error(" Bad starting value for MCMC \n");
      }
   }
   ss4 = calc4_ss(z,Dmat,(*n))+(*ss_sigma);  
@@ -643,7 +630,7 @@ void mcmcrun4boxcox(Integer *n, Real *data, Real *units, Real *DD, Integer *no_l
         }   
   }
   if(ctrl2*10 > itr || ctrl3*10 > itr){
-    printf("rejection of proposals cauced by density for proposal being zero: S: %d; phi: %d , out of %d iterations \n",ctrl2,ctrl3,itr);
+    printf("rejection of proposals caused by density being zero: S: %d; phi: %d , out of %d iterations \n",ctrl2,ctrl3,itr);
   }
   RANDOUT;  
 }
@@ -679,14 +666,14 @@ void mcmcrunbinom(Integer *n, Real *zz, Real *SS, Real *data,
       z[l] = zz[l]; 
       S[l] = 0;     
   }
-  conddensity1binom(S,QQ,&logf,data,z,meanS,units,(*n));           
+  conddensity1binom(S,&logf,QQ,z,data,units,meanS,(*n));           
   gradientbinom(S,gradz,QQ,z,data,meanS,units,(*n));
   logp_z = -calc_ss(z,(*n))/2;
   acc= 0;
   for(i=0; i<(*nsim); i++){ 
      for(ii=0; ii<(*subsample); ii++){  
         for (l=0; l<(*n); l++) zprop[l]=z[l]+0.5*gradz[l]*(*scale) + randnormal[(i*(*subsample)+ii)*(*n)+l];
-        conddensity1binom(Sprop,QQ,&logfprop,data,zprop,meanS,units,(*n));     
+        conddensity1binom(Sprop,&logfprop,QQ,zprop,data,units,meanS,(*n));     
         gradientbinom(Sprop,gradzprop,QQ,zprop,data,meanS,units,(*n));
         logp_zprop=-calc_ss(zprop,(*n))/2;  
         for (logq=0,logqprop=0,l=0; l<(*n); l++){
@@ -854,8 +841,7 @@ void mcmcrun4binom(Integer *n, Real *data, Real *units, Real *DD, Integer *no_li
   temp2 = Salloc((*no_linpar)*(*n),Real) ;      
 
   if(*nmphi>2001){
-       printf(" number of values in phi.discrete must not exceed 2001 \n");
-       exit(1);
+       error(" number of values in phi.discrete must not exceed 2001 \n");
   }
   for (l=0; l<(*n); l++) S[l]=SS[l];
   for (l=0; l<(*n); l++){
@@ -1025,8 +1011,7 @@ void mcmcrun5binom(Integer *n, Real *data, Real *units, Real *meanS, Real *DDvbe
   AA = Salloc(dim2,Real) ;
 
   if(*nmphi>2001){
-       printf(" number of values in phi.discrete must not exceed 2001 \n");
-       exit(1);
+       error(" number of values in phi.discrete must not exceed 2001 \n");
   }
   for (l=0; l<(*n); l++) S[l]=SS[l];
   for (l=0; l<(*n); l++){
@@ -1176,7 +1161,8 @@ void gradient5boxcox(Real *S, Real *gradz, Real *BB, Real *z, Real *obsdata, Rea
 
    for (l=0; l<dim; l++) gradz[l]=-z[l]*df/ss;
    for (k=0; k<dim; k++){
-     likeli=(obsdata[k]-trunc_u(units[k]*pow(lambda*(S[k]+linpred[k])+1,1/lambda),Hz[k]))*trunc_u(1/(lambda*(S[k]+linpred[k])+1),pow(Hz[k]/units[k],lambda));
+     likeli=(obsdata[k]-trunc_u(units[k]*pow(lambda*(S[k]+linpred[k])+1,1/lambda),Hz[k]))/trunc_l(lambda*(S[k]+linpred[k])+1,1/Hz[k]);
+                                                                         /*  trunc_l sufficient ? */
      for (l=0; l<k+1; l++) gradz[l]+=BB[dim*l-l*(l+1)/2+k]*likeli ;
    }
 }
@@ -1208,8 +1194,7 @@ void mcmcrun5boxcox(Integer *n, Real *data, Real *units, Real *meanS, Real *DDvb
   AA = Salloc(dim2,Real) ;
 
   if(*nmphi>2001){
-       printf(" number of values in phi.discrete must not exceed 2001 \n");
-       exit(1);
+       error(" number of values in phi.discrete must not exceed 2001 \n");
   }
   for (l=0; l<(*n); l++) S[l]=SS[l];
   for (l=0; l<(*n); l++){
@@ -1250,7 +1235,12 @@ void mcmcrun5boxcox(Integer *n, Real *data, Real *units, Real *meanS, Real *DDvb
       cholesky(AA,Q,(*n)); 
   }  
   initz(S,Q,z,(*n));
-  conddensity5boxcox(S,Q,&logf,data,z,meanS,units,(*n),(*lambda));    
+  conddensity5boxcox(S,Q,&logf,data,z,meanS,units,(*n),(*lambda));  
+  for(l=0;l<(*n);l++){
+    if(S[l] < -1/(*lambda)){
+      error(" Bad starting value for MCMC \n");
+    }
+  }    
   ss5 = calc_ss(z,(*n))+(*ss_sigma);  
   gradient5boxcox(S,gradz,Q,z,data,meanS,units,Htrunc,(*n),ss5,(*df),(*lambda));  
   logp_z = -0.5*(*df)*log(ss5); 
@@ -1345,7 +1335,7 @@ void mcmcrun5boxcox(Integer *n, Real *data, Real *units, Real *meanS, Real *DDvb
 	}   
   }
   if(ctrl2*10 > itr || ctrl3*10 > itr){
-    printf("rejection of proposals cauced by density for proposal being zero: S: %d; phi: %d , out of %d iterations \n",ctrl2,ctrl3,itr);
+    printf("rejection of proposals caused by density being zero: S: %d; phi: %d , out of %d iterations \n",ctrl2,ctrl3,itr);
   }
   RANDOUT;  
 }
@@ -1402,8 +1392,7 @@ void mcmcrun5(Integer *n, Real *data, Real *units, Real *meanS, Real *DDvbetaDD,
   AA = Salloc(dim2,Real) ;
 
   if(*nmphi>2001){
-       printf(" number of values in phi.discrete must not exceed 2001 \n");
-       exit(1);
+       error(" number of values in phi.discrete must not exceed 2001 \n");
   }
   for (l=0; l<(*n); l++) S[l]=SS[l];
   for (l=0; l<(*n); l++){
@@ -1525,10 +1514,10 @@ void mcmcrun5(Integer *n, Real *data, Real *units, Real *meanS, Real *DDvbetaDD,
 
 
 
-/* 15. May : The new stuff - better algorithm  */
+/* 11. Aug : The new stuff - better algorithm  */
 
 
-void conddensity1(Real *S, Real *BB, Real *logfcond, Real *obsdata, Real *z, Real *linpred, Integer dim){
+void conddensity1(Real *S, Real *logfcond, Real *BB, Real *z, Real *obsdata, Real *linpred, Integer dim){
 Integer l, k;
 
    for (l=0; l<dim; l++){
@@ -1568,14 +1557,14 @@ void mcmc1poislog(Integer *n, Real *zz, Real *SS, Real *data, Real *meanS, Real 
       z[l] = zz[l];     
       S[l] = 0; 
   }
-  conddensity1(S,QQ,&logf,data,z,meanS,(*n));          
+  conddensity1(S,&logf,QQ,z,data,meanS,(*n));     
   gradient1(S,gradz,QQ,QtivQ,z,data,meanS,Htrunc,(*n));
   logp_z = -calc1_ss(z,QtivQ,(*n))/2;
-  acc= 0; 
+  acc= 0;
   for(i=0; i<(*nsim); i++){ 
      for(ii=0; ii<(*subsample); ii++){ 
         for (l=0; l<(*n); l++) zprop[l]=z[l]+0.5*gradz[l]*(*scale) + randnormal[(i*(*subsample)+ii)*(*n)+l];
-        conddensity1(Sprop,QQ,&logfprop,data,zprop,meanS,(*n));
+        conddensity1(Sprop,&logfprop,QQ,zprop,data,meanS,(*n));
         gradient1(Sprop,gradzprop,QQ,QtivQ,zprop,data,meanS,Htrunc,(*n));
         logp_zprop=-calc1_ss(zprop,QtivQ,(*n))/2;  
         for (logq=0,logqprop=0,l=0; l<(*n); l++){
@@ -1606,7 +1595,7 @@ void mcmc1poislog(Integer *n, Real *zz, Real *SS, Real *data, Real *meanS, Real 
   for (l=0; l<(*n); l++) zz[l] = z[l]; 
 }
 
-void conddensity1boxcox(Real *S, Real *BB, Real *logfcond, Real *obsdata, Real *z, Real *meanS, Real *units, Integer dim, Real lambda){
+void conddensity1boxcox(Real *S, Real *logfcond, Real *BB, Real *z, Real *obsdata, Real *units, Real *meanS, Integer dim, Real lambda){
 Integer l, k, ctrl0 ;
 
    ctrl0 = 0;    
@@ -1624,13 +1613,13 @@ Integer l, k, ctrl0 ;
    }
 }
 
-void gradient1boxcox(Real *S, Real *gradz, Real *BB, Real *Dmat, Real *z, Real *obsdata, Real *meanS, Real *units, Real *Hz, Integer dim, Real lambda){
+void gradient1boxcox(Real *S, Real *gradz, Real *BB, Real *Dmat, Real *z, Real *obsdata, Real *units, Real *meanS, Real *Hz, Integer dim, Real lambda){
    Integer l, k;
    Real likeli ;
    
    for (l=0; l<dim; l++) gradz[l]=0;
    for (k=0; k<dim; k++){
-      likeli=(obsdata[k]- trunc_u(units[k]*pow(lambda*(S[k]+meanS[k])+1,1/lambda),Hz[k]))*trunc_u(1/(lambda*(S[k]+meanS[k])+1),pow(Hz[k]/units[k],lambda));
+      likeli=(obsdata[k]- trunc_u(units[k]*pow(lambda*(S[k]+meanS[k])+1,1/lambda),Hz[k]))/trunc_l(lambda*(S[k]+meanS[k])+1,1/Hz[k]);
       for (l=0; l<dim; l++)
           if(l<k+1) gradz[l]+=BB[k*dim+l]*likeli - Dmat[l*dim+k]*z[k] ;
           else gradz[l]-=Dmat[k*dim+l]*z[k] ;
@@ -1653,57 +1642,56 @@ void mcmc1poisboxcox(Integer *n, Real *zz, Real *SS, Real *data, Real *units, Re
       z[l] = zz[l];     
       S[l] = 0; 
   }
-  conddensity1boxcox(S,QQ,&logf,data,z,meanS,units,(*n),(*lambda)); 
+  conddensity1boxcox(S,&logf,QQ,z,data,units,meanS,(*n),(*lambda)); 
   for(l=0;l<(*n);l++){
-       if(S[l] + meanS[l] < -1/(*lambda)){
-            printf(" Bad starting value for MCMC \n");
-            exit(1);
-       }
-  }           
-  gradient1boxcox(S,gradz,QQ,QtivQ,z,data,meanS,units,Htrunc,(*n),(*lambda));
+    if(S[l] + meanS[l] < -1/(*lambda)-0.0000000001){
+      error(" Bad starting value for MCMC \n");
+    }
+  }
+  gradient1boxcox(S,gradz,QQ,QtivQ,z,data,units,meanS,Htrunc,(*n),(*lambda));
   logp_z = -calc1_ss(z,QtivQ,(*n))/2;
   acc= 0; ctrl2 = 0;
   for(i=0; i<(*nsim); i++){ 
-     for(ii=0; ii<(*subsample); ii++){ 
-        for (l=0; l<(*n); l++) zprop[l]=z[l]+0.5*gradz[l]*(*scale) + randnormal[(i*(*subsample)+ii)*(*n)+l];
-        conddensity1boxcox(Sprop,QQ,&logfprop,data,zprop,meanS,units,(*n),(*lambda));
-        ctrl1 = 0;
-        for(l=0;l<(*n);l++){
-           if(Sprop[l] + meanS[l] < -1/(*lambda)){
-               if(data[l] > 0) ctrl1 = 1 ;
-           }
-        }
-        if(ctrl1 == 0){  
-           gradient1boxcox(Sprop,gradzprop,QQ,QtivQ,zprop,data,meanS,units,Htrunc,(*n),(*lambda));
-           logp_zprop=-calc1_ss(zprop,QtivQ,(*n))/2;  
-           for (logq=0,logqprop=0,l=0; l<(*n); l++){
-              logq+=pow(zprop[l]-(z[l]+0.5*gradz[l]*(*scale)),2);
-              logqprop+=pow(z[l]-(zprop[l]+0.5*gradzprop[l]*(*scale)),2);
-           }
-           logq*=(-0.5/(*scale));
-           logqprop*=(-0.5/(*scale));     
-           if (log(randunif[i*(*subsample)+ii])<logfprop+logp_zprop+logqprop-logq-logf-logp_z){  
- 	      /*accept */
-               logf=logfprop;
-               logp_z=logp_zprop;
-               temp=gradz;
-               gradz=gradzprop;
-               gradzprop=temp;
-               temp=S;
-               S=Sprop;
-               Sprop=temp;
-               temp=z;
-               z=zprop;
-               zprop=temp;
-               acc++;
-           } 
-        }
-        else ctrl2++;   
-     }     
-     for (l=0; l<(*n); l++) SS[i*(*n)+l] = S[l];     
+    for(ii=0; ii<(*subsample); ii++){ 
+      for (l=0; l<(*n); l++) zprop[l]=z[l]+0.5*gradz[l]*(*scale) + randnormal[(i*(*subsample)+ii)*(*n)+l];
+      conddensity1boxcox(Sprop,&logfprop,QQ,zprop,data,units,meanS,(*n),(*lambda));
+      ctrl1 = 0;
+      for(l=0;l<(*n);l++){
+	if(Sprop[l] + meanS[l] < -1/(*lambda)){
+	  if(data[l] > 0) ctrl1 = 1 ;
+	} 
+      }
+      if(ctrl1 == 0){  
+	gradient1boxcox(Sprop,gradzprop,QQ,QtivQ,zprop,data,units,meanS,Htrunc,(*n),(*lambda));
+	logp_zprop = -calc1_ss(zprop,QtivQ,(*n))/2;  
+	for (logq=0,logqprop=0,l=0; l<(*n); l++){
+	  logq+=pow(zprop[l]-(z[l]+0.5*gradz[l]*(*scale)),2);
+	  logqprop+=pow(z[l]-(zprop[l]+0.5*gradzprop[l]*(*scale)),2);
+	}
+	logq*=(-0.5/(*scale));
+	logqprop*=(-0.5/(*scale));     
+	if (log(randunif[i*(*subsample)+ii])<logfprop+logp_zprop+logqprop-logq-logf-logp_z){  
+	  /*accept */
+	  logf=logfprop;
+	  logp_z=logp_zprop;
+	  temp=gradz;
+	  gradz=gradzprop;
+	  gradzprop=temp;
+	  temp=S;
+	  S=Sprop;
+	  Sprop=temp;
+	  temp=z;
+	  z=zprop;
+	  zprop=temp;
+	  acc++;
+	} 
+      }
+      else ctrl2++;
+    }     
+    for (l=0; l<(*n); l++) SS[i*(*n)+l] = S[l];     
   }
   if(ctrl2*10 > (*nsim)*(*subsample)){
-     printf(" rejection of proposals for S cauced by density for proposal being zero: %d out of %d iterations \n",ctrl2,(*nsim)*(*subsample));
+    printf(" rejection of proposals for S caused by density being zero: %d out of %d iterations \n",ctrl2,(*nsim)*(*subsample));
   }
   *acc_rate = (Real) acc/((*nsim)*(*subsample));  
   for (l=0; l<(*n); l++) zz[l] = z[l]; 
@@ -1726,14 +1714,14 @@ void mcmc1binom(Integer *n, Real *zz, Real *SS, Real *data, Real *units, Real *m
       z[l] = zz[l];     
       S[l] = 0; 
   } 
-  conddensity1binom(S,QQ,&logf,data,z,units,meanS,(*n));           
+  conddensity1binom(S,&logf,QQ,z,data,units,meanS,(*n));           
   gradient2binom(S,gradz,QQ,QtivQ,z,data,units,(*n));
   logp_z = -calc1_ss(z,QtivQ,(*n))/2;
   acc= 0; 
   for(i=0; i<(*nsim); i++){ 
      for(ii=0; ii<(*subsample); ii++){ 
         for (l=0; l<(*n); l++) zprop[l]=z[l]+0.5*gradz[l]*(*scale) + randnormal[(i*(*subsample)+ii)*(*n)+l];
-        conddensity1binom(Sprop,QQ,&logfprop,data,zprop,units,meanS,(*n));  
+        conddensity1binom(Sprop,&logfprop,QQ,zprop,data,units,meanS,(*n));  
         gradient2binom(Sprop,gradzprop,QQ,QtivQ,zprop,data,units,(*n));
         logp_zprop=-calc1_ss(zprop,QtivQ,(*n))/2;  
         for (logq=0,logqprop=0,l=0; l<(*n); l++){

@@ -219,6 +219,7 @@
   if(nrow(coords) != n) stop("krige.bayes.extnd: number of data is different of number of data locations (coordinates)")
   trend.data <- unclass(trend.spatial(trend=model$trend.d, geodata = geodata))
   beta.size <- ncol(trend.data)
+  if(nrow(trend.data) != n) stop("length of trend is different from the length of the data")
   if((prior$beta.prior == "normal") && (beta.size != length(beta)) )
     stop("krige.bayes.extnd: size of beta incompatible with the trend model (covariates)")
   ##
@@ -255,7 +256,7 @@
     ##
     if(messages.screen){
       cat(switch(model$trend.d,
-                 "cte" = "krige.bayes.extnd: model with constant mean",
+                 "cte" = "krige.bayes.extnd: model with mean being constant",
                  "1st" = "krige.bayes.extnd: model with mean given by a 1st degree polynomial on the coordinates",
                  "2nd" = "krige.bayes.extnd: model with mean given by a 2nd degree polynomial on the coordinates",
                  "krige.bayes.extnd: model with mean defined by covariates provided by the user"))
@@ -631,7 +632,7 @@ function(geodata, coords = geodata$coords, data = geodata$data, locations, krige
       cat("krige.conv.extnd: model with covariates matrix provided by the user")
     else
       cat(switch(as.character(krige$trend.d)[1],
-                 "cte" = "krige.conv.extnd: model with constant mean",
+                 "cte" = "krige.conv.extnd: model with mean being constant",
                  "1st" = "krige.conv.extnd: model with mean given by a 1st degree polinomial on the coordinates",
                  "2nd" = "krige.conv.extnd: model with mean given by a 2nd degree polinomial on the coordinates",
                  "krige.conv.extnd: model with mean defined by covariates provided by the user"))
@@ -639,7 +640,10 @@ function(geodata, coords = geodata$coords, data = geodata$data, locations, krige
   }
   trend.data <- unclass(trend.spatial(trend=krige$trend.d, geodata = geodata))
   beta.size <- ncol(trend.data)
+  if(nrow(trend.data) != n) stop("length of trend is different from the length of the data")
   trend.l <- unclass(trend.spatial(trend=krige$trend.l, geodata = list(coords = locations)))
+  ni <- nrow(trend.l)
+  if(nrow(locations) != ni) stop("length of trend is different from the number of locations for prediction")
   ##
   ## Anisotropy correction (should be placed AFTER trend.d/trend.l
   ##
@@ -669,7 +673,6 @@ function(geodata, coords = geodata$coords, data = geodata$data, locations, krige
   else stop("covariance parametershould be given as a vector")
   sill.partial <- krige$micro.scale + sigmasq
   sill.tot <- tausq + sigmasq
-  ni <- nrow(trend.l)
   ##
   ## starting kriging calculations
   ##

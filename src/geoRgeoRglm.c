@@ -81,8 +81,8 @@ Real corrfctvalue(Real phi, Real kappa, Real h, Integer cornr)
       else
 	return 0 ;
       break;
-    case 7: /* power */
-      return exp(phi * log(h)) ;
+    case 7: /* power: care here this is a variogram value (not correlation) */
+      return  R_pow(h, phi) ;
       break;
     case 8: /* powered.exponential */
       return exp(-1 *  R_pow(hphi, kappa))  ;

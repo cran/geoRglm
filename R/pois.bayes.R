@@ -78,7 +78,7 @@
                   as.integer(nmphi),
                   as.double(e.mean),
                   Sdata = Sdata,
-                  phi.sample = phi.sample, DUP=FALSE)[c("Sdata", "phi.sample")]
+                  phi.sample = phi.sample, DUP=FALSE, PACKAGE = "geoRglm")[c("Sdata", "phi.sample")]
   }
   else{
     result <- .C("mcmcrun4",
@@ -193,7 +193,7 @@
                   as.double(e.mean),
                   as.double(lambda),
                   Sdata = Sdata,
-                  phi.sample = phi.sample, DUP=FALSE)[c("Sdata", "phi.sample")]    
+                  phi.sample = phi.sample, DUP=FALSE, PACKAGE = "geoRglm")[c("Sdata", "phi.sample")]    
   }
   else{
     result <- .C("mcmcrun4boxcox",
@@ -308,7 +308,7 @@
                   as.integer(nmphi),
                   as.double(e.mean),
                   Sdata = Sdata,
-                  phi.sample = phi.sample, DUP=FALSE)[c("Sdata", "phi.sample")]
+                  phi.sample = phi.sample, DUP=FALSE, PACKAGE = "geoRglm")[c("Sdata", "phi.sample")]
   }
   else{
     result <- .C("mcmcrun5",
@@ -422,7 +422,7 @@
                   as.double(e.mean),
                   as.double(lambda),
                   Sdata = Sdata,
-                  phi.sample = phi.sample, DUP=FALSE)[c("Sdata", "phi.sample")]
+                  phi.sample = phi.sample, DUP=FALSE, PACKAGE = "geoRglm")[c("Sdata", "phi.sample")]
   }
   else{
     result <- .C("mcmcrun5boxcox",
@@ -612,7 +612,7 @@
   trend.d <- model$trend.d
   if(messages.screen) {
     cat(switch(as.character(trend.d)[1],
-                 "cte" = "pois.krige.bayes: model with constant mean",
+                 "cte" = "pois.krige.bayes: model with mean being constant",
                  "1st" = "pois.krige.bayes: model with mean given by a 1st degree polinomial on the coordinates",
                  "2nd" = "pois.krige.bayes: model with mean given by a 2nd degree polinomial on the coordinates",
                  "pois.krige.bayes: model with mean defined by covariates provided by the user"))
@@ -622,6 +622,7 @@
   dimnames(coords) <- list(NULL, NULL)
   dimnames(trend.data) <- list(NULL, NULL)
   beta.size <- ncol(trend.data)
+  if(nrow(trend.data) != n) stop("length of trend is different from the length of the data")
   if(beta.size > 1)
     beta.names <- paste("beta", (0:(beta.size-1)), sep="")
   else beta.names <- "beta"
@@ -677,7 +678,7 @@
       if(!is.list(mcmc.input))
         stop("pois.krige.bayes: the argument mcmc.input only takes a list or an output of the function mcmc.control")
       else{
-        mcmc.input.names <- c("S.scale", "Htrunc", "S.start", "burn.in", "thin", "n.iter", "phi.start",  "phi.scale")    
+        mcmc.input.names <- c("S.scale", "Htrunc", "S.start", "burn.in", "thin", "n.iter", "phi.start", "phi.scale")    
         mcmc.input.user <- mcmc.input
         mcmc.input <- list()
         if(length(mcmc.input.user) > 0){
@@ -700,7 +701,7 @@
   }
   ##
   if(beta.prior == "fixed" | beta.prior == "normal") mean.d <- as.vector(trend.data%*%beta)
-  else mean.d <- 0
+  else mean.d <- rep(0,n)
   if(sigmasq.prior != "fixed"){
     if(beta.prior == "flat") df.model <- n - beta.size + df.sigmasq
     else df.model <- n + df.sigmasq
@@ -726,7 +727,7 @@
 ############-----------MCMC -------------##############################
   ##
   if(sigmasq.prior == "fixed"){ 
-    if(lambda == 0){
+    if(lambda == 0){ 
       gauss.post <- mcmc.pois.log(data = data, units.m = units.m, meanS = mean.d, invcov=invcov, mcmc.input = mcmc.input)  
     }
     else{

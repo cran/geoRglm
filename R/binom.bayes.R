@@ -26,7 +26,7 @@
                    as.double(S.scale),
                    as.integer(nsim),
                    as.integer(thin),
-                   acc.rate = acc.rate, DUP=FALSE)[c("z", "S", "acc.rate")]
+                   acc.rate = acc.rate, DUP=FALSE, PACKAGE = "geoRglm")[c("z", "S", "acc.rate")]
     }
     else{
       result <- .C("mcmcrunbinom",
@@ -61,7 +61,7 @@
                    as.double(S.scale),
                    as.integer(nsim),
                    as.integer(thin),
-                   acc.rate = acc.rate, DUP=FALSE)[c("z", "S", "acc.rate")]
+                   acc.rate = acc.rate, DUP=FALSE, PACKAGE = "geoRglm")[c("z", "S", "acc.rate")]
     }
     else{
       result <- .C("mcmcrun2binom",
@@ -198,7 +198,7 @@
                   as.integer(nmphi),
                   as.double(e.mean),
                   Sdata = Sdata,
-                  phi.sample = phi.sample, DUP=FALSE)[c("Sdata", "phi.sample")]
+                  phi.sample = phi.sample, DUP=FALSE, PACKAGE = "geoRglm")[c("Sdata", "phi.sample")]
   }
   else{
     result <- .C("mcmcrun4binom",
@@ -304,7 +304,7 @@
                   as.integer(nmphi),
                   as.double(e.mean),
                   Sdata = Sdata,
-                  phi.sample = phi.sample, DUP=FALSE)[c("Sdata", "phi.sample")]
+                  phi.sample = phi.sample, DUP=FALSE, PACKAGE = "geoRglm")[c("Sdata", "phi.sample")]
   }
   else{
     result <- .C("mcmcrun5binom",
@@ -487,7 +487,7 @@
   trend.d <- model$trend.d
   if(messages.screen) {
     cat(switch(as.character(trend.d)[1],
-                 "cte" = "binom.krige.bayes: model with constant mean",
+                 "cte" = "binom.krige.bayes: model with mean being constant",
                  "1st" = "binom.krige.bayes: model with mean given by a 1st degree polinomial on the coordinates",
                  "2nd" = "binom.krige.bayes: model with mean given by a 2nd degree polinomial on the coordinates",
                  "binom.krige.bayes: model with mean defined by covariates provided by the user"))
@@ -497,6 +497,7 @@
   dimnames(coords) <- list(NULL, NULL)
   dimnames(trend.data) <- list(NULL, NULL)
   beta.size <- ncol(trend.data)
+  if(nrow(trend.data) != n) stop("length of trend is different from the length of the data")
   if(beta.size > 1)
     beta.names <- paste("beta", (0:(beta.size-1)), sep="")
   else beta.names <- "beta"

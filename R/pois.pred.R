@@ -26,7 +26,7 @@
                as.double(S.scale),
                as.integer(nsim),
                as.integer(thin),
-               acc.rate = acc.rate, DUP=FALSE)[c("z", "S", "acc.rate")]
+               acc.rate = acc.rate, DUP=FALSE, PACKAGE = "geoRglm")[c("z", "S", "acc.rate")]
   attr(result$S, "dim") <- c(n, nsim)
   return(result)
 }
@@ -46,7 +46,7 @@
       Htrunc <- mcmc.input$Htrunc
     else Htrunc <- rep(mcmc.input$Htrunc, n)
   }
-  QQ <- solve(chol(invcov + diag(data)))  ## needs to be improved
+  QQ <- t(chol(solve(invcov + diag(data)))) ## needs to be improved
   sqrtdataQ <- sqrt(data)*QQ              ## needs to be improved
   QtivQ <- diag(n)-crossprod(sqrtdataQ)
   if(any(mcmc.input$S.start=="default")) {
@@ -103,14 +103,14 @@
   randunif <- runif(nsim * thin)
   z <-  as.double(z)
   S <-  as.double(rep(0, nsim * n))
-  acc.rate <-  as.double(1) 
+  acc.rate <-  as.double(1)  
   result <- .C("mcmc1poisboxcox",
                as.integer(n),
                z = z,
                S = S,
                as.double(data),
-               as.double(meanS),
                as.double(units.m),
+               as.double(meanS),
                as.double(as.vector(t(QQ))),
                as.double(as.vector(QtivQ)),
                as.double(randnormal),
@@ -120,23 +120,23 @@
                as.integer(nsim),
                as.integer(thin),
                as.double(lambda),
-               acc.rate = acc.rate, DUP=FALSE)[c("z", "S", "acc.rate")]
+               acc.rate = acc.rate, DUP=FALSE, PACKAGE = "geoRglm")[c("z", "S", "acc.rate")]
   attr(result$S, "dim") <- c(n, nsim)
   return(result)
 }
 
 "mcmc.pois.boxcox" <- 
-  function(data, units.m, meanS = NULL, invcov, mcmc.input, lambda)
+  function(data, units.m, meanS, invcov, mcmc.input, lambda)
 {
 ####
   ## This is the MCMC engine for the spatial Poisson - Normal model with link from the box-cox-family ----
   ##
   n <- length(data)
   S.scale <- mcmc.input$S.scale
-  if(is.null(meanS)) meanS <- rep(0,n)
-  QQ <- solve(chol(invcov + diag(data)))  ## needs to be improved
-  sqrtdataQ <- sqrt(data)*QQ              ## needs to be improved
-  QtivQ <- diag(n)-crossprod(sqrtdataQ)
+  fisher.l <- ifelse(data>0,data^(1-2*lambda)*units.m^(2*lambda),0)
+  QQ <- t(chol(solve(invcov + diag(fisher.l)))) ## needs to be improved 
+  sqrtfiQ <- sqrt(fisher.l)*QQ              ## needs to be improved
+  QtivQ <- diag(n)-crossprod(sqrtfiQ)
   if(any(mcmc.input$S.start=="default")) {
     S <- as.vector(ifelse(data > 0, (data/units.m)^lambda-1, 0)/lambda - meanS )         
     z <- as.vector(solve(QQ,S))
@@ -170,7 +170,7 @@
   Sdata <- matrix(NA, n, n.sim)
   for(i in 1:n.turn) {
     mcmc.output <- mcmc.boxcox.aux(mcmc.output$z, data, units.m, meanS, QQ, Htrunc, S.scale, n.temp, thin, QtivQ, lambda)
-    Sdata[, (n.temp * (i - 1) + 1):(n.temp * i)] <- mcmc.output$S+meanS                       
+    Sdata[, (n.temp * (i - 1) + 1):(n.temp * i)] <- mcmc.output$S+meanS
     cat(paste("iter. numb.", i * n.temp * thin, " : Acc.-rate = ", mcmc.output$acc.rate, "\n"))
   }
   cat(paste("MCMC performed: n.iter. = ", n.iter, "; thinning = ", thin, "; burn.in = ", burn.in, "\n"))
@@ -240,6 +240,7 @@
                            "wave", "power",
                            "powered.exponential", "cauchy", "gneiting",
                            "gneiting.matern", "pure.nugget"))
+  if(cov.model == "power") stop("krige.glm.control: correlation function does not exist for the power variogram")
   res <- list(type.krige = type.krige,
               trend.d = trend.d, trend.l = trend.l, 
               beta = beta,
@@ -356,6 +357,7 @@ function(geodata, coords = geodata$coords, data = geodata$data, units.m = "defau
   }
   trend.data <- unclass(trend.spatial(trend=trend.d, geodata = geodata))
   beta.size <- ncol(trend.data)
+  if(nrow(trend.data) != n) stop("length of trend is different from the length of the data")
   if(beta.prior == "deg")
     if(beta.size != length(beta))
       stop("size of mean vector is incompatible with trend specified") 
@@ -393,7 +395,7 @@ function(geodata, coords = geodata$coords, data = geodata$data, units.m = "defau
   }
   ##
   if(beta.prior == "deg") mean.d <-  as.vector(trend.data %*% beta)
-  else mean.d <- 0
+  else mean.d <- rep(0,n)
   if(!is.null(aniso.pars)) {
     invcov <- varcov.spatial(coords = coords.aniso(coords = coords, aniso.pars = aniso.pars), cov.model = cov.model, kappa = kappa, 
                              nugget = nugget, cov.pars = cov.pars, inv = TRUE, func.inv = "cholesky",

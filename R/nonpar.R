@@ -56,7 +56,7 @@
                    as.double(as.vector(temp.list$bins.lim)),
                    as.double(temp.list$max.dist),
                    cbin = as.integer(cbin),
-                   vbin = as.double(vbin))[c("vbin", "cbin")]
+                   vbin = as.double(vbin), PACKAGE = "geoRglm")[c("vbin", "cbin")]
       return(result)
     }
   result <- array(unlist(lapply(as.data.frame(data1), bin.f, temp.list = temp.list)), dim = c(nbins, 2, n.datasets))
