@@ -50,7 +50,7 @@
   sqrtdataQ <- sqrt(data)*QQ 
   QtivQ <- diag(n)-crossprod(sqrtdataQ)
   if(any(mcmc.input$S.start=="default")) {
-    z <- as.vector(solve(QQ,ifelse(data > 0, log(data), 0) - meanS - log(units.m)))
+    z <- as.vector(solve(QQ,ifelse(data > 0, log(data), -1.96) - meanS - log(units.m)))
   }
   else{
     if(any(mcmc.input$S.start=="random")) z <- rnorm(n)
@@ -68,7 +68,7 @@
 ## ---------------- burn-in ----------------- ######### 
   if(burn.in > 0) {
     mcmc.output <- mcmc.aux(z, data, meanS + log(units.m), QQ, Htrunc, S.scale, 1, burn.in, QtivQ)
-    if(messages.screen) cat(paste("burn-in = ", burn.in, " is finished. Acc.-rate = ", mcmc.output$acc.rate, "\n"))
+    if(messages.screen) cat(paste("burn-in = ", burn.in, " is finished. Acc.-rate = ", round(mcmc.output$acc.rate, digits=3), "\n"))
     acc.rate.burn.in <- c(burn.in, mcmc.output$acc.rate)
   }
   else mcmc.output <- list(z = z)
@@ -87,7 +87,7 @@
   for(i in 1:n.turn) {
     mcmc.output <- mcmc.aux(mcmc.output$z, data, meanS + log(units.m), QQ, Htrunc, S.scale, n.temp, thin, QtivQ)
     Sdata[, (n.temp * (i - 1) + 1):(n.temp * i)] <- mcmc.output$S+meanS
-    if(messages.screen) cat(paste("iter. numb.", i * n.temp * thin, " : Acc.-rate = ", mcmc.output$acc.rate, "\n"))
+    if(messages.screen) cat(paste("iter. numb.", i * n.temp * thin+burn.in, " : Acc.-rate = ", round(mcmc.output$acc.rate, digits=3), "\n"))
     acc.rate[i,1] <-  i * n.temp * thin
     acc.rate[i,2] <- mcmc.output$acc.rate
   }
@@ -147,7 +147,7 @@
   sqrtfiQ <- sqrt(fisher.l)*QQ 
   QtivQ <- diag(n)-crossprod(sqrtfiQ)
   if(any(mcmc.input$S.start=="default")) {
-    S <- as.vector(ifelse(data > 0, (data/units.m)^lambda-1, 0)/lambda - meanS )         
+    S <- as.vector(ifelse(data > 0, (data/units.m)^lambda-1, -1.96)/lambda - meanS )       
     z <- as.vector(solve(QQ,S))
   }
   else{
@@ -172,7 +172,7 @@
   ## ---------------- burn-in ----------------- ######### 
   if(burn.in > 0) {
     mcmc.output <- mcmc.boxcox.aux(z, data, units.m, meanS, QQ, Htrunc, S.scale, 1, burn.in, QtivQ, lambda)
-    if(messages.screen) cat(paste("burn-in = ", burn.in, " is finished. Acc.-rate = ", mcmc.output$acc.rate, "\n"))
+    if(messages.screen) cat(paste("burn-in = ", burn.in, " is finished. Acc.-rate = ", round(mcmc.output$acc.rate, digits=3), "\n"))
     acc.rate.burn.in <- c(burn.in, mcmc.output$acc.rate)
   }
   else mcmc.output <- list(z = z)
@@ -191,7 +191,7 @@
   for(i in 1:n.turn) {
     mcmc.output <- mcmc.boxcox.aux(mcmc.output$z, data, units.m, meanS, QQ, Htrunc, S.scale, n.temp, thin, QtivQ, lambda)
     Sdata[, (n.temp * (i - 1) + 1):(n.temp * i)] <- mcmc.output$S+meanS
-    if(messages.screen) cat(paste("iter. numb.", i * n.temp * thin, " : Acc.-rate = ", mcmc.output$acc.rate, "\n"))
+    if(messages.screen) cat(paste("iter. numb.", i * n.temp * thin+burn.in, " : Acc.-rate = ", round(mcmc.output$acc.rate, digits=3), "\n"))
     acc.rate[i,1] <-  i * n.temp * thin
     acc.rate[i,2] <- mcmc.output$acc.rate
   }
@@ -206,7 +206,7 @@
 }
 
 "krige.glm.control" <-
-  function (type.krige = "ok", trend.d = "cte", trend.l = "cte", obj.model = NULL, beta, cov.model, cov.pars, kappa,
+  function (type.krige = "sk", trend.d = "cte", trend.l = "cte", obj.model = NULL, beta, cov.model, cov.pars, kappa,
             nugget, micro.scale, dist.epsilon = 1e-10, aniso.pars, lambda)
 {
   if(type.krige != "ok" & type.krige != "OK" & type.krige != "o.k." & type.krige != "O.K." & type.krige != "sk" & type.krige != "SK" & type.krige != "s.k." & type.krige != "S.K.")
@@ -239,16 +239,16 @@
   ##
   if(type.krige == "sk")
     if(is.null(beta) | !is.numeric(beta))
-      stop("\n pois.krige: argument beta must be provided in order to perform simple kriging")
+      stop(" argument beta must be provided in order to perform simple kriging")
   if(micro.scale > nugget)
-    stop("pois.krige: micro.scale must be in the interval [0, nugget]")
+    stop(" micro.scale must be in the interval [0, nugget]")
   if(!is.null(aniso.pars))
     if(length(aniso.pars) != 2 | !is.numeric(aniso.pars))
-      stop("pois.krige: anisotropy parameters must be provided as a numeric vector with two elements: the rotation angle (in radians) and the anisotropy ratio (a number greater than 1)")
+      stop(" anisotropy parameters must be provided as a numeric vector with two elements: the rotation angle (in radians) and the anisotropy ratio (a number greater than 1)")
   ##
   if(inherits(trend.d, "formula") | inherits(trend.l, "formula")){
     if(!inherits(trend.d, "formula") | !inherits(trend.l, "formula"))
-      stop("pois.krige: trend.d and trend.l must have similar specification")
+      stop(" trend.d and trend.l must have similar specification")
   }
   else{
     if((!is.null(class(trend.d)) && class(trend.d)=="trend.spatial") & (!is.null(class(trend.l)) && class(trend.l)=="trend.spatial")){
@@ -257,7 +257,7 @@
     }
     else{
       if(trend.d != trend.l)
-        stop("pois.krige: trend.l is different from trend.d")
+        stop(" trend.l is different from trend.d")
     }
   }
   cov.model <- match.arg(cov.model,
@@ -279,8 +279,47 @@
   return(res)
 }
 
+"krige.glm.check.aux" <-
+  function(krige,fct)
+{
+  if(is.null(class(krige)) || class(krige) != "krige.geoRglm"){
+    if(!is.list(krige))
+      stop(paste(fct,": the argument krige only takes a list or an output of the function krige.glm.control"))
+    else{
+      krige.names <-c("type.krige","trend.d","trend.l","obj.model","beta","cov.model",
+                      "cov.pars","kappa","nugget","micro.scale","dist.epsilon","lambda","aniso.pars")
+      krige.user <- krige
+      krige <- list()
+      if(length(krige.user) > 0){
+        for(i in 1:length(krige.user)){
+          n.match <- match.arg(names(krige.user)[i], krige.names)
+          krige[[n.match]] <- krige.user[[i]]
+        }
+      }
+      if(is.null(krige$type.krige)) krige$type.krige <- "sk"  
+      if(is.null(krige$trend.d)) krige$trend.d <-  "cte"
+      if(is.null(krige$trend.l)) krige$trend.l <-  "cte"
+      if(is.null(krige$cov.model)) krige$cov.model <- "matern"
+      if(is.null(krige$kappa)) krige$kappa <-  0.5
+      if(is.null(krige$nugget)) krige$nugget <-  0
+      if(is.null(krige$micro.scale)) krige$micro.scale <- krige$nugget
+      if(is.null(krige$dist.epsilon)) krige$dist.epsilon <-  1e-10
+      krige <- krige.glm.control(type.krige = krige$type.krige,	
+                                 trend.d = krige$trend.d, trend.l = krige$trend.l,
+                                 obj.model = krige$obj.model,
+                                 beta = krige$beta, cov.model = krige$cov.model,
+                                 cov.pars = krige$cov.pars, kappa = krige$kappa,
+                                 nugget = krige$nugget, micro.scale = krige$micro.scale,
+                                 dist.epsilon = krige$dist.epsilon, 
+                                 aniso.pars = krige$aniso.pars)
+    }
+  }
+  return(krige)
+}
+
+
 "pois.krige" <- 
-function(geodata, coords = geodata$coords, data = geodata$data, units.m = "default", locations = NULL, mcmc.input, krige, output)
+function(geodata, coords = geodata$coords, data = geodata$data, units.m = "default", locations = NULL,  borders = NULL, mcmc.input, krige, output)
 {
   if(missing(geodata))
     geodata <- list(coords=coords, data=data)
@@ -291,42 +330,7 @@ function(geodata, coords = geodata$coords, data = geodata$data, units.m = "defau
     else units.m <- rep(1, n)
   }
   if(missing(krige)) stop("must provide object krige")
-  else{
-    if(is.null(class(krige)) || class(krige) != "krige.geoRglm"){
-      if(!is.list(krige))
-        stop("pois.krige: the argument krige only takes a list or an output of the function krige.glm.control")
-      else{
-        krige.names <-c("type.krige","trend.d","trend.l","obj.model","beta","cov.model",
-                        "cov.pars","kappa","nugget","micro.scale","dist.epsilon","lambda","aniso.pars")
-        krige.user <- krige
-        krige <- list()
-        if(length(krige.user) > 0){
-          for(i in 1:length(krige.user)){
-            n.match <- match.arg(names(krige.user)[i], krige.names)
-            krige[[n.match]] <- krige.user[[i]]
-          }
-        }
-        if(is.null(krige$type.krige)) krige$type.krige <- "ok"  
-        if(is.null(krige$trend.d)) krige$trend.d <-  "cte"
-        if(is.null(krige$trend.l)) krige$trend.l <-  "cte"
-        if(is.null(krige$cov.model)) krige$cov.model <- "matern"
-        if(is.null(krige$kappa)) krige$kappa <-  0.5
-        if(is.null(krige$nugget)) krige$nugget <-  0
-        if(is.null(krige$micro.scale)) krige$micro.scale <- krige$nugget
-        if(is.null(krige$dist.epsilon)) krige$dist.epsilon <-  1e-10
-        if(is.null(krige$lambda)) krige$lambda <- 0
-          krige <- krige.glm.control(type.krige = krige$type.krige,
-                                 trend.d = krige$trend.d, trend.l = krige$trend.l,
-                                 obj.model = krige$obj.model,
-                                 beta = krige$beta, cov.model = krige$cov.model,
-                                 cov.pars = krige$cov.pars, kappa = krige$kappa,
-                                 nugget = krige$nugget, micro.scale = krige$micro.scale,
-                                 dist.epsilon = krige$dist.epsilon, 
-                                 aniso.pars = krige$aniso.pars,
-                                 lambda = krige$lambda)
-      }
-    }
-  }
+  krige <- krige.glm.check.aux(krige,fct="pois.krige")
   cov.model <- krige$cov.model
   kappa <- krige$kappa
   beta <- krige$beta
@@ -340,29 +344,8 @@ function(geodata, coords = geodata$coords, data = geodata$data, units.m = "defau
   lambda <- krige$lambda
   if(krige$type.krige == "ok") beta.prior <- "flat"
   if(krige$type.krige == "sk") beta.prior <- "deg"
-  if(missing(output))
-    output <- output.glm.control()
-  else{
-    if(is.null(class(output)) || class(output) != "output.geoRglm"){
-      if(!is.list(output))
-        stop("pois.krige: the argument output only takes a list or an output of the function output.glm.control")
-      else{
-        output.names <- c("sim.posterior","sim.predict", "keep.mcmc.sim","quantile","threshold","inference","messages.screen")      
-        output.user <- output
-        output <- list()
-        if(length(output.user) > 0){
-          for(i in 1:length(output.user)){
-            n.match <- match.arg(names(output.user)[i], output.names)
-            output[[n.match]] <- output.user[[i]]
-          }
-        }
-        if(is.null(output$sim.predict)) output$sim.predict <- FALSE      
-        if(is.null(output$messages.screen)) output$messages.screen <- TRUE
-        output <- output.glm.control(sim.predict = output$sim.predict,
-                                 messages.screen = output$messages.screen)
-      }
-    }
-  }
+  if(missing(output)) output <- output.glm.control()
+  output <- output.glm.check.aux(output, fct="pois.krige")
   sim.predict <- output$sim.predict
   messages.screen <- output$messages.screen
   ##
@@ -393,31 +376,7 @@ function(geodata, coords = geodata$coords, data = geodata$data, units.m = "defau
   ## preparing for MCMC 
   ##
   if(missing(mcmc.input)) stop("pois.krige: argument mcmc.input must be given")
-  else{
-    if(is.null(class(mcmc.input)) || class(mcmc.input) != "mcmc.geoRglm"){
-      if(!is.list(mcmc.input))
-        stop("pois.krige: the argument mcmc.input only takes a list or an output of the function mcmc.control")
-      else{
-        mcmc.input.names <- c("S.scale", "Htrunc", "S.start", "burn.in", "thin", "n.iter", "phi.start",  "phi.scale")    
-        mcmc.input.user <- mcmc.input
-        mcmc.input <- list()
-        if(length(mcmc.input.user) > 0){
-          for(i in 1:length(mcmc.input.user)){
-            n.match <- match.arg(names(mcmc.input.user)[i], mcmc.input.names)
-            mcmc.input[[n.match]] <- mcmc.input.user[[i]]
-          }
-        }
-        if(is.null(mcmc.input$Htrunc)) mcmc.input$Htrunc <- "default"
-        if(is.null(mcmc.input$S.start)) mcmc.input$S.start <- "default"
-        if(is.null(mcmc.input$burn.in)) mcmc.input$burn.in <- 0
-        if(is.null(mcmc.input$thin)) mcmc.input$thin <- 10
-        if(is.null(mcmc.input$n.iter)) mcmc.input$n.iter <- 1000*mcmc.input$thin
-        mcmc <- mcmc.control(S.scale = mcmc.input$S.scale,Htrunc=mcmc.input$Htrunc,S.start=mcmc.input$S.start,
-                             burn.in=mcmc.input$burn.in,thin=mcmc.input$thin,n.iter=mcmc.input$n.iter,
-                             phi.start=mcmc.input$phi.start,phi.scale=mcmc.input$phi.scale)
-      }
-    }
-  }
+  mcmc.input <- mcmc.check.aux(mcmc.input, fct="pois.krige")
   ##
   if(beta.prior == "deg") mean.d <-  as.vector(trend.data %*% beta)
   else mean.d <- rep(0,n)
@@ -452,17 +411,24 @@ function(geodata, coords = geodata$coords, data = geodata$data, units.m = "defau
   ##------------------------------------------------------------
 ######################## ---- prediction ----- #####################
   if(!is.null(locations)) {
+    if(!is.null(borders)){
+      locations <- locations.inside(locations, borders)
+      if(nrow(locations) == 0)
+        stop(" pois.krige : there are no prediction locations inside the borders")
+      if(messages.screen)
+        cat(" pois.krige: results will be returned only for prediction locations inside the borders\n")
+    }
     krige <- list(type.krige = krige$type.krige, beta = beta, trend.d = trend.d, trend.l = trend.l, cov.model = cov.model, 
                   cov.pars = cov.pars, kappa = kappa, nugget = nugget, micro.scale = micro.scale, dist.epsilon = dist.epsilon, 
                   aniso.pars = aniso.pars, lambda = lambda)
     kpl.result <- krige.conv.extnd(data = intensity, coords = coords, locations = locations, krige = krige,
                                    output = list(n.predictive = ifelse(sim.predict,1,0), signal = TRUE, messages.screen = FALSE))
     remove(list = c("intensity"))
-    kpl.result$krige.var <- apply(kpl.result$krige.var, 1, mean) + apply(kpl.result$predict, 1, var) 
+    kpl.result$krige.var <- rowMeans(kpl.result$krige.var) + apply(kpl.result$predict, 1, var) 
     kpl.result$mcmc.error <- sqrt(asympvar(kpl.result$predict)/ncol(kpl.result$predict))
-    kpl.result$predict <- apply(kpl.result$predict, 1, mean)
+    kpl.result$predict <- rowMeans(kpl.result$predict)
     if(beta.prior == "flat") {
-      kpl.result$beta.est <- apply(kpl.result$beta, 1, mean)
+      kpl.result$beta.est <- rowMeans(kpl.result$beta)
       names(kpl.result$beta.est) <- beta.names
     }
     kpl.result$beta <- NULL
@@ -470,14 +436,15 @@ function(geodata, coords = geodata$coords, data = geodata$data, units.m = "defau
   else{
     if(beta.prior == "flat") {
       beta.est <- (ittivtt %*% t(ivtt))%*%log(intensity)
-      kpl.result <- list(intensity=intensity, beta.est = apply(beta.est, 1, mean), acc.rate=acc.rate)
+      kpl.result <- list(intensity=intensity, beta.est = rowMeans(beta.est), acc.rate=acc.rate)
     }
     else kpl.result <- list(intensity=intensity, acc.rate=acc.rate)
   }
   kpl.result$call <- call.fc
 #######################################
   attr(kpl.result, "prediction.locations") <- call.fc$locations
-  ##class(kpl.result) <- "kriging"
-  class(kpl.result) <- "pois.kriging"
+  if(!is.null(call.fc$borders)) attr(kpl.result, "borders") <- call.fc$borders
+  class(kpl.result) <- "kriging"
+  ##class(kpl.result) <- "pois.kriging"
   return(kpl.result)
 }

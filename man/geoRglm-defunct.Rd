@@ -4,6 +4,7 @@
 
 \alias{geoRglmdefunct}
 \alias{pois.log.krige}
+\alias{y50}
 
 \usage{
 geoRglmdefunct()
@@ -21,7 +22,8 @@ geoRglmdefunct()
     
     \item{\code{pois.log.krige}}{renamed to \code{\link{pois.krige}}.
       From \code{geoRglm_0.6-0}.  }
-    
+    \item{\code{y50}}{renamed to \code{\link{p50}}.
+      From \code{geoRglm_0.6-2}.  }
     
   }
   

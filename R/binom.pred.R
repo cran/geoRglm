@@ -4,7 +4,7 @@
 {
 #
 ###### ------------------------ doing the mcmc-steps -----------
-############# 
+###### 
 #  
   n <- length(data)
   randnormal <- rnorm(n * nsim * thin) * sqrt(S.scale)
@@ -31,19 +31,21 @@
   return(result)
 }
 
-
 "mcmc.binom.logit" <- function(data, units.m, meanS, invcov, mcmc.input, messages.screen)
 {
 ####
-  ## This is the MCMC engine for the spatial Poisson log Normal model ----
+  ## This is the MCMC engine for the spatial Binomial logit Normal model ----
   ##
   n <- length(data)
   S.scale <- mcmc.input$S.scale
-  QQ <- t(chol(solve(invcov + diag(data))))
-  sqrtdataQ <- sqrt(data)*QQ 
-  QtivQ <- diag(n)-crossprod(sqrtdataQ)
+  fisher.l <- data*(1-data/units.m)
+  QQ <- t(chol(solve(invcov + diag(fisher.l)))) 
+  sqrtfiQ <- sqrt(fisher.l)*QQ 
+  QtivQ <- diag(n)-crossprod(sqrtfiQ)  
   if(any(mcmc.input$S.start=="default")) {
-    z <- as.vector(solve(QQ,ifelse(data > 0, log(data), 0) - meanS - log(units.m)))
+    signum <- round(2*data/units.m) -1
+    S <- as.vector(ifelse(data > 0 & data < units.m, logit.fct(data/units.m), signum*1.96) - meanS )
+    z <- as.vector(solve(QQ,S))
   }
   else{
     if(any(mcmc.input$S.start=="random")) z <- rnorm(n)
@@ -61,7 +63,7 @@
 ## ---------------- burn-in ----------------- ######### 
   if(burn.in > 0) {
     mcmc.output <- mcmc.binom.aux(z, data, units.m, meanS, QQ, S.scale, 1, burn.in, QtivQ)
-    if(messages.screen) cat(paste("burn-in = ", burn.in, " is finished. Acc.-rate = ", mcmc.output$acc.rate, "\n"))
+    if(messages.screen) cat(paste("burn-in = ", burn.in, " is finished. Acc.-rate = ", round(mcmc.output$acc.rate, digits=3), "\n"))
     acc.rate.burn.in <- c(burn.in, mcmc.output$acc.rate)
   }
   else mcmc.output <- list(z = z)
@@ -80,7 +82,7 @@
   for(i in 1:n.turn) {
     mcmc.output <- mcmc.binom.aux(mcmc.output$z, data, units.m, meanS, QQ, S.scale, n.temp, thin, QtivQ)
     Sdata[, (n.temp * (i - 1) + 1):(n.temp * i)] <- mcmc.output$S+meanS
-    if(messages.screen) cat(paste("iter. numb.", i * n.temp * thin, " : Acc.-rate = ", mcmc.output$acc.rate, "\n"))
+    if(messages.screen) cat(paste("iter. numb.", i * n.temp * thin+burn.in, " : Acc.-rate = ", round(mcmc.output$acc.rate, digits=3), "\n"))
     acc.rate[i,1] <-  i * n.temp * thin
     acc.rate[i,2] <- mcmc.output$acc.rate
   }
@@ -93,7 +95,7 @@
 }
 
 
-"binom.krige" <- function(geodata, coords = geodata$coords, data = geodata$data, units.m = "default", locations = NULL, mcmc.input, krige, output)
+"binom.krige" <- function(geodata, coords = geodata$coords, data = geodata$data, units.m = "default", locations = NULL, borders = NULL, mcmc.input, krige, output)
 {
   if(missing(geodata))
     geodata <- list(coords=coords, data=data)
@@ -104,40 +106,7 @@
     else units.m <- rep(1, n)
   }
   if(missing(krige)) stop("must provide object krige")
-  else{
-    if(is.null(class(krige)) || class(krige) != "krige.geoRglm"){
-      if(!is.list(krige))
-        stop("pois.krige: the argument krige only takes a list or an output of the function krige.glm.control")
-      else{
-        krige.names <-c("type.krige","trend.d","trend.l","obj.model","beta","cov.model",
-                        "cov.pars","kappa","nugget","micro.scale","dist.epsilon","lambda","aniso.pars")
-        krige.user <- krige
-        krige <- list()
-        if(length(krige.user) > 0){
-          for(i in 1:length(krige.user)){
-            n.match <- match.arg(names(krige.user)[i], krige.names)
-            krige[[n.match]] <- krige.user[[i]]
-          }
-        }
-        if(is.null(krige$type.krige)) krige$type.krige <- "ok"  
-        if(is.null(krige$trend.d)) krige$trend.d <-  "cte"
-        if(is.null(krige$trend.l)) krige$trend.l <-  "cte"
-        if(is.null(krige$cov.model)) krige$cov.model <- "matern"
-        if(is.null(krige$kappa)) krige$kappa <-  0.5
-        if(is.null(krige$nugget)) krige$nugget <-  0
-        if(is.null(krige$micro.scale)) krige$micro.scale <- krige$nugget
-        if(is.null(krige$dist.epsilon)) krige$dist.epsilon <-  1e-10
-	krige <- krige.glm.control(type.krige = krige$type.krige,	
-                                 trend.d = krige$trend.d, trend.l = krige$trend.l,
-                                 obj.model = krige$obj.model,
-                                 beta = krige$beta, cov.model = krige$cov.model,
-                                 cov.pars = krige$cov.pars, kappa = krige$kappa,
-                                 nugget = krige$nugget, micro.scale = krige$micro.scale,
-                                 dist.epsilon = krige$dist.epsilon, 
-                                 aniso.pars = krige$aniso.pars)
-      }
-    }
-  }
+  krige <- krige.glm.check.aux(krige,fct="binom.krige")
   cov.model <- krige$cov.model
   kappa <- krige$kappa
   beta <- krige$beta
@@ -150,29 +119,8 @@
   dist.epsilon <- krige$dist.epsilon
   if(krige$type.krige == "ok") beta.prior <- "flat"
   if(krige$type.krige == "sk") beta.prior <- "deg"
-  if(missing(output))
-    output <- output.glm.control()
-  else{
-    if(is.null(class(output)) || class(output) != "output.geoRglm"){
-      if(!is.list(output))
-        stop("pois.krige: the argument output only takes a list or an output of the function output.glm.control")
-      else{
-        output.names <- c("sim.posterior","sim.predict", "keep.mcmc.sim","quantile","threshold","inference","messages.screen")      
-        output.user <- output
-        output <- list()
-        if(length(output.user) > 0){
-          for(i in 1:length(output.user)){
-            n.match <- match.arg(names(output.user)[i], output.names)
-            output[[n.match]] <- output.user[[i]]
-          }
-        }
-        if(is.null(output$sim.predict)) output$sim.predict <- FALSE      
-        if(is.null(output$messages.screen)) output$messages.screen <- TRUE
-        output <- output.glm.control(sim.predict = output$sim.predict,
-                                 messages.screen = output$messages.screen)
-      }
-    }
-  }
+  if(missing(output)) output <- output.glm.control()
+  else output <- output.glm.check.aux(output, fct = "binom.krige")
   sim.predict <- output$sim.predict
   messages.screen <- output$messages.screen
   ##
@@ -202,32 +150,8 @@
   ##
   ## preparing for MCMC 
   ##
-  if(missing(mcmc.input)) stop("pois.krige: argument mcmc.input must be given")
-  else{
-    if(is.null(class(mcmc.input)) || class(mcmc.input) != "mcmc.geoRglm"){
-      if(!is.list(mcmc.input))
-        stop("pois.krige: the argument mcmc.input only takes a list or an output of the function mcmc.control")
-      else{
-        mcmc.input.names <- c("S.scale", "Htrunc", "S.start", "burn.in", "thin", "n.iter", "phi.start",  "phi.scale")    
-        mcmc.input.user <- mcmc.input
-        mcmc.input <- list()
-        if(length(mcmc.input.user) > 0){
-          for(i in 1:length(mcmc.input.user)){
-            n.match <- match.arg(names(mcmc.input.user)[i], mcmc.input.names)
-            mcmc.input[[n.match]] <- mcmc.input.user[[i]]
-          }
-        }
-        if(is.null(mcmc.input$Htrunc)) mcmc.input$Htrunc <- "default"
-        if(is.null(mcmc.input$S.start)) mcmc.input$S.start <- "default"
-        if(is.null(mcmc.input$burn.in)) mcmc.input$burn.in <- 0
-        if(is.null(mcmc.input$thin)) mcmc.input$thin <- 10
-        if(is.null(mcmc.input$n.iter)) mcmc.input$n.iter <- 1000*mcmc.input$thin
-        mcmc <- mcmc.control(S.scale = mcmc.input$S.scale,Htrunc=mcmc.input$Htrunc,S.start=mcmc.input$S.start,
-                             burn.in=mcmc.input$burn.in,thin=mcmc.input$thin,n.iter=mcmc.input$n.iter,
-                             phi.start=mcmc.input$phi.start,phi.scale=mcmc.input$phi.scale)
-      }
-    }
-  }
+  if(missing(mcmc.input)) stop("binom.krige: argument mcmc.input must be given")
+  mcmc.input <- mcmc.check.aux(mcmc.input, fct="binom.krige")
   ##
   if(beta.prior == "deg") mean.d <-  as.vector(trend.data %*% beta)
   else mean.d <- rep(0,n)
@@ -255,6 +179,13 @@
   ##------------------------------------------------------------
 ######################## ---- prediction ----- #####################
   if(!is.null(locations)) {
+    if(!is.null(borders)){
+      locations <- locations.inside(locations, borders)
+      if(nrow(locations) == 0)
+        stop(" binom.krige : there are no prediction locations inside the borders")
+      if(messages.screen)
+        cat(" binom.krige: results will be returned only for prediction locations inside the borders\n")
+    }
     krige <- list(type.krige = krige$type.krige, beta = beta, trend.d = trend.d, trend.l = trend.l, cov.model = cov.model, 
                   cov.pars = cov.pars, kappa = kappa, nugget = nugget, micro.scale = micro.scale, dist.epsilon = dist.epsilon, 
                   aniso.pars = aniso.pars, link = "logit")
@@ -262,11 +193,11 @@
 					output = list(n.predictive = ifelse(sim.predict,1,0),
 					      signal = TRUE, messages.screen = FALSE))			   
     remove(list = c("prevalence"))
-    kpl.result$krige.var <- apply(kpl.result$krige.var, 1, mean) + apply(kpl.result$predict, 1, var) 
+    kpl.result$krige.var <- rowMeans(kpl.result$krige.var) + apply(kpl.result$predict, 1, var) 
     kpl.result$mcmc.error <- sqrt(asympvar(kpl.result$predict)/ncol(kpl.result$predict))
-    kpl.result$predict <- apply(kpl.result$predict, 1, mean)
+    kpl.result$predict <- rowMeans(kpl.result$predict)
     if(beta.prior == "flat") {
-      kpl.result$beta.est <- apply(kpl.result$beta, 1, mean)
+      kpl.result$beta.est <- rowMeans(kpl.result$beta)
       names(kpl.result$beta.est) <- beta.names
     }
     kpl.result$beta <- NULL
@@ -274,15 +205,16 @@
   else{
     if(beta.prior == "flat") {
       beta.est <- (ittivtt %*% t(ivtt)) %*% logit.fct(prevalence)
-      kpl.result <- list(prevalence=prevalence, beta.est = apply(beta.est, 1, mean), acc.rate=acc.rate)
+      kpl.result <- list(prevalence=prevalence, beta.est = rowMeans(beta.est), acc.rate=acc.rate)
     }
     else kpl.result <- list(prevalence=prevalence, acc.rate=acc.rate)
   }
   kpl.result$call <- call.fc
 #######################################
   attr(kpl.result, "prediction.locations") <- call.fc$locations
-  ##class(kpl.result) <- "kriging"
-  class(kpl.result) <- "binom.kriging"
+  if(!is.null(call.fc$borders)) attr(kpl.result, "borders") <- call.fc$borders
+  class(kpl.result) <- "kriging"
+  ##class(kpl.result) <- "binom.kriging"
   return(kpl.result)
 }
 

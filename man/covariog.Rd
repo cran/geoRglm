@@ -115,11 +115,11 @@ and Langevin-type Markov chain Monte Carlo.
 }
 
 \examples{
-if(is.R()) data(y50)
-covar <- covariog(y50, uvec=c(1:10))
+if(is.R()) data(p50)
+covar <- covariog(p50, uvec=c(1:10))
 plot(covar)
 ## Now excluding the bin at zero (only assuming log-link).
-covar2 <- covariog(y50,uvec=c(1:10), estimator.type="no")
+covar2 <- covariog(p50,uvec=c(1:10), estimator.type="no")
 plot(covar2)
 }
 

@@ -7,6 +7,8 @@
 \alias{mcmc.bayes.conj.pois.boxcox}
 \alias{krige.bayes.extnd}
 \alias{pmixed}
+\alias{pred.aux}
+\alias{pred.quan.aux}
 \alias{phi.number}
 \alias{multgauss}
 \alias{BC.inv}
@@ -198,7 +200,7 @@ the guess is too low, it is adjusted upwards, and vise verse.
         locations.  }
       \item{uncertainty}{a vector with the estimated uncertainty at the
         prediction locations, defined as the length of the \eqn{95\%} prediction interval divided by 4. }
-      \item{quantile}{A matrix or vector with quantile estimators.  }
+      \item{quantiles}{A matrix or vector with quantile estimators.  }
       \item{probability}{A matrix or vector with probabilities below a threshold. Returned
         only if the argument \code{threshold} is used.  }
       \cr
@@ -233,47 +235,57 @@ Further information about \bold{geoRglm} can be found at:\cr
 }
 
 \examples{
-if(is.R()) data(y50)
+data(p50)
 \testonly{library(geoR)}
 if(!exists(".Random.seed")) set.seed(1234)
 ## MCMC with fixed phi
 prior.5 <- prior.glm.control(phi.prior = "fixed", phi = 0.1)
 mcmc.5 <- mcmc.control(S.scale = 0.01, thin = 1)
-test.5 <- pois.krige.bayes(y50, prior = prior.5, mcmc.input = mcmc.5)
+test.5 <- pois.krige.bayes(p50, prior = prior.5, mcmc.input = mcmc.5)
+##hist(test.5) - does not work at the moment
 \dontrun{
 ## Now chose S.scale (Acc-rate=0.60 is preferable).
 mcmc.5.new <- mcmc.control(S.scale = 0.08, thin = 100)
-test.5.new <- pois.krige.bayes(y50, locations = t(cbind(c(2.5,3), c(-6050,-3270))), 
+test.5.new <- pois.krige.bayes(p50,
+               locations = t(cbind(c(2.5,3.5),c(-6,3.5),c(2.5,-3.5),c(-6,-3.5))), 
                prior = prior.5, mcmc.input = mcmc.5.new, 
-               output = list(threshold = 10, quantile = c(0.49999, 0.99)))
+               output = list(threshold = 10, quantile = c(0.49999,0.99)))
+image(test.5.new)
+persp(test.5.new)
 ## MCMC with random phi.
 ## Note here that we can start with the S.scale from above.
 mcmc.6 <- mcmc.control(S.scale = 0.08, n.iter = 2000, thin = 100, 
                        phi.scale = 0.01)
 prior.6 <- prior.glm.control(phi.discrete = seq(0.02, 1, 0.02))
-test.6 <- pois.krige.bayes(y50, prior = prior.6, mcmc.input = mcmc.6)
+test.6 <- pois.krige.bayes(p50, prior = prior.6, mcmc.input = mcmc.6)
 ## Acc-rate=0.60 , acc-rate-phi = 0.25-0.30  are preferable
 mcmc.6.new <- mcmc.control(S.scale=0.08, n.iter = 400000, thin = 200,
                        burn.in = 5000, phi.scale = 0.12, phi.start = 0.5)
 prior.6 <- prior.glm.control(phi.prior = "uniform", 
                phi.discrete = seq(0.02, 1, 0.02))
-test.6.new <- pois.krige.bayes(y50, 
+test.6.new <- pois.krige.bayes(p50, 
                  locations = t(cbind(c(2.5,3.5), c(-60,-37))), 
                  prior = prior.6, mcmc.input = mcmc.6.new)
+par(mfrow=c(3,1))
+hist(test.6.new)
 }
 \testonly{
-y9 <- list(data=y50$data[c(1:4,10:14)],coords=y50$coords[c(1:4,10:14),],units.m=y50$units.m[c(1:4,10:14)])
+y9 <- list(data=p50$data[c(1:4,10:14)],coords=p50$coords[c(1:4,10:14),],units.m=p50$units.m[c(1:4,10:14)])
 class(y9) <- "geodata"
 mcmc5 <- mcmc.control(S.scale = 0.1, thin = 1, n.iter=10)
 test5 <- pois.krige.bayes(y9, locations = t(cbind(c(2,1),c(-6050,-3270),c(1.1,2.1),c(2,3))),
 prior = list(phi.prior = "fixed", phi= 1), mcmc.input = mcmc5,
 output = list(threshold = c(9,10), quantile = c(0.05,0.99), sim.predict=TRUE)) 
-prior6 <- prior.glm.control(phi.prior = "uniform", phi.discrete = c(0.98,1.02), tausq.rel = 0.05)
+prior6 <- prior.glm.control(phi.prior = "uniform", phi.discrete =
+c(0.98,1.02), tausq.rel = 0.05)
 mcmc6 <- list(S.scale = 0.1, thin = 1, n.iter=10, burn.in = 1, phi.scale = 0.01, phi.start = 1) 
-test6 <- pois.krige.bayes(y9, locations =t(cbind(c(2.5,3.5),c(-60,-37))), prior = prior6, mcmc.input = mcmc6)
+test6 <- pois.krige.bayes(y9, locations=t(cbind(c(2.5,3.5),c(-60,-37))),
+prior = prior6, mcmc.input = mcmc6)
+par(mfrow=c(3,1))
+hist(test6,density.est=FALSE)
 run2.y9 <- pois.krige.bayes(y9, prior = list(phi.prior = "fixed", phi= 1), mcmc.input = mcmc5,
 model = list(trend.d ="1st", trend.l ="1st", aniso.pars =c(1,2), kappa
 =1, lambda= 0.5), locations = t(cbind(c(2.5,3.5),c(-60,-37))) ,
-output = output.glm.control(sim.predict = TRUE)) }
+output = output.glm.control(sim.predict = TRUE))  }
 }
 \keyword{spatial}

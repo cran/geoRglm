@@ -69,8 +69,8 @@
 }
 
 \examples{
-if(is.R()) data(y50)
-covario <- covariog(y50, uvec = c(1:10))  # sample covariogram
+if(is.R()) data(p50)
+covario <- covariog(p50, uvec = c(1:10))  # sample covariogram
 plot(covario)                      
 }
 

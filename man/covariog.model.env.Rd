@@ -87,12 +87,12 @@ covariog.model.env(geodata, coords = geodata$coords, units.m = "default",
 
 \examples{
 \testonly{library(geoR)}
-if(is.R()) data(y50)
-covar <- covariog(y50, uvec = c(1:10))
+if(is.R()) data(p50)
+covar <- covariog(p50, uvec = c(1:10))
 parmval <- list(cov.model = "exponential", cov.pars = c(0.8,0.1), 
                 beta = 1)
 class(parmval) <- "covariomodel"
-konvol <- covariog.model.env(y50, obj.covariog = covar, 
+konvol <- covariog.model.env(p50, obj.covariog = covar, 
                              model.pars = parmval)
 plot(covar, envelope.obj = konvol)
 lines(parmval, max.dist = 10, lty = 1)

@@ -1,6 +1,7 @@
 \name{output.glm.control}
 
 \alias{output.glm.control}
+\alias{output.glm.check.aux}
 
 \title{ Defines output options }
 

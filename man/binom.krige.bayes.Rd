@@ -220,14 +220,16 @@ the guess is too low, it is adjusted upwards, and vise verse.
 }
 
 \examples{
-if(is.R()) data(b50)
+data(b50)
 \testonly{library(geoR)}
 if(!exists(".Random.seed")) set.seed(1234)
 mcmc.10 <- mcmc.control(S.scale = 0.09, n.iter = 1000, phi.scale = 0.2, 
               phi.start = 4.5)
 prior.10 <- prior.glm.control(phi.discrete = seq(0.2,5,0.2))
-test.10 <- binom.krige.bayes(b50, locations=t(cbind(c(2.5,3.5),c(-60,-37))),
+test.10 <- binom.krige.bayes(b50, locations=t(cbind(c(2.5,3.5),c(-1,3.5),c(2.5,1.5),c(-1,1.5))),
               prior = prior.10, mcmc.input = mcmc.10)
+image(test.10)
+persp(test.10)
 \testonly{
 b9 <- grf(grid = expand.grid(x = seq(1, 7, l = 3), y = seq(1, 7, l = 3)), cov.pars = c(0.1, 2))
 b9$units.m <- rep(4,9)
@@ -280,7 +282,7 @@ prior4.b9 <- prior.glm.control(beta.prior = "flat", phi.prior = "fixed", phi = 2
 mcmc4.b9 <- mcmc.control(S.scale = 0.2, thin = 1, n.iter =10)
 run4.b9 <- binom.krige.bayes(b9, prior = prior4.b9, mcmc.input =
 mcmc4.b9, locations = pred.grid, output = output.glm.control(sim.predict
-= TRUE)) }
+= TRUE))  }
 }
 
 \keyword{spatial}

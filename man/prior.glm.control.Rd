@@ -1,6 +1,7 @@
 \name{prior.glm.control}
 
 \alias{prior.glm.control}
+\alias{prior.glm.check.aux}
 
 \title{ Defines prior options }
 

@@ -1,6 +1,7 @@
 \name{model.glm.control}
 
 \alias{model.glm.control}
+\alias{model.glm.check.aux}
 
 \title{ Defines model options }
 

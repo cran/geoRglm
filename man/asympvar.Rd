@@ -44,8 +44,8 @@ asympvar(timeseries, type="mon", lag.max = 100)
 
 \examples{
 \testonly{library(geoR)}
-data(y50)
-test <- pois.krige(y50, krige = krige.glm.control(cov.pars = c(1,1), beta = 1),
+data(p50)
+test <- pois.krige(p50, krige = krige.glm.control(cov.pars = c(1,1), beta = 1),
       mcmc.input = mcmc.control(S.scale = 0.5, n.iter = 1000, thin = 1))
 asympvar(test$intensity[45,])
 ass <- asympvar(test$intensity[1:10,], type = "pos")

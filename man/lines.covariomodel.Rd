@@ -60,7 +60,7 @@ sim$data <- rpois(100, lambda = exp(sim$data+1))
 covario <- covariog(sim, max.dist = 1)  # sample covariogram
 plot(covario)                      
 parmval <- list(cov.model = "exponential", cov.pars = c(0.1, 0.1), 
-                max.dist = 1)
+                max.dist = 1, nugget = 0.01)
 class(parmval) <- "covariomodel"
 lines(parmval, lty = 2)
 }

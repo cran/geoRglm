@@ -1468,7 +1468,7 @@ void mcmcrun5(Integer *n, Real *data, Real *units, Real *meanS, Real *DDvbetaDD,
 
 
 
-/* 28. December : The new stuff - better algorithm  */
+/* 28. December 2002 : The new stuff - better algorithm  */
 
 
 Real calc1_ss(Real *z, Real *Dmat, Integer dim){
@@ -1674,13 +1674,13 @@ void conddensity1binom(Real *S, Real *logfcond, Real *BB, Real *z, Real *obsdata
   }
 }
 
-void gradient1binom(Real *S, Real *gradz, Real *BB, Real *Dmat, Real *z, Real *obsdata, Real *units, Integer dim){
+void gradient1binom(Real *S, Real *gradz, Real *BB, Real *Dmat, Real *z, Real *obsdata, Real *units, Real *meanS, Integer dim){
   Integer l, k;
   Real likeli ;
    
   for (l=0; l<dim; l++) gradz[l]=0;
   for (k=0; k<dim; k++){
-    likeli = obsdata[k] - units[k]*exp(S[k])/(1+exp(S[k]));
+    likeli = obsdata[k] - units[k]*exp(S[k]+meanS[k])/(1+exp(S[k]+meanS[k]));
     for (l=0; l<dim; l++)
       if(l<k+1) gradz[l]+=BB[k*dim+l]*likeli - Dmat[l*dim+k]*z[k] ;
       else gradz[l]-=Dmat[k*dim+l]*z[k] ;
@@ -1691,7 +1691,7 @@ void mcmc1binom(Integer *n, Real *zz, Real *SS, Real *data, Real *units, Real *m
          Real *randnormal, Real *randunif, Real *scale, Integer *nsim, Integer *subsample, Real *acc_rate){
          
   Integer i, ii, l, acc ;  
-  Real *z = Salloc((*n),Real) ; 
+  Real *z = Salloc((*n),Real) ;
   Real *zprop = Salloc((*n),Real) ; 
   Real *S = Salloc((*n),Real) ;
   Real *Sprop = Salloc((*n),Real) ;
@@ -1702,16 +1702,16 @@ void mcmc1binom(Integer *n, Real *zz, Real *SS, Real *data, Real *units, Real *m
   for (l=0; l<(*n); l++){
     z[l] = zz[l];     
     S[l] = 0; 
-  } 
+  }
   conddensity1binom(S,&logf,QQ,z,data,units,meanS,(*n));           
-  gradient1binom(S,gradz,QQ,QtivQ,z,data,units,(*n));
+  gradient1binom(S,gradz,QQ,QtivQ,z,data,units,meanS,(*n));
   logp_z = -calc1_ss(z,QtivQ,(*n))/2;
   acc= 0; 
   for(i=0; i<(*nsim); i++){ 
     for(ii=0; ii<(*subsample); ii++){ 
       for (l=0; l<(*n); l++) zprop[l]=z[l]+0.5*gradz[l]*(*scale) + randnormal[(i*(*subsample)+ii)*(*n)+l];
       conddensity1binom(Sprop,&logfprop,QQ,zprop,data,units,meanS,(*n));  
-      gradient1binom(Sprop,gradzprop,QQ,QtivQ,zprop,data,units,(*n));
+      gradient1binom(Sprop,gradzprop,QQ,QtivQ,zprop,data,units,meanS,(*n));
       logp_zprop=-calc1_ss(zprop,QtivQ,(*n))/2;  
       for (logq=0,logqprop=0,l=0; l<(*n); l++){
 	logq+=pow(zprop[l]-(z[l]+0.5*gradz[l]*(*scale)),2);
@@ -1733,7 +1733,7 @@ void mcmc1binom(Integer *n, Real *zz, Real *SS, Real *data, Real *units, Real *m
 	z=zprop;
 	zprop=temp;
 	acc++;
-      }   
+      }
     }     
     for (l=0; l<(*n); l++) SS[i*(*n)+l] = S[l];     
   }

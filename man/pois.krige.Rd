@@ -2,6 +2,7 @@
 
 \alias{pois.krige}
 \alias{krige.glm.control}
+\alias{krige.glm.check.aux}
 \alias{krige.conv.extnd}
 \alias{mcmc.aux}
 \alias{mcmc.boxcox.aux}
@@ -16,15 +17,15 @@
   This function performs conditional simulation (by MCMC) and spatial prediction in the Poisson normal
   model with link function from the Box-Cox class for fixed covariance parameters.
   Available types of prediction are:
-  \emph{SK} (simple kriging; fixed beta),
-  \emph{OK} (ordinary kriging; uniform prior on beta). 
+  \emph{sk} (simple kriging; fixed beta),
+  \emph{ok} (ordinary kriging; uniform prior on beta). 
 }
 
 \usage{
 pois.krige(geodata, coords = geodata$coords, data = geodata$data,
-               units.m = "default", locations = NULL,
+               units.m = "default", locations = NULL, borders = NULL,
                mcmc.input, krige, output)
-krige.glm.control(type.krige = "ok", trend.d = "cte", trend.l = "cte",
+krige.glm.control(type.krige = "sk", trend.d = "cte", trend.l = "cte",
                   obj.model = NULL, beta, cov.model, cov.pars, kappa,
                   nugget, micro.scale, dist.epsilon = 1e-10, 
                   aniso.pars, lambda)
@@ -46,6 +47,9 @@ krige.glm.control(type.krige = "ok", trend.d = "cte", trend.l = "cte",
     it takes \code{geodata$units.m} in case this exist and else a vector of 1's.  }
   \item{locations}{an \eqn{N \times 2}{N x 2} matrix or data frame with the 2-D
     coordinates of the \eqn{N} prediction locations.  }
+  \item{borders}{optional. If a two column matrix defining a polygon is
+    provided the prediction is performed only at locations inside this
+    polygon.  }
   \item{mcmc.input}{input parameter for the MCMC algorithm. It can take an output from \code{mcmc.control} or
     a list with elements as for the arguments in
     \code{mcmc.control}. See documentation for
@@ -60,9 +64,9 @@ krige.glm.control(type.krige = "ok", trend.d = "cte", trend.l = "cte",
     See documentation for \code{output.glm.control}.  } 
   \item{type.krige}{type of prediction to be performed (minimal mean
     square error prediction). Options are
-    \code{"SK"} and \code{"OK"} corresponding to prediction with fixed
-    parameters (\code{type.krige = "SK"}) or prediction with a uniform
-    prior on \eqn{\beta}{beta} (\code{type.krige = "OK"}). 
+    \code{"sk"} and \code{"ok"} corresponding to prediction with fixed
+    parameters (\code{type.krige = "sk"}), which is the default, or prediction with a uniform
+    prior on \eqn{\beta}{beta} (\code{type.krige = "ok"}). 
     Prediction using a model with covariates can be done by specifying the
     covariate model using the arguments \code{trend.d} and
     \code{trend.l}.  }
@@ -115,7 +119,7 @@ krige.glm.control(type.krige = "ok", trend.d = "cte", trend.l = "cte",
 
 \details{
   For simulating the conditional distribution of \eqn{S} given \eqn{y}, the Langevin-Hastings algorithm 
-with the parametrisation in Papaspilliopoulus, Roberts and Skold (2003)
+  with the parametrisation in Papaspilliopoulus, Roberts and Skold (2003)
 is used. This algorithm is a Metropolis-Hastings algorithm, where the
 proposal distribution uses gradient information from the
 log-posterior distribution. 
@@ -183,20 +187,20 @@ Further information about \bold{geoRglm} can be found at:\cr
 \examples{
 \testonly{library(geoR)}
 if(!exists(".Random.seed")) set.seed(1234)
-data(y50)
+data(p50)
 # First we scale the algorithm, and study how well the chain is mixing.
-test <- pois.krige(y50, krige = list(cov.pars = c(1,1), beta = 1),
+test <- pois.krige(p50, krige = list(cov.pars = c(1,1), beta = 1),
       mcmc.input = mcmc.control(S.scale = 0.2, thin = 1))
 plot(log(test$intensity[45,]), type = "l")
 require(ts)
 acf(log(test$intensity[45,]), type = "correlation", plot = TRUE)
 # Now we make prediction (we decide to thin to every 10, which is the default),
 # where we now use S.scale = 0.55.
-\dontrun{test2 <- pois.krige(y50, locations = cbind(c(0.5,0.5), c(1,0.4)), 
+\dontrun{test2 <- pois.krige(p50, locations = cbind(c(0.5,0.5), c(1,0.4)), 
       krige = krige.glm.control(cov.pars = c(1,1), beta = 1), 
       mcmc.input = mcmc.control(S.scale = 0.55)) }
 \testonly{
-y9 <- grf(grid = expand.grid(x = seq(1, 3, l = 3), y = seq(1, 3, l = 3)), cov.pars = c(0.1, 0.2))  
+y9 <- grf(grid = expand.grid(x = seq(1, 3, l = 3), y = seq(1, 3, l = 3)), cov.pars = c(0.1, 0.2))
 y9$data <- rpois(9, lambda = exp(y9$data))
 model2 <- krige.glm.control(cov.pars = c(1,1), beta = 1)
 test2 <- pois.krige(y9, locations = cbind(c(0.5,0.5),c(1,0.4)),

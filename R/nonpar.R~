@@ -140,8 +140,9 @@ function(x, max.dist = x$max.dist, ...)
   if (is.null(max.dist)) stop("argument max.dist needed for this object")
   my.l <- x
   if(is.null(my.l$nugget)) my.l$nugget <- 0
-  C.f <- function(x, my.l){ 
-    return(ifelse(x>0, 0, my.l$nugget)+cov.spatial(x, cov.model = my.l$cov.model, kappa = my.l$kappa, cov.pars = my.l$cov.pars))
+  C.f <- function(x, my.l){
+    if(x>0) return(cov.spatial(x, cov.model = my.l$cov.model, kappa = my.l$kappa, cov.pars = my.l$cov.pars))
+    else return(my.l$nugget+cov.spatial(x, cov.model = my.l$cov.model, kappa = my.l$kappa, cov.pars = my.l$cov.pars))
   }
   curve(C.f(x,my.l=my.l), from = 0, to = max.dist, add=TRUE, ...)
   return(invisible())

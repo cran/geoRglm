@@ -13,7 +13,7 @@
     if(any(sd.error < 1e-12)) sd.error[sd.error < 1e-12] <- 1e-12
     temp <- array(pt((value - parms$mean)/sd.error, df = df), dim = c(nrow(parms$mean), ncol(parms$mean)))
   }
-  temp2 <- apply(temp, 1, mean)
+  temp2 <- rowMeans(temp)
   return(temp2)
 }
 
@@ -29,10 +29,6 @@
   if(cov.model == "powered.exponential" & (kappa <= 0 | kappa > 2))
     stop("model.glm.control: for power exponential correlation model the parameter kappa must be in the interval \(0,2\]")
   if(cov.model == "power") stop("model.glm.control: correlation function does not exist for the power variogram")
-  ##  if(any(cov.model == c("exponential", "gaussian", "spherical",
-  ##           "circular", "cubic", "wave", "powered.exponential",
-  ##           "cauchy", "gneiting", "pure.nugget")))
-  ##    kappa <- NULL
   if(!is.null(aniso.pars)){ 
     if(length(aniso.pars) != 2 | !is.numeric(aniso.pars))
       stop("anisotropy parameters must be a vector with two elements: rotation angle (in radians) and anisotropy ratio (a number > 1)")
@@ -41,6 +37,43 @@
   class(res) <- "model.geoRglm"
   return(res)
 }
+
+
+"model.glm.check.aux" <-
+  function(model, fct)
+{
+  if(is.null(class(model)) || class(model) != "model.geoRglm"){
+    if(!is.list(model))
+      stop(paste(fct,": the argument model only takes a list or an output of the function model.glm.control"))
+    else{
+      model.names <- c("trend.d", "trend.l", "cov.model", "kappa", "aniso.pars", "lambda")
+      model.user <- model
+      model <- list()
+      if(length(model.user) > 0){
+        for(i in 1:length(model.user)){
+          n.match <- match.arg(names(model.user)[i], model.names)
+          model[[n.match]] <- model.user[[i]]
+        }
+      }    
+      if(is.null(model$trend.d)) model$trend.d <- "cte"  
+      if(is.null(model$trend.l)) model$trend.l <- "cte"  
+      if(is.null(model$cov.model)) model$cov.model <- "matern"  
+      if(is.null(model$kappa)) model$kappa <- 0.5
+      if(is.null(model$lambda)){
+        if(fct=="pois.krige.bayes") model$lambda <- 0
+        if(fct=="binom.krige.bayes") model$lambda <- NULL
+      }
+      model <- model.glm.control(trend.d = model$trend.d,
+                                 trend.l = model$trend.l,
+                                 cov.model = model$cov.model,
+                                 kappa = model$kappa,
+                                 aniso.pars = model$aniso.pars,
+                                 lambda = model$lambda)
+    }
+  }
+  return(model)
+}
+
 
 "multgauss" <- 
   function(cov)
@@ -55,150 +88,44 @@
   function(S.scale, Htrunc="default", S.start, burn.in=0, thin=10, n.iter=1000*thin, phi.start="default",  phi.scale=NULL)
 {
   if(missing(S.scale)) stop("S.scale parameter must to be provided for MCMC-proposal")
-  if(missing(S.start)) S.start<- "default"
+  if(missing(S.start) || is.null(S.start)) S.start<- "default"
+  if(is.null(Htrunc)) Htrunc <- "default"
+  if(is.null(burn.in)) burn.in <- 0
+  if(is.null(thin)) thin <- 10
+  if(is.null(n.iter)) n.iter <- 1000*thin
   res <- list(S.scale = S.scale, Htrunc = Htrunc, S.start = S.start, burn.in = burn.in, thin = thin, n.iter = n.iter,
               phi.start = phi.start, phi.scale=phi.scale)
   class(res) <- "mcmc.geoRglm"
   return(res)
 }
 
-
-"prior.glm.control" <- 
-  function(beta.prior = c("flat", "normal", "fixed"), beta = NULL, beta.var.std = NULL, 
-           sigmasq.prior = c("uniform", "sc.inv.chisq", "reciprocal", "fixed"), sigmasq = NULL, df.sigmasq = NULL,
-           phi.prior = c("uniform","exponential", "fixed", "squared.reciprocal", "reciprocal"), phi = NULL, 
-           phi.discrete = NULL, tausq.rel = 0)
+"mcmc.check.aux" <-
+  function(mcmc.input, fct)
 {
-  beta.prior <- match.arg(beta.prior)
-  if(beta.prior == "fixed" & is.null(beta))
-    stop("argument \"beta\" must be provided with fixed value for this parameter")
-  if(beta.prior == "normal"){
-    if(is.null(beta) | is.null(beta.var.std))
-      stop("arguments \"beta\" and \"beta.var.std\" must be provided when using normal prior for the parameter beta")
-    if((length(beta))^2 != length(beta.var.std))
-      stop(" beta and beta.var.std have incompatible dimensions")
-    if(any(beta.var.std != t(beta.var.std)))
-      stop(" non symmetric matrix in beta.var.std")
-    if(inherits(try(chol(beta.var.std)), "try-error"))
-          stop(" matrix in beta.var.std is not positive definit")
-  }
-  ##
-  sigmasq.prior <- match.arg(sigmasq.prior)
-  if(sigmasq.prior == "fixed" & is.null(sigmasq))
-    stop("argument \"sigmasq\" must be provided when the parameter sigmaq is fixed")
-  if(sigmasq.prior == "sc.inv.chisq")
-    if(is.null(sigmasq) | is.null(df.sigmasq))
-      stop("arguments \"sigmasq\" and \"df.sigmasq\" must be provided for inverse chisq prior")
-  if(!is.null(sigmasq))
-    if(sigmasq < 0) stop("negative values not allowed for \"sigmasq\"")
-  if(sigmasq.prior == "reciprocal"){
-    warning("This choice of sigmasq.prior gives an improper posterior !!!!!!! \n")
-    sigmasq <- 0
-    df.sigmasq <- 0
-  }
-  if(sigmasq.prior == "uniform"){
-    sigmasq <- 0
-    df.sigmasq <- -2
-  }
-  ##
-  if(!is.null(phi) && length(phi) > 1)
-    stop("prior.glm.control: length of phi must be one. ")
-  if(is.numeric(phi.prior)){
-    phi.prior.probs <- phi.prior
-    phi.prior <- "user"
-    if(is.null(phi.discrete))
-      stop("prior.glm.control: argument phi.discrete with support points for phi must be provided\n")
-    if(length(phi.prior.probs) != length(phi.discrete))
-      stop("prior.glm.control: user provided phi.prior and phi.discrete have incompatible dimensions\n")
-    if(round(sum(phi.prior.probs), dig=6) != 1)
-      stop("prior.glm.control: prior probabilities provided for phi do not sum up to 1")
-  }
-  else phi.prior <- match.arg(phi.prior)
-  if(phi.prior == "fixed"){
-    if(is.null(phi)){
-      stop("argument \"phi\" must be provided with fixed prior for this parameter")
-    }
-    phi.discrete <- phi
-  }
-  else{
-    if(phi.prior == "exponential" & (is.null(phi) | (length(phi) > 1)))
-      stop("argument \"phi\" must be provided when using the exponential prior for the parameter phi")
-    if(any(phi.prior == c("reciprocal", "squared.reciprocal")) & any(phi.discrete == 0)){
-      warning("degenerated prior at phi = 0. Excluding value phi.discrete[1] = 0")
-      phi.discrete <- phi.discrete[phi.discrete > 1e-12]
-    }
-    if(!is.null(phi.discrete)){
-      discrete.diff <- diff(phi.discrete)
-      if(round(max(1e08 * discrete.diff)) != round(min(1e08 * discrete.diff)))
-        stop("The current implementation requires equally spaced values in the argument \"phi.discrete\"\n")
-    }
-    if(phi.prior != "exponential") phi <- NULL
-  }
-  if(any(phi.discrete < 0))
-    stop("negative values not allowed for parameter phi")
-  ##
-  if(is.null(tausq.rel)) stop("argument \"tausq.rel\" must be provided")
-  ##
-  ip <- list(beta=list(), sigmasq=list(), phi=list())
-  ##
-  if(beta.prior == "fixed"){
-    ip$beta$status <- "fixed"
-    ip$beta$fixed.value <- beta 
-  }
-  else{
-    ip$beta <- list(dist = beta.prior)
-    if(beta.prior == "flat")
-      ip$beta$pars <- c(0, +Inf)
-    if(beta.prior == "normal"){
-      if(length(beta) == 1)
-        ip$beta$pars <- c(mean=beta, var.std=beta.var.std)
-      else
-        ip$beta$pars <- list(mean=beta, var.std=beta.var.std)
-    }
-  }
-  ##
-  if(sigmasq.prior == "fixed"){
-    ip$sigmasq$status <- "fixed"
-    ip$sigmasq$fixed.value <- sigmasq 
-  }
-  else{
-    ip$sigmasq <- list(dist = sigmasq.prior)
-    if(sigmasq.prior == "reciprocal")
-      ip$sigmasq$pars <- c(df=0, var=+Inf)
-    if(sigmasq.prior == "uniform")
-      ip$sigmasq$pars <- c(df=-2, var=+Inf)
-    if(sigmasq.prior == "sc.inv.chisq")
-      ip$sigmasq$pars <- c(df=df.sigmasq, var=sigmasq)
-  }
-  ##
-  if(phi.prior == "fixed"){
-    ip$phi$status <- "fixed"
-    ip$phi$fixed.value <- phi
-  }
-  else{
-    ip$phi$dist <- phi.prior
-    if(is.null(phi.discrete))
-      stop("phi.discrete must be given when parameter phi is random")
+  if(is.null(class(mcmc.input)) || class(mcmc.input) != "mcmc.geoRglm"){
+    if(!is.list(mcmc.input))
+      stop(paste(fct,": the argument mcmc.input only takes a list or an output of the function mcmc.control"))
     else{
-      ip$phi$probs <- switch(phi.prior,
-                             uniform = rep(1/length(phi.discrete), length(phi.discrete)),
-                             exponential = (1/phi) * exp(- phi.discrete/phi),
-                             squared.reciprocal = (1/(phi.discrete^2))/sum(1/(phi.discrete^2)),
-                             reciprocal = (1/phi.discrete)/sum(1/phi.discrete),
-                             user = phi.prior.probs)
-      names(ip$phi$probs) <- phi.discrete
+      mcmc.input.names <- c("S.scale", "Htrunc", "S.start", "burn.in", "thin", "n.iter", "phi.start", "phi.scale")    
+      mcmc.input.user <- mcmc.input
+      mcmc.input <- list()
+      if(length(mcmc.input.user) > 0){
+        for(i in 1:length(mcmc.input.user)){
+          n.match <- match.arg(names(mcmc.input.user)[i], mcmc.input.names)
+          mcmc.input[[n.match]] <- mcmc.input.user[[i]]
+        }
+      }
+      if(fct=="pois.krige.bayes" | fct=="binom.krige.bayes"){
+        if(is.null(mcmc.input$phi.start)) mcmc.input$phi.start <- "default"
+      }
+      mcmc.input <- mcmc.control(S.scale = mcmc.input$S.scale,Htrunc=mcmc.input$Htrunc,S.start=mcmc.input$S.start,
+                                 burn.in=mcmc.input$burn.in,thin=mcmc.input$thin,n.iter=mcmc.input$n.iter,
+                                 phi.start=mcmc.input$phi.start,phi.scale=mcmc.input$phi.scale)
     }
-    if(phi.prior == "exponential") ip$phi$pars <- c(ip$phi$pars, exp.par=phi)
   }
-  ##
-  ip$tausq.rel <- list(status = "fixed", fixed.value = tausq.rel)
-  ##
-  res <- list(beta.prior = beta.prior, beta = beta, beta.var.std = beta.var.std, sigmasq.prior = sigmasq.prior, sigmasq = sigmasq, 
-              df.sigmasq = df.sigmasq, phi.prior = phi.prior, phi = phi, 
-              phi.discrete = phi.discrete, tausq.rel = tausq.rel, priors.info = ip)
-  class(res) <- "prior.geoRglm"
-  return(res)
+  return(mcmc.input)
 }
+
 
 "BC.inv" <- 
   function(z,lambda)
@@ -219,15 +146,15 @@
   ##
   ## Assigning default values
   ##
-  if(missing(sim.posterior)) sim.posterior <- TRUE
-  if(missing(sim.predict)) sim.predict <- FALSE
-  if(missing(keep.mcmc.sim)) keep.mcmc.sim <- TRUE
-  if(missing(quantile)) quantile.estimator <- TRUE
+  if(missing(sim.posterior) || is.null(sim.posterior)) sim.posterior <- TRUE
+  if(missing(sim.predict) || is.null(sim.predict)) sim.predict <- FALSE
+  if(missing(keep.mcmc.sim) || is.null(keep.mcmc.sim)) keep.mcmc.sim <- TRUE
+  if(missing(quantile) || is.null(quantile)) quantile.estimator <- TRUE
   else quantile.estimator <- quantile
   if(missing(threshold)) probability.estimator <- NULL 
   else probability.estimator <- threshold
-  if(missing(inference)) inference <- TRUE
-  if(missing(messages.screen)) messages.screen <- TRUE
+  if(missing(inference) || is.null(inference)) inference <- TRUE
+  if(missing(messages.screen) || is.null(messages.screen)) messages.screen <- TRUE
   ##
   ##
   if(is.null(quantile.estimator)) quantile.estimator <- TRUE
@@ -253,4 +180,34 @@
               inference = inference, messages.screen = messages.screen)
   class(res) <- "output.geoRglm"
   return(res)
+}
+
+## else output <- output.glm.check.aux(output, fct = "binom.krige.bayes")
+
+"output.glm.check.aux" <-
+  function(output, fct)
+{
+  if(is.null(class(output)) || class(output) != "output.geoRglm"){
+    if(!is.list(output))
+      stop(paste(fct,": the argument output only takes a list or an output of the function output.glm.control"))
+    else{
+      output.names <- c("sim.posterior","sim.predict", "keep.mcmc.sim","quantile","threshold","inference","messages.screen")      
+      output.user <- output
+      output <- list()
+      if(length(output.user) > 0){
+        for(i in 1:length(output.user)){
+          n.match <- match.arg(names(output.user)[i], output.names)
+          output[[n.match]] <- output.user[[i]]
+        }
+      }
+      if(is.null(output$sim.predict)) output$sim.predict <- FALSE
+      if(is.null(output$messages.screen)) output$messages.screen <- TRUE        
+      output <- output.glm.control(sim.posterior = output$sim.posterior,
+                                   sim.predict = output$sim.predict,
+                                   keep.mcmc.sim = output$keep.mcmc.sim, quantile = output$quantile,
+                                   threshold = output$threshold, inference = output$inference,
+                                   messages.screen = output$messages.screen)
+    }
+  }
+  return(output)
 }

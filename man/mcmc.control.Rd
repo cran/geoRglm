@@ -1,6 +1,7 @@
 \name{mcmc.control}
 
 \alias{mcmc.control}
+\alias{mcmc.check.aux}
 
 \title{ Defines options for the MCMC-algorithm }
 
@@ -17,7 +18,8 @@ mcmc.control(S.scale, Htrunc, S.start, burn.in, thin, n.iter, phi.start,
 
 \arguments{
 \item{S.scale}{proposal variance for the update of \eqn{S} in the algorithm.  }
-    \item{Htrunc}{truncation parameter for the MCMC-algorithm. Either a number or a vector of the same dimension as the data. 
+    \item{Htrunc}{truncation parameter for the MCMC-algorithm. Only used
+      for the Poisson model. Either a number or a vector of the same dimension as the data. 
      Default is Htrunc = 2*data + 5.  }
     \item{S.start}{starting value for \code{S} (without the mean !!) in
       the MCMC-algorithm. Default value exist. Should either

@@ -1,20 +1,23 @@
-\name{b50 and y50}
+\name{b50, p50 and b64}
 
 \alias{b50}
-\alias{y50}
+\alias{p50}
+\alias{b64}
 
-\non_function{b50, y50}
+\non_function{b50, p50, b64}
 
 \title{Simulated Data sets which Illustrate the Usage of the Package geoRglm}
 
 \usage{
 data(b50)
-data(y50)
+data(p50)
+data(b64)
 }
 
-\description{The simulated data sets \code{b50} and \code{y50} are used
+\description{The simulated data sets \code{b50} and \code{p50} are used
   in several examples throughout the package
-  documentation.
+  documentation. The simulated data set \code{b64} was used in Diggle,
+  Ribeiro and Christensen (20030, and Christensen and Ribeiro (2002).
 }
 
 \format{
@@ -24,10 +27,10 @@ data(y50)
     \item{\code{coords}}{the coordinates of data locations.  }
     \item{\code{data}}{the simulated data from the binomial-logit normal
       model for \code{b50}, and the simulated data from the Poisson-log normal
-      model for \code{y50}.  }
+      model for \code{p50}.  }
     \item{\code{units.m}}{\eqn{n}-dimensional vector giving the number
       of trials for \code{b50} and the observation times
-      for \code{y50}.  }
+      for \code{p50}.  }
     \item{\code{cov.model}}{the correlation model used for the simulation.  }
     \item{\code{nugget}}{the values of the \code{nugget} parameter used for the simulation.  }
     \item{\code{cov.pars}}{the covariance parameters used for the simulation.  }
@@ -36,8 +39,14 @@ data(y50)
 }
 
 \references{
-  Further information about \bold{geoRglm} can be found at:\cr
-  \url{http://www.maths.lancs.ac.uk/~christen/geoRglm}.
+Peter J. Diggle, Paulo J. Ribeiro and Ole F. Christensen (2003). An
+introduction to model-based geostatistics. In : \emph{Spatial statistics and computational methods} (ed. J. Møller),
+Springer Verlag, 43-86.
+
+Christensen, O. F. and Ribeiro Jr, P. J. (2002). geoRglm - a package for generalised linear spatial models. \emph{R News}, 2(2), 26-28.
+  
+Further information about \bold{geoRglm} can be found at:\cr
+\url{http://www.maths.lancs.ac.uk/~christen/geoRglm}.
 }
 
 \keyword{datasets}
