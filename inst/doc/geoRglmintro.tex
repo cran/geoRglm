@@ -51,7 +51,7 @@
 \author{Ole F. Christensen \& Paulo J. Ribeiro Jr.}
 \date{Last update: \today}
 
-\usepackage{/users/olefc/local.1.8.1/lib/R/share/texmf/Sweave}
+\usepackage{/users/olefc/R/share/texmf/Sweave}
 \begin{document}
 
 \maketitle
@@ -97,13 +97,13 @@ If the packages are correctly loaded the following messages will be displayed:
 \begin{Soutput}
 -------------------------------------------------
 geoR - functions for geostatistical data analysis
-geoR version 1.4-4 (2004-01-30) is now loaded
+geoR version 1.4-5 (2004-02-23) is now loaded
 -------------------------------------------------
 \end{Soutput}
 \begin{Soutput}
 -----------------------------------------------------------
 geoRglm - a package for generalised linear spatial models
-geoRglm version 0.7-11 (2004-01-31) is now loaded
+geoRglm version 0.7-12 (2004-03-20) is now loaded
 -----------------------------------------------------------
 \end{Soutput}
 \end{Schunk}
@@ -154,11 +154,6 @@ We also need to study how well the chain is mixing.
 \setkeys{Gin}{width=0.8\textwidth}
 \begin{figure}[h!]
 \centering
-\begin{Schunk}
-\begin{Soutput}
-[1] TRUE
-\end{Soutput}
-\end{Schunk}
 \includegraphics{geoRglmintro-006}
 \label{fig:pois.krige}
 \caption{Results from \texttt{pois.krige}.}
@@ -244,104 +239,104 @@ After having adjusted the parameters for the MCMC algorithm and checking the out
 \begin{Soutput}
 pois.krige.bayes: model with mean being constant
 iter. numb. 1000 ; Acc.-rate = 0.67 
-iter. numb. 2000 ; Acc.-rate = 0.63 
+iter. numb. 2000 ; Acc.-rate = 0.67 
 iter. numb. 3000 ; Acc.-rate = 0.64 
 iter. numb. 4000 ; Acc.-rate = 0.64 
-iter. numb. 5000 ; Acc.-rate = 0.64 
-iter. numb. 6000 ; Acc.-rate = 0.64 
-iter. numb. 7000 ; Acc.-rate = 0.66 
-iter. numb. 8000 ; Acc.-rate = 0.64 
-iter. numb. 9000 ; Acc.-rate = 0.63 
-iter. numb. 10000 ; Acc.-rate = 0.65 
-iter. numb. 11000 ; Acc.-rate = 0.65 
-iter. numb. 12000 ; Acc.-rate = 0.62 
-iter. numb. 13000 ; Acc.-rate = 0.63 
-iter. numb. 14000 ; Acc.-rate = 0.67 
+iter. numb. 5000 ; Acc.-rate = 0.63 
+iter. numb. 6000 ; Acc.-rate = 0.62 
+iter. numb. 7000 ; Acc.-rate = 0.64 
+iter. numb. 8000 ; Acc.-rate = 0.65 
+iter. numb. 9000 ; Acc.-rate = 0.66 
+iter. numb. 10000 ; Acc.-rate = 0.60 
+iter. numb. 11000 ; Acc.-rate = 0.64 
+iter. numb. 12000 ; Acc.-rate = 0.67 
+iter. numb. 13000 ; Acc.-rate = 0.65 
+iter. numb. 14000 ; Acc.-rate = 0.65 
 iter. numb. 15000 ; Acc.-rate = 0.65 
 iter. numb. 16000 ; Acc.-rate = 0.66 
-iter. numb. 17000 ; Acc.-rate = 0.67 
+iter. numb. 17000 ; Acc.-rate = 0.66 
 iter. numb. 18000 ; Acc.-rate = 0.66 
-iter. numb. 19000 ; Acc.-rate = 0.62 
-iter. numb. 20000 ; Acc.-rate = 0.65 
-iter. numb. 21000 ; Acc.-rate = 0.64 
-iter. numb. 22000 ; Acc.-rate = 0.61 
+iter. numb. 19000 ; Acc.-rate = 0.66 
+iter. numb. 20000 ; Acc.-rate = 0.64 
+iter. numb. 21000 ; Acc.-rate = 0.65 
+iter. numb. 22000 ; Acc.-rate = 0.65 
 iter. numb. 23000 ; Acc.-rate = 0.61 
-iter. numb. 24000 ; Acc.-rate = 0.64 
-iter. numb. 25000 ; Acc.-rate = 0.63 
+iter. numb. 24000 ; Acc.-rate = 0.67 
+iter. numb. 25000 ; Acc.-rate = 0.66 
 iter. numb. 26000 ; Acc.-rate = 0.65 
 iter. numb. 27000 ; Acc.-rate = 0.63 
-iter. numb. 28000 ; Acc.-rate = 0.62 
-iter. numb. 29000 ; Acc.-rate = 0.65 
-iter. numb. 30000 ; Acc.-rate = 0.64 
+iter. numb. 28000 ; Acc.-rate = 0.67 
+iter. numb. 29000 ; Acc.-rate = 0.63 
+iter. numb. 30000 ; Acc.-rate = 0.63 
 iter. numb. 31000 ; Acc.-rate = 0.65 
-iter. numb. 32000 ; Acc.-rate = 0.64 
-iter. numb. 33000 ; Acc.-rate = 0.65 
-iter. numb. 34000 ; Acc.-rate = 0.64 
-iter. numb. 35000 ; Acc.-rate = 0.63 
-iter. numb. 36000 ; Acc.-rate = 0.65 
-iter. numb. 37000 ; Acc.-rate = 0.63 
-iter. numb. 38000 ; Acc.-rate = 0.64 
-iter. numb. 39000 ; Acc.-rate = 0.65 
-iter. numb. 40000 ; Acc.-rate = 0.65 
-iter. numb. 41000 ; Acc.-rate = 0.67 
-iter. numb. 42000 ; Acc.-rate = 0.63 
-iter. numb. 43000 ; Acc.-rate = 0.65 
-iter. numb. 44000 ; Acc.-rate = 0.64 
-iter. numb. 45000 ; Acc.-rate = 0.65 
+iter. numb. 32000 ; Acc.-rate = 0.65 
+iter. numb. 33000 ; Acc.-rate = 0.63 
+iter. numb. 34000 ; Acc.-rate = 0.63 
+iter. numb. 35000 ; Acc.-rate = 0.61 
+iter. numb. 36000 ; Acc.-rate = 0.63 
+iter. numb. 37000 ; Acc.-rate = 0.66 
+iter. numb. 38000 ; Acc.-rate = 0.67 
+iter. numb. 39000 ; Acc.-rate = 0.64 
+iter. numb. 40000 ; Acc.-rate = 0.63 
+iter. numb. 41000 ; Acc.-rate = 0.63 
+iter. numb. 42000 ; Acc.-rate = 0.66 
+iter. numb. 43000 ; Acc.-rate = 0.63 
+iter. numb. 44000 ; Acc.-rate = 0.66 
+iter. numb. 45000 ; Acc.-rate = 0.64 
 iter. numb. 46000 ; Acc.-rate = 0.67 
 iter. numb. 47000 ; Acc.-rate = 0.64 
-iter. numb. 48000 ; Acc.-rate = 0.63 
-iter. numb. 49000 ; Acc.-rate = 0.63 
-iter. numb. 50000 ; Acc.-rate = 0.67 
+iter. numb. 48000 ; Acc.-rate = 0.64 
+iter. numb. 49000 ; Acc.-rate = 0.65 
+iter. numb. 50000 ; Acc.-rate = 0.66 
 iter. numb. 51000 ; Acc.-rate = 0.65 
-iter. numb. 52000 ; Acc.-rate = 0.64 
-iter. numb. 53000 ; Acc.-rate = 0.64 
-iter. numb. 54000 ; Acc.-rate = 0.61 
-iter. numb. 55000 ; Acc.-rate = 0.65 
-iter. numb. 56000 ; Acc.-rate = 0.65 
+iter. numb. 52000 ; Acc.-rate = 0.61 
+iter. numb. 53000 ; Acc.-rate = 0.65 
+iter. numb. 54000 ; Acc.-rate = 0.69 
+iter. numb. 55000 ; Acc.-rate = 0.64 
+iter. numb. 56000 ; Acc.-rate = 0.64 
 iter. numb. 57000 ; Acc.-rate = 0.61 
-iter. numb. 58000 ; Acc.-rate = 0.65 
-iter. numb. 59000 ; Acc.-rate = 0.67 
-iter. numb. 60000 ; Acc.-rate = 0.62 
-iter. numb. 61000 ; Acc.-rate = 0.67 
-iter. numb. 62000 ; Acc.-rate = 0.67 
+iter. numb. 58000 ; Acc.-rate = 0.61 
+iter. numb. 59000 ; Acc.-rate = 0.63 
+iter. numb. 60000 ; Acc.-rate = 0.64 
+iter. numb. 61000 ; Acc.-rate = 0.64 
+iter. numb. 62000 ; Acc.-rate = 0.66 
 iter. numb. 63000 ; Acc.-rate = 0.65 
-iter. numb. 64000 ; Acc.-rate = 0.66 
-iter. numb. 65000 ; Acc.-rate = 0.62 
-iter. numb. 66000 ; Acc.-rate = 0.66 
+iter. numb. 64000 ; Acc.-rate = 0.65 
+iter. numb. 65000 ; Acc.-rate = 0.65 
+iter. numb. 66000 ; Acc.-rate = 0.63 
 iter. numb. 67000 ; Acc.-rate = 0.63 
-iter. numb. 68000 ; Acc.-rate = 0.67 
-iter. numb. 69000 ; Acc.-rate = 0.64 
-iter. numb. 70000 ; Acc.-rate = 0.67 
-iter. numb. 71000 ; Acc.-rate = 0.65 
-iter. numb. 72000 ; Acc.-rate = 0.64 
-iter. numb. 73000 ; Acc.-rate = 0.65 
-iter. numb. 74000 ; Acc.-rate = 0.64 
-iter. numb. 75000 ; Acc.-rate = 0.65 
-iter. numb. 76000 ; Acc.-rate = 0.64 
-iter. numb. 77000 ; Acc.-rate = 0.65 
+iter. numb. 68000 ; Acc.-rate = 0.60 
+iter. numb. 69000 ; Acc.-rate = 0.62 
+iter. numb. 70000 ; Acc.-rate = 0.64 
+iter. numb. 71000 ; Acc.-rate = 0.64 
+iter. numb. 72000 ; Acc.-rate = 0.62 
+iter. numb. 73000 ; Acc.-rate = 0.64 
+iter. numb. 74000 ; Acc.-rate = 0.65 
+iter. numb. 75000 ; Acc.-rate = 0.62 
+iter. numb. 76000 ; Acc.-rate = 0.66 
+iter. numb. 77000 ; Acc.-rate = 0.63 
 iter. numb. 78000 ; Acc.-rate = 0.65 
-iter. numb. 79000 ; Acc.-rate = 0.66 
+iter. numb. 79000 ; Acc.-rate = 0.63 
 iter. numb. 80000 ; Acc.-rate = 0.65 
-iter. numb. 81000 ; Acc.-rate = 0.63 
-iter. numb. 82000 ; Acc.-rate = 0.60 
-iter. numb. 83000 ; Acc.-rate = 0.65 
-iter. numb. 84000 ; Acc.-rate = 0.62 
-iter. numb. 85000 ; Acc.-rate = 0.65 
-iter. numb. 86000 ; Acc.-rate = 0.64 
-iter. numb. 87000 ; Acc.-rate = 0.64 
-iter. numb. 88000 ; Acc.-rate = 0.65 
-iter. numb. 89000 ; Acc.-rate = 0.69 
-iter. numb. 90000 ; Acc.-rate = 0.65 
-iter. numb. 91000 ; Acc.-rate = 0.67 
-iter. numb. 92000 ; Acc.-rate = 0.62 
-iter. numb. 93000 ; Acc.-rate = 0.61 
-iter. numb. 94000 ; Acc.-rate = 0.67 
-iter. numb. 95000 ; Acc.-rate = 0.63 
-iter. numb. 96000 ; Acc.-rate = 0.63 
-iter. numb. 97000 ; Acc.-rate = 0.64 
-iter. numb. 98000 ; Acc.-rate = 0.65 
-iter. numb. 99000 ; Acc.-rate = 0.63 
+iter. numb. 81000 ; Acc.-rate = 0.66 
+iter. numb. 82000 ; Acc.-rate = 0.65 
+iter. numb. 83000 ; Acc.-rate = 0.64 
+iter. numb. 84000 ; Acc.-rate = 0.64 
+iter. numb. 85000 ; Acc.-rate = 0.62 
+iter. numb. 86000 ; Acc.-rate = 0.65 
+iter. numb. 87000 ; Acc.-rate = 0.62 
+iter. numb. 88000 ; Acc.-rate = 0.62 
+iter. numb. 89000 ; Acc.-rate = 0.61 
+iter. numb. 90000 ; Acc.-rate = 0.66 
+iter. numb. 91000 ; Acc.-rate = 0.64 
+iter. numb. 92000 ; Acc.-rate = 0.64 
+iter. numb. 93000 ; Acc.-rate = 0.65 
+iter. numb. 94000 ; Acc.-rate = 0.65 
+iter. numb. 95000 ; Acc.-rate = 0.68 
+iter. numb. 96000 ; Acc.-rate = 0.65 
+iter. numb. 97000 ; Acc.-rate = 0.65 
+iter. numb. 98000 ; Acc.-rate = 0.62 
+iter. numb. 99000 ; Acc.-rate = 0.64 
 iter. numb. 100000 ; Acc.-rate = 0.62 
 MCMC performed: n.iter. =  1e+05 ; thinning =  100 ; burn.in =  0 
 pois.krige.bayes: Prediction performed 
@@ -410,34 +405,34 @@ To calculate the Monte Carlo standard errors on the posterior means of the param
 > sqrt(asympvar(test6$posterior$beta$sample)/2000)
 \end{Sinput}
 \begin{Soutput}
-[1] 0.003987273
+[1] 0.004044618
 \end{Soutput}
 \begin{Sinput}
 > sqrt(asympvar(test6$posterior$sigmasq$sample)/2000)
 \end{Sinput}
 \begin{Soutput}
-[1] 0.005988311
+[1] 0.006110709
 \end{Soutput}
 \begin{Sinput}
 > sqrt(asympvar(test6$posterior$phi$sample)/2000)
 \end{Sinput}
 \begin{Soutput}
-[1] 0.004674492
+[1] 0.004633281
 \end{Soutput}
 \begin{Sinput}
 > sqrt(asympvar(log(test6$posterior$simulations))/2000)
 \end{Sinput}
 \begin{Soutput}
- [1] 0.009374290 0.012638003 0.011794051 0.014555765 0.015347837
- [6] 0.011045295 0.014465286 0.012491128 0.006027526 0.008469001
-[11] 0.005531818 0.013874580 0.015976958 0.015250717 0.009199150
-[16] 0.009210645 0.005880092 0.016010136 0.012233969 0.009458540
-[21] 0.010637662 0.009375096 0.009345658 0.010245975 0.006142211
-[26] 0.014449004 0.008758485 0.010099277 0.007804221 0.008338349
-[31] 0.009768063 0.012269127 0.011481620 0.012702738 0.013745384
-[36] 0.009780933 0.012138821 0.011836702 0.014334527 0.012199694
-[41] 0.012523938 0.008098801 0.014382872 0.012506506 0.008908307
-[46] 0.005264276 0.015292651 0.013220800 0.012310278 0.009545884
+ [1] 0.010251472 0.012857275 0.011335576 0.014272616 0.015905545
+ [6] 0.012096571 0.013930179 0.012385419 0.005964200 0.008644862
+[11] 0.006228193 0.013724528 0.015421052 0.013761430 0.009418635
+[16] 0.009246115 0.005926357 0.016600850 0.013414592 0.009735895
+[21] 0.009850077 0.009136813 0.009583265 0.008635842 0.005453478
+[26] 0.014913459 0.009043357 0.010115974 0.007419523 0.008163207
+[31] 0.009370546 0.011980031 0.011487674 0.012426885 0.014113085
+[36] 0.009426728 0.013041502 0.011040078 0.014049159 0.012780685
+[41] 0.012166682 0.007473775 0.013803047 0.012190057 0.009141520
+[46] 0.005409696 0.016415075 0.013819733 0.012634068 0.010307191
 \end{Soutput}
 \end{Schunk}
 

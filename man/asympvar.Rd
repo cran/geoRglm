@@ -48,10 +48,18 @@ asympvar(timeseries, type="mon", lag.max = 100, messages)
 \examples{
 \dontshow{library(geoR)}
 data(p50)
+\dontrun{
 test <- pois.krige(p50, krige = krige.glm.control(cov.pars = c(1,1), beta = 1),
       mcmc.input = mcmc.control(S.scale = 0.5, n.iter = 1000, thin = 1))
 asympvar(test$intensity[45,])
 ass <- asympvar(test$intensity[1:10,], type = "pos")
+}
+\dontshow{
+test <- pois.krige(p50, krige = krige.glm.control(cov.pars = c(1,1), beta = 1),
+      mcmc.input = mcmc.control(S.scale = 0.5, n.iter = 100, thin = 1))
+asympvar(test$intensity[45,])
+ass <- asympvar(test$intensity[1:10,], type = "pos")
+}
 }
 
 \keyword{spatial}

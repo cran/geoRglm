@@ -132,7 +132,7 @@ data(b50)
 test <- binom.krige(b50, krige = list(cov.pars = c(1,1), beta = 1),
       mcmc.input = mcmc.control(S.scale = 0.2, thin = 1))
 plot(qlogis(test$prevalence[45,]), type = "l")
-if(!("package:stats" \%in\% search())) require("ts")
+\dontshow{if(!("package:stats" \%in\% search())) require("ts")}
 acf(qlogis(test$prevalence[45,]), type = "correlation", plot = TRUE)
 \dontrun{# Now we make prediction (we decide to thin to every 10, which is the default),
 # where we now use S.scale = 0.7.

@@ -179,6 +179,10 @@
             number.col, coords.data, xlim, ylim,
             x.leg, y.leg, ...) 
 {
+  ldots <- match.call(expand.dots = FALSE)$...
+  ldots[!is.na(match(names(ldots), "offset.leg"))] <- NULL
+  if(is.null(ldots[!is.na(match(names(ldots), "xlab"))])) ldots$xlab <- "X Coord"
+  if(is.null(ldots[!is.na(match(names(ldots), "ylab"))])) ldots$ylab <- "Y Coord"
   if(missing(x)) x <- NULL
   attach(x)
   on.exit(detach(x))
@@ -192,6 +196,17 @@
       match.arg(values.to.plot,
                 choices = c("median", "uncertainty",
                   "quantiles", "probabilities", "simulation"))
+
+
+  if(missing(borders)){
+    if(!is.null(attr(x, "borders"))) borders.arg <- borders <- eval(attr(x, "borders"))
+    else borders.arg <- borders <- NULL
+  }
+  else{
+    borders.arg <- borders
+    if(is.null(borders)) borders <- eval(attr(x, "borders"))
+  }
+  
   if(missing(borders)){
     if(!is.null(attr(x, "borders"))) borders <- eval(attr(x, "borders"))
     else borders <- NULL
@@ -208,15 +223,16 @@
   else{
     locations <- prepare.graph.krige.bayes(obj=x, locations=locations,
                                            borders=borders,
+                                           borders.obj = eval(attr(x,"borders")),
                                            values.to.plot=values.to.plot,
                                            number.col = number.col,
                                            xlim = xlim, ylim = ylim)
     pty.prev <- par()$pty
     par(pty = "s")
-    image(locations$x, locations$y, locations$values,
-          xlim= locations$coords.lims[,1], ylim=locations$coords.lims[,2], ...)
+    do.call("image", c(list(x=locations$x, y=locations$y, z=locations$values,
+                          xlim = locations$coords.lims[,1], ylim = locations$coords.lims[,2]), ldots))
     if(!is.null(coords.data)) points(coords.data)
-    if(!is.null(borders)) polygon(borders, lwd=2)
+    if(!is.null(borders.arg)) polygon(borders, lwd=2)
     dots.l <- list(...)
     if(is.null(dots.l$col)) dots.l$col <- heat.colors(12)
     if(!is.null(x.leg) & !is.null(y.leg)){
@@ -254,6 +270,7 @@
   else{
     locations <- prepare.graph.krige.bayes(obj=x, locations=locations,
                                          borders=borders,
+                                         borders.obj = eval(attr(x,"borders")),
                                          values.to.plot=values.to.plot,
                                          number.col = number.col)
     persp(locations$x, locations$y, locations$values, ...)

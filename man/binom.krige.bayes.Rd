@@ -223,6 +223,7 @@ the guess is too low, it is adjusted upwards, and vise verse.
 data(b50)
 \dontshow{library(geoR)}
 if(!exists(".Random.seed", envir=.GlobalEnv, inherits = FALSE)) set.seed(1234)
+\dontrun{
 mcmc.10 <- mcmc.control(S.scale = 0.09, n.iter = 1000, phi.scale = 0.2, 
               phi.start = 4.5)
 prior.10 <- prior.glm.control(phi.discrete = seq(0.2,5,0.2))
@@ -230,6 +231,7 @@ test.10 <- binom.krige.bayes(b50, locations=t(cbind(c(2.5,3.5),c(-1,3.5),c(2.5,1
               prior = prior.10, mcmc.input = mcmc.10)
 image(test.10)
 persp(test.10)
+}
 \dontshow{
 b9 <- grf(grid = expand.grid(x = seq(1, 7, l = 3), y = seq(1, 7, l = 3)), cov.pars = c(0.1, 2))
 b9$units.m <- rep(4,9)

@@ -237,14 +237,15 @@ Further information about \bold{geoRglm} can be found at:\cr
 \examples{
 data(p50)
 \dontshow{library(geoR)}
-if(!exists(".Random.seed", envir=.GlobalEnv, inherits = FALSE)) set.seed(1234)
+if(!exists(".Random.seed", envir=.GlobalEnv, inherits = FALSE))
+set.seed(1234)
+\dontrun{
 ## MCMC with fixed phi
 prior.5 <- prior.glm.control(phi.prior = "fixed", phi = 0.1)
 mcmc.5 <- mcmc.control(S.scale = 0.01, thin = 1)
 test.5 <- pois.krige.bayes(p50, prior = prior.5, mcmc.input = mcmc.5)
 par(mfrow=c(1,2))
 hist(test.5)
-\dontrun{
 ## Now chose S.scale (Acc-rate=0.60 is preferable).
 mcmc.5.new <- mcmc.control(S.scale = 0.08, thin = 100)
 test.5.new <- pois.krige.bayes(p50,
@@ -276,7 +277,10 @@ class(y9) <- "geodata"
 mcmc5 <- mcmc.control(S.scale = 0.1, thin = 1, n.iter=10)
 test5 <- pois.krige.bayes(y9, locations = t(cbind(c(2,1),c(-6050,-3270),c(1.1,2.1),c(2,3))),
 prior = list(phi.prior = "fixed", phi= 1), mcmc.input = mcmc5,
-output = list(threshold = c(9,10), quantile = c(0.05,0.99), sim.predict=TRUE)) 
+output = list(threshold = c(9,10), quantile = c(0.05,0.99),
+sim.predict=TRUE))
+par(mfrow=c(1,2))
+hist(test5)
 prior6 <- prior.glm.control(phi.prior = "uniform", phi.discrete =
 c(0.98,1.02), tausq.rel = 0.05)
 mcmc6 <- list(S.scale = 0.1, thin = 1, n.iter=10, burn.in = 1, phi.scale = 0.01, phi.start = 1) 
