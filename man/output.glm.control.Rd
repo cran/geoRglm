@@ -18,12 +18,10 @@ output.glm.control(sim.posterior, sim.predict, keep.mcmc.sim, quantile,
 \arguments{
   \item{sim.posterior}{logical. Indicates
     whether or not the MCMC-sample from the posterior distribution of
-    the parameters should be returned.  Default is \code{sim.posterior =
-      TRUE}.  }
+    the parameters should be returned.  Default is \code{sim.posterior = TRUE}.  }
   \item{sim.predict}{logical. Defines whether simulations are
     drawn from the predictive distribution. Only valid if prediction
-    locations are provided in the argument \code{locations}. Default is \code{sim.predict =
-      FALSE}.   }
+    locations are provided in the argument \code{locations}. Default is \code{sim.predict = FALSE}.   }
   \item{keep.mcmc.sim}{logical. Indicates
     whether or not the MCMC-sample from the posterior distribution of
     \eqn{\exp(S)}{exp(S)} should be returned. Default is

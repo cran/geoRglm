@@ -217,7 +217,7 @@
   ##
   dimnames(coords) <- list(NULL, NULL)
   if(nrow(coords) != n) stop("krige.bayes.extnd: number of data is different of number of data locations (coordinates)")
-  trend.data <- trend.spatial(trend=model$trend.d, geodata=geodata)
+  trend.data <- unclass(trend.spatial(trend=model$trend.d, geodata = geodata))
   beta.size <- ncol(trend.data)
   if((prior$beta.prior == "normal") && (beta.size != length(beta)) )
     stop("krige.bayes.extnd: size of beta incompatible with the trend model (covariates)")
@@ -239,11 +239,19 @@
     ## Checking trend specification
     ##
     if(inherits(model$trend.d, "formula") | inherits(model$trend.l, "formula")){
-      if(!(inherits(model$trend.d, "formula")) | !(inherits(model$trend.l, "formula")))
+      if((inherits(model$trend.d, "formula") == FALSE) | (inherits(model$trend.l, "formula") == FALSE))
         stop("krige.bayes.extnd: model$trend.d and model$trend.l must have similar specification\n")
     }
-    else
-      if(model$trend.d != model$trend.l) stop("krige.bayes.extnd: model$trend.l cannot be different from model$trend.d")
+    else{
+      if((!is.null(class(model$trend.d)) && class(model$trend.d) == "trend.spatial") &
+         (!is.null(class(model$trend.l)) && class(model$trend.l) == "trend.spatial")){
+        if(ncol(model$trend.d) != ncol(model$trend.l))
+          stop("krige.bayes.extnd: trend.d and trend.l do not have the same number of columns")
+      }
+      else
+        if(model$trend.d != model$trend.l)
+          stop("krige.bayes.extnd: especification of model$trend.l and model$trend.d must be similar")
+    }
     ##
     if(messages.screen){
       cat(switch(model$trend.d,
@@ -255,7 +263,7 @@
     }
     ##
     dimnames(locations) <- list(NULL, NULL)
-    assign("trend.loc", trend.spatial(trend=model$trend.l, geodata = list(coords=locations)), envir=pred.env)
+    assign("trend.loc", unclass(trend.spatial(trend=model$trend.l, geodata = list(coords = locations))), envir=pred.env)
     ni <- nrow(get("trend.loc", envir=pred.env))
     if(nrow(locations) != ni)
       stop("krige.bayes.extnd: number of points to be estimated is different of the number of trend locations")
@@ -433,7 +441,7 @@
     coincide.cond <- ((tausq.rel < 1e-12) & !is.null(loc.coincide))
     nloc <- ni - n.loc.coincide
     if(coincide.cond){
-      ind.not.coincide <- -loc.coincide
+      ind.not.coincide <- (-loc.coincide)
       v0 <- v0[, ind.not.coincide, drop=FALSE]
       tmean <- tmean[ind.not.coincide,]
       b <- b[,ind.not.coincide, drop=FALSE]
@@ -444,16 +452,17 @@
       n.predictive <- 1
     }
     kb$predictive$simulations <- matrix(NA, nrow=ni, ncol=n.datasets)
-    kb$predictive$simulations[ind.not.coincide,] <-
-      cond.sim(env.loc = base.env, env.iter = base.env,
-               loc.coincide = loc.coincide,
-               tmean = tmean,
-               Rinv = list(lower=iR$lower.inverse, diag=iR$diag.inverse),
-               mod = list(beta.size = beta.size, nloc = nloc, Nsims = n.datasets, n = n, Dval = Dval,
-                 df.model = df.post, s2 = S2.post, cov.model.number = cov.model.number, phi = phi.fixed, kappa = kappa),
-               vbetai = beta.var.std.post,
-               fixed.sigmasq = (sigmasq.info$df.sigmasq == Inf))
-    if(coincide.cond) kb$predictive$simulations[loc.coincide,] <- rep(data.coincide, n.datasets)
+    if(any(ind.not.coincide)){
+      kb$predictive$simulations[ind.not.coincide,] <- cond.sim(env.loc = base.env, env.iter = base.env,
+                                                               loc.coincide = loc.coincide, tmean = tmean,
+                                                               Rinv = list(lower=iR$lower.inverse, diag=iR$diag.inverse),
+                                                               mod = list(beta.size = beta.size, nloc = nloc, Nsims = n.datasets, n = n,
+                                                                 Dval = Dval, df.model = df.post, s2 = S2.post,
+                                                                 cov.model.number = cov.model.number, phi = phi.fixed, kappa = kappa),
+                                                               vbetai = beta.var.std.post,
+                                                               fixed.sigmasq = (sigmasq.info$df.sigmasq == Inf))
+    }
+    if(coincide.cond) kb$predictive$simulations[loc.coincide,] <- data.coincide
   }
   if(!do.prediction) kb$predictive <- "no prediction locations provided"
   kb$.Random.seed <- seed
@@ -617,23 +626,20 @@ function(geodata, coords = geodata$coords, data = geodata$data, locations, krige
   dimnames(coords) <- list(NULL, NULL)
   dimnames(locations) <- list(NULL, NULL)
   ##
-  if(messages.screen) {
-    if(inherits(krige$trend.d, "formula") | inherits(krige$trend.l, "formula"))
-        cat("krige.conv.extnd: Kriging with external trend to be performed using covariates provided by the user\n")
-    else {
-      if(krige$trend.d == "cte" & krige$type.krige == "sk")
-        cat("krige.conv.extnd: Simple kriging to be performed with constant mean provided by the user\n")
-      if(krige$trend.d == "cte" & krige$type.krige == "ok")
-        cat("krige.conv.extnd: Ordinary kriging to be performed filtering a constant mean\n")
-      if(krige$trend.d == "1st")
-        cat("krige.conv.extnd: Universal) kriging to be performed filtering a 1st degree polynomial trend\n")
-      if(krige$trend.d == "2nd")
-        cat("krige.conv.extnd: Universal) kriging to be performed filtering a 2nd degree polynomial trend\n")
-    }
+  if(messages.screen){
+    if(is.numeric(krige$trend.d))
+      cat("krige.conv.extnd: model with covariates matrix provided by the user")
+    else
+      cat(switch(as.character(krige$trend.d)[1],
+                 "cte" = "krige.conv.extnd: model with constant mean",
+                 "1st" = "krige.conv.extnd: model with mean given by a 1st degree polinomial on the coordinates",
+                 "2nd" = "krige.conv.extnd: model with mean given by a 2nd degree polinomial on the coordinates",
+                 "krige.conv.extnd: model with mean defined by covariates provided by the user"))
+    cat("\n")
   }
-  trend.data <- trend.spatial(trend = krige$trend.d, geodata=geodata)
+  trend.data <- unclass(trend.spatial(trend=krige$trend.d, geodata = geodata))
   beta.size <- ncol(trend.data)
-  trend.l <- trend.spatial(trend = krige$trend.l, geodata = list(coords = locations))
+  trend.l <- unclass(trend.spatial(trend=krige$trend.l, geodata = list(coords = locations)))
   ##
   ## Anisotropy correction (should be placed AFTER trend.d/trend.l
   ##
@@ -758,14 +764,16 @@ function(geodata, coords = geodata$coords, data = geodata$data, locations, krige
     }
     else ind.not.coincide <- TRUE
     kc.result$simulations <- matrix(0, nrow = ni, ncol = n.datasets)
-    kc.result$simulations[ind.not.coincide,  ] <- cond.sim(env.loc = base.env, env.iter = base.env,
-                         loc.coincide = loc.coincide, tmean = kc.result$predict[ind.not.coincide, , drop = FALSE], Rinv = invcov,
-                         mod = list(beta.size = beta.size, nloc = nloc,
-                           Nsims = n.datasets, n = n, Dval = Dval,
-                           df.model = NULL, s2 = sill.partial,
-                           cov.model.number = cor.number(cov.model),
-                           phi = phi, kappa = kappa),
-                         vbetai = vbetai, fixed.sigmasq = TRUE)
+    if(any(ind.not.coincide)){
+      kc.result$simulations[ind.not.coincide,  ] <- cond.sim(env.loc = base.env, env.iter = base.env,  loc.coincide = loc.coincide,
+                                                             tmean = kc.result$predict[ind.not.coincide, , drop = FALSE], Rinv = invcov,
+                                                             mod = list(beta.size = beta.size, nloc = nloc,
+                                                               Nsims = n.datasets, n = n, Dval = Dval,
+                                                               df.model = NULL, s2 = sill.partial,
+                                                               cov.model.number = cor.number(cov.model),
+                                                               phi = phi, kappa = kappa),
+                                                             vbetai = vbetai, fixed.sigmasq = TRUE)
+    }
     if(coincide.cond)
       kc.result$simulations[loc.coincide,  ] <- kc.result$predict[loc.coincide,, drop = FALSE]         
     if(is.R()) remove(list = c("v0", "invcov", "b"))

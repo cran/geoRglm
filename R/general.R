@@ -41,7 +41,6 @@
   return(res)
 }
 
-
 "multgauss" <- 
   function(cov)
 {

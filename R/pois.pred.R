@@ -1,6 +1,7 @@
 
+
 "mcmc.aux" <- 
-  function(z, data, meanS, QQ, Htrunc, S.scale, nsim, thin, Dmat)
+  function(z, data, meanS, QQ, Htrunc, S.scale, nsim, thin, QtivQ)
 {
 #
 ###### ------------------------ doing the mcmc-steps ----------- ############# 
@@ -11,85 +12,28 @@
   z <-  as.double(z)
   S <-  as.double(rep(0, nsim * n))
   acc.rate <-  as.double(1)
-  if(is.null(Dmat)) {
-    if(is.R()){
-      result <- .C("mcmcrun",
-                   as.integer(n),
-                   z = z,
-                   S = S,
-                   as.double(data),
-                   as.double(meanS),
-                   as.double(as.vector(t(QQ))),
-                   as.double(randnormal),
-                   as.double(randunif),
-                   as.double(Htrunc),
-                   as.double(S.scale),
-                   as.integer(nsim),
-                   as.integer(thin),
-                   acc.rate = acc.rate, DUP=FALSE)[c("z", "S", "acc.rate")]
-    }
-    else{
-      result <- .C("mcmcrun",
-                   COPY = c(FALSE, TRUE, TRUE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, TRUE),
-                   as.integer(n),
-                   z = z,
-                   S = S,
-                   as.double(data),
-                   as.double(meanS),
-                   as.double(as.vector(t(QQ))),
-                   as.double(randnormal),
-                   as.double(randunif),
-                   as.double(Htrunc),
-                   as.double(S.scale),
-                   as.integer(nsim),
-                   as.integer(thin),
-                   acc.rate = acc.rate)[c("z", "S", "acc.rate")]
-    }
-  }
-  else {
-    if(is.R()){
-      result <- .C("mcmcrun2",
-                   as.integer(n),
-                   z = z,
-                   S = S,
-                   as.double(data),
-                   as.double(meanS),
-                   as.double(as.vector(t(QQ))),
-                   as.double(as.vector(Dmat)),
-                   as.double(randnormal),
-                   as.double(randunif),
-                   as.double(Htrunc),
-                   as.double(S.scale),
-                   as.integer(nsim),
-                   as.integer(thin),
-                   acc.rate = acc.rate, DUP=FALSE)[c("z", "S", "acc.rate")]
-    }
-    else{
-      result <- .C("mcmcrun2",
-                   COPY = c(FALSE, TRUE, TRUE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, TRUE),
-                   as.integer(n),
-                   z = z,
-                   S = S,
-                   as.double(data),
-                   as.double(meanS),
-                   as.double(as.vector(t(QQ))),
-                   as.double(as.vector(Dmat)),
-                   as.double(randnormal),
-                   as.double(randunif),
-                   as.double(Htrunc),
-                   as.double(S.scale),
-                   as.integer(nsim),
-                   as.integer(thin),
-                   acc.rate = acc.rate)[c("z", "S", "acc.rate")]
-    }
-  }
+  result <- .C("mcmc1poislog",
+               as.integer(n),
+               z = z,
+               S = S,
+               as.double(data),
+               as.double(meanS),
+               as.double(as.vector(t(QQ))),
+               as.double(as.vector(QtivQ)),
+               as.double(randnormal),
+               as.double(randunif),
+               as.double(Htrunc),
+               as.double(S.scale),
+               as.integer(nsim),
+               as.integer(thin),
+               acc.rate = acc.rate, DUP=FALSE)[c("z", "S", "acc.rate")]
   attr(result$S, "dim") <- c(n, nsim)
   return(result)
 }
 
 
 "mcmc.pois.log" <- 
-  function(data, units.m, meanS, QQ, mcmc.input, Dmat = NULL)
+  function(data, units.m, meanS, invcov, mcmc.input)
 {
 ####
   ## This is the MCMC engine for the spatial Poisson log Normal model ----
@@ -102,6 +46,9 @@
       Htrunc <- mcmc.input$Htrunc
     else Htrunc <- rep(mcmc.input$Htrunc, n)
   }
+  QQ <- solve(chol(invcov + diag(data)))  ## needs to be improved
+  sqrtdataQ <- sqrt(data)*QQ              ## needs to be improved
+  QtivQ <- diag(n)-crossprod(sqrtdataQ)
   if(any(mcmc.input$S.start=="default")) {
     z <- as.vector(solve(QQ,ifelse(data > 0, log(data), 0) - meanS - log(units.m)))
   }
@@ -111,7 +58,7 @@
   n.iter <- mcmc.input$n.iter
   ## ---------------- burn-in ----------------- ######### 
   if(burn.in > 0) {
-    mcmc.output <- mcmc.aux(z, data, meanS + log(units.m), QQ, Htrunc, S.scale, 1, burn.in, Dmat)
+    mcmc.output <- mcmc.aux(z, data, meanS + log(units.m), QQ, Htrunc, S.scale, 1, burn.in, QtivQ)
     cat(paste("burn-in = ", burn.in, " is finished. Acc.-rate = ", mcmc.output$acc.rate, "\n"))
   }
   else mcmc.output <- list(z = z)
@@ -133,7 +80,7 @@
   nsim <- n.turn * n.temp
   Sdata <- matrix(NA, n, nsim)
   for(i in 1:n.turn) {
-    mcmc.output <- mcmc.aux(mcmc.output$z, data, meanS + log(units.m), QQ, Htrunc, S.scale, n.temp, thin, Dmat)
+    mcmc.output <- mcmc.aux(mcmc.output$z, data, meanS + log(units.m), QQ, Htrunc, S.scale, n.temp, thin, QtivQ)
     Sdata[, (n.temp * (i - 1) + 1):(n.temp * i)] <- mcmc.output$S+meanS
     cat(paste("iter. numb.", i * n.temp * thin, " : Acc.-rate = ", mcmc.output$acc.rate, "\n"))
   }
@@ -144,8 +91,9 @@
   return(Sdata)
 }
 
+
 "mcmc.boxcox.aux" <- 
-  function(z, data, units.m, meanS, QQ, Htrunc, S.scale, nsim, thin, Dmat, lambda)
+  function(z, data, units.m, meanS, QQ, Htrunc, S.scale, nsim, thin, QtivQ, lambda)
 {
   ##
 ###### ------------------------ doing the mcmc-steps ----------- ############# 
@@ -156,90 +104,29 @@
   z <-  as.double(z)
   S <-  as.double(rep(0, nsim * n))
   acc.rate <-  as.double(1) 
-  if(is.null(Dmat)) {
-    if(is.R()){
-      result <- .C("mcmcrunboxcox",
-                   as.integer(n),
-                   z = z,
-                   S = S,
-                   as.double(data),
-                   as.double(units.m),
-                   as.double(meanS),
-                   as.double(as.vector(t(QQ))),
-                   as.double(randnormal),
-                   as.double(randunif),
-                   as.double(Htrunc),
-                   as.double(S.scale),
-                   as.integer(nsim),
-                   as.integer(thin),
-                   as.double(lambda),
-                   acc.rate = acc.rate, DUP=FALSE)[c("z", "S", "acc.rate")]
-    }
-    else{
-      result <- .C("mcmcrunboxcox",
-                   COPY = c(FALSE, TRUE, TRUE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, TRUE),
-                   as.integer(n),
-                   z = z,
-                   S = S,
-                   as.double(data),
-                   as.double(units.m),
-                   as.double(meanS),
-                   as.double(as.vector(t(QQ))),
-                   as.double(randnormal),
-                   as.double(randunif),
-                   as.double(Htrunc),
-                   as.double(S.scale),
-                   as.integer(nsim),
-                   as.integer(thin),  
-                   as.double(lambda),
-                   acc.rate = acc.rate)[c("z", "S", "acc.rate")]
-    }
-  }
-  else{
-    if(is.R()){
-      result <- .C("mcmcrun2boxcox",
-                   as.integer(n),
-                   z = z,
-                   S = S,
-                   as.double(data),
-                   as.double(units.m),
-                   as.double(as.vector(t(QQ))),
-                   as.double(as.vector(Dmat)),
-                   as.double(randnormal),
-                   as.double(randunif),
-                   as.double(Htrunc),
-                   as.double(S.scale),
-                   as.integer(nsim),
-                   as.integer(thin),
-                   as.double(lambda),
-                   acc.rate = acc.rate, DUP=FALSE)[c("z", "S", "acc.rate")]
-    }
-    else{
-      result <- .C("mcmcrun2boxcox",
-                   COPY = c(FALSE, TRUE, TRUE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, TRUE),
-                   as.integer(n),
-                   z = z,
-                   S = S,
-                   as.double(data),
-                   as.double(units.m),
-                   as.double(as.vector(t(QQ))),
-                   as.double(as.vector(Dmat)),
-                   as.double(randnormal),
-                   as.double(randunif),
-                   as.double(Htrunc),
-                   as.double(S.scale),
-                   as.integer(nsim),
-                   as.integer(thin),
-                   as.double(lambda),
-                   acc.rate = acc.rate)[c("z", "S", "acc.rate")]
-    }
-  }
+  result <- .C("mcmc1poisboxcox",
+               as.integer(n),
+               z = z,
+               S = S,
+               as.double(data),
+               as.double(meanS),
+               as.double(units.m),
+               as.double(as.vector(t(QQ))),
+               as.double(as.vector(QtivQ)),
+               as.double(randnormal),
+               as.double(randunif),
+               as.double(Htrunc),
+               as.double(S.scale),
+               as.integer(nsim),
+               as.integer(thin),
+               as.double(lambda),
+               acc.rate = acc.rate, DUP=FALSE)[c("z", "S", "acc.rate")]
   attr(result$S, "dim") <- c(n, nsim)
   return(result)
 }
 
 "mcmc.pois.boxcox" <- 
-  function(data, units.m, meanS = NULL, QQ, mcmc.input, lambda, Dmat = NULL)
+  function(data, units.m, meanS = NULL, invcov, mcmc.input, lambda)
 {
 ####
   ## This is the MCMC engine for the spatial Poisson - Normal model with link from the box-cox-family ----
@@ -247,8 +134,11 @@
   n <- length(data)
   S.scale <- mcmc.input$S.scale
   if(is.null(meanS)) meanS <- rep(0,n)
+  QQ <- solve(chol(invcov + diag(data)))  ## needs to be improved
+  sqrtdataQ <- sqrt(data)*QQ              ## needs to be improved
+  QtivQ <- diag(n)-crossprod(sqrtdataQ)
   if(any(mcmc.input$S.start=="default")) {
-    S <- as.vector(ifelse(data > 0, ((data/units.m)^lambda-1)/lambda, 0) - meanS )         
+    S <- as.vector(ifelse(data > 0, (data/units.m)^lambda-1, 0)/lambda - meanS )         
     z <- as.vector(solve(QQ,S))
   }
   else z <- as.vector(solve(QQ,mcmc.input$S.start))
@@ -263,7 +153,7 @@
   n.iter <- mcmc.input$n.iter
   ## ---------------- burn-in ----------------- ######### 
   if(burn.in > 0) {
-    mcmc.output <- mcmc.boxcox.aux(z, data, units.m, meanS, QQ, Htrunc, S.scale, 1, burn.in, Dmat, lambda)
+    mcmc.output <- mcmc.boxcox.aux(z, data, units.m, meanS, QQ, Htrunc, S.scale, 1, burn.in, QtivQ, lambda)
     cat(paste("burn-in = ", burn.in, " is finished. Acc.-rate = ", mcmc.output$acc.rate, "\n"))
   }
   else mcmc.output <- list(z = z)
@@ -279,7 +169,7 @@
   n.sim <- n.turn * n.temp
   Sdata <- matrix(NA, n, n.sim)
   for(i in 1:n.turn) {
-    mcmc.output <- mcmc.boxcox.aux(mcmc.output$z, data, units.m, meanS, QQ, Htrunc, S.scale, n.temp, thin, Dmat, lambda)
+    mcmc.output <- mcmc.boxcox.aux(mcmc.output$z, data, units.m, meanS, QQ, Htrunc, S.scale, n.temp, thin, QtivQ, lambda)
     Sdata[, (n.temp * (i - 1) + 1):(n.temp * i)] <- mcmc.output$S+meanS                       
     cat(paste("iter. numb.", i * n.temp * thin, " : Acc.-rate = ", mcmc.output$acc.rate, "\n"))
   }
@@ -331,12 +221,18 @@
       stop("pois.log.krige: anisotropy parameters must be provided as a numeric vector with two elements: the rotation angle (in radians) and the anisotropy ratio (a number greater than 1)")
   ##
   if(inherits(trend.d, "formula") | inherits(trend.l, "formula")){
-    if((!inherits(trend.d, "formula")) | (!inherits(trend.l, "formula")))
+    if(!inherits(trend.d, "formula") | !inherits(trend.l, "formula"))
       stop("pois.log.krige: trend.d and trend.l must have similar specification")
   }
   else{
-    if(trend.d != trend.l)
-      stop("pois.log.krige: trend.l is different from trend.d")
+    if((!is.null(class(trend.d)) && class(trend.d)=="trend.spatial") & (!is.null(class(trend.l)) && class(trend.l)=="trend.spatial")){
+      if(ncol(trend.d) != ncol(trend.l))
+        stop("pois.log.krige: trend.d and trend.l do not have the same number of columns")
+    }
+    else{
+      if(trend.d != trend.l)
+        stop("pois.log.krige: trend.l is different from trend.d")
+    }
   }
   cov.model <- match.arg(cov.model,
                          choices = c("matern", "exponential","gaussian",
@@ -402,7 +298,6 @@ function(geodata, coords = geodata$coords, data = geodata$data, units.m = "defau
                                  dist.epsilon = krige$dist.epsilon, 
                                  aniso.pars = krige$aniso.pars,
                                  lambda = krige$lambda)
-        
       }
     }
   }
@@ -459,7 +354,7 @@ function(geodata, coords = geodata$coords, data = geodata$data, units.m = "defau
     if(is.null(trend.l))
       stop("trend.l needed for prediction")
   }
-  trend.data <- trend.spatial(trend = trend.d, geodata=geodata)
+  trend.data <- unclass(trend.spatial(trend=trend.d, geodata = geodata))
   beta.size <- ncol(trend.data)
   if(beta.prior == "deg")
     if(beta.size != length(beta))
@@ -500,41 +395,26 @@ function(geodata, coords = geodata$coords, data = geodata$data, units.m = "defau
   if(beta.prior == "deg") mean.d <-  as.vector(trend.data %*% beta)
   else mean.d <- 0
   if(!is.null(aniso.pars)) {
-    QQt <- varcov.spatial(coords = coords.aniso(coords = coords, aniso.pars = aniso.pars), cov.model = cov.model, kappa = kappa, 
-           nugget = nugget, cov.pars = cov.pars, only.decomposition = TRUE, func.inv = "cholesky", 
-           try.another.decomposition = FALSE)$sqrt.varcov
+    invcov <- varcov.spatial(coords = coords.aniso(coords = coords, aniso.pars = aniso.pars), cov.model = cov.model, kappa = kappa, 
+                             nugget = nugget, cov.pars = cov.pars, inv = TRUE, func.inv = "cholesky",
+                             try.another.decomposition = FALSE)$inverse
   }
   else {
-    QQt <- varcov.spatial(coords = coords, cov.model = cov.model, kappa = kappa, nugget = nugget, cov.pars = cov.pars,
-            only.decomposition = TRUE, func.inv = "cholesky", try.another.decomposition = FALSE)$sqrt.varcov
+    invcov <- varcov.spatial(coords = coords, cov.model = cov.model, kappa = kappa, nugget = nugget, cov.pars = cov.pars,
+                             inv = TRUE, func.inv = "cholesky", try.another.decomposition = FALSE)$inverse
   }
   ##
 ########################----- MCMC ------#####################
   ##
   if(beta.prior == "deg") {
-    intensity <- exp(mcmc.pois.log(data = data, units.m = units.m, meanS = mean.d, QQ = t(QQt), mcmc.input = mcmc.input))
-    if(is.R()) remove(list = c("QQt"))
-    else remove(list = c("QQt"), frame = sys.nframe())
+    intensity <- exp(mcmc.pois.log(data = data, units.m = units.m, meanS = mean.d, invcov=invcov, mcmc.input = mcmc.input))
   }
   if(beta.prior == "flat") {
-    if(is.R()){
-      QQtinv <- solve(QQt)
-      invcov <- chol2inv(QQt)
-    }
-    else{
-      QQtinv <- solve.upper(QQt)
-      invcov <- QQtinv %*% t(QQtinv)
-    }
-    temp <- crossprod(QQtinv,trend.data)
-    ittivtt <- solve.geoR(crossprod(temp))
-    intensity <- exp(mcmc.pois.log(data = data, units.m = units.m, meanS = mean.d,QQ = t(QQt), mcmc.input = mcmc.input,
-                                   Dmat = diag(n) - temp %*% ittivtt %*% t(temp)))
-    if(is.R()) remove(list = c("QQt", "QQtinv", "temp"))
-    else
-      remove(list = c("QQt", "QQtinv", "temp"), frame = sys.nframe())
+    ivtt <- invcov%*%trend.data    
+    ittivtt <- solve.geoR(crossprod(trend.data, ivtt))    
+    intensity <- exp(mcmc.pois.log(data = data, units.m = units.m, meanS = mean.d,
+                                       invcov=invcov-ivtt%*%ittivtt%*%t(ivtt), mcmc.input = mcmc.input))
   }
-  if(is.R()) remove(list = c("mean.d"))
-  else remove(list = c("mean.d"), frame = sys.nframe())
   ##
   ##------------------------------------------------------------
 ######################## ---- prediction ----- #####################
@@ -559,7 +439,7 @@ function(geodata, coords = geodata$coords, data = geodata$data, units.m = "defau
   }
   else{
     if(beta.prior == "flat") {
-      beta.est <- (ittivtt %*% crossprod(trend.data, invcov)) %*% log(intensity)
+      beta.est <- (ittivtt %*% t(ivtt)) %*% log(intensity)
       kpl.result <- list(intensity=intensity, beta.est = apply(beta.est, 1, mean))
     }
     else kpl.result <- list(intensity=intensity)

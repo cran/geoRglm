@@ -1,4 +1,5 @@
 
+
 "mcmc.bayes.pois.log" <- 
   function(data, units.m, trend, mcmc.input, cov.model, kappa, tausq.rel, distcoords, ss.sigma, df, phi.prior, phi.discrete, phi)
 {
@@ -234,7 +235,7 @@
            phi.discrete, phi)
 {
   ##
-  ## This is the MCMC engine for the Bayesian analysis (with normal prior for beta) of a spatial binomial logit Normal model
+  ## This is the MCMC engine for the Bayesian analysis (with normal prior for beta) of a spatial Poisson logit Normal model
   ##
   n <- length(data)
   S.scale <- mcmc.input$S.scale
@@ -347,7 +348,7 @@
            phi.discrete, phi, lambda)
 {
   ##
-  ## This is the MCMC engine for the Bayesian analysis (with normal prior for beta) of a spatial binomial logit Normal model
+  ## This is the MCMC engine for the Bayesian analysis (with normal prior for beta) of a spatial Poisson logit Normal model
   ##
   n <- length(data)
   S.scale <- mcmc.input$S.scale
@@ -484,7 +485,7 @@
     if(!is.null(geodata$units.m)) units.m <- geodata$units.m
     else units.m <- rep(1, n)
   }
-  ##
+  ####
   ## reading model input
   ##
   if(missing(model))
@@ -521,7 +522,7 @@
   kappa <- model$kappa
   tausq.rel <- prior$tausq.rel
   lambda <- model$lambda
-  if(lambda < 0) stop("lambda < 0 is not allowed")
+  if(lambda < 0) stop ("lambda < 0 is not allowed")
   ## reading prior input
   ##
   if(missing(prior)) stop("pois.krige.bayes: argument prior must be given")
@@ -610,14 +611,14 @@
   ##
   trend.d <- model$trend.d
   if(messages.screen) {
-    if(inherits(trend.d, "formula")) cat("pois.krige.bayes: analysis using covariates provided by the user\n")
-    else {
-      if(trend.d == "cte") cat("pois.krige.bayes: analysis assuming constant mean\n")
-      if(trend.d == "1st") cat("pois.krige.bayes: analysis assuming a 1st degree polynomial trend\n")
-      if(trend.d == "2nd") cat("pois.krige.bayes: analysis assuming a 2nd degree polynomial trend\n")
-    }
+    cat(switch(as.character(trend.d)[1],
+                 "cte" = "pois.krige.bayes: model with constant mean",
+                 "1st" = "pois.krige.bayes: model with mean given by a 1st degree polinomial on the coordinates",
+                 "2nd" = "pois.krige.bayes: model with mean given by a 2nd degree polinomial on the coordinates",
+                 "pois.krige.bayes: model with mean defined by covariates provided by the user"))
+    cat("\n")
   }
-  trend.data <- trend.spatial(trend = trend.d, geodata = geodata)
+  trend.data <- unclass(trend.spatial(trend=trend.d, geodata = geodata))
   dimnames(coords) <- list(NULL, NULL)
   dimnames(trend.data) <- list(NULL, NULL)
   beta.size <- ncol(trend.data)
@@ -647,11 +648,19 @@
     else locations <- as.matrix(locations)
     ni <- nrow(locations)
     if(is.null(trend.l)) stop("trend.l needed for prediction")
-    if(inherits(trend.d, "formula") | inherits(trend.l, "formula")) {
-      if(!(inherits(trend.d, "formula")) | !(inherits(trend.l, "formula")))
-        stop("trend.d and trend.l must have similar specification")
+    if(inherits(trend.d, "formula") | inherits(trend.l, "formula")){
+      if((!inherits(trend.d, "formula")) | (!inherits(trend.l, "formula")))
+        stop("trend.d and trend.l must have similar specification\n")
     }
-    else if(trend.d != trend.l) stop("trend.l is different from trend.d")
+    else{
+      if((!is.null(class(trend.d)) && class(trend.d)=="trend.spatial") & (!is.null(class(trend.l)) && class(trend.l)=="trend.spatial")){
+        if(ncol(trend.d) != ncol(trend.l))
+          stop("trend.d and trend.l do not have the same number of columns")
+      }
+      else if(trend.d != trend.l) stop("trend.l is different from trend.d")
+    }
+    if(nrow(unclass(trend.spatial(trend=trend.l, geodata = list(coords = locations)))) != ni) 
+      stop("pois.krige.bayes: number of points to be estimated is different of the number of trend locations")
     kb.results <- list(posterior = list(), predictive = list())
   }
   else {
@@ -690,7 +699,7 @@
     }
   }
   ##
-  if(beta.prior == "fixed" | beta.prior == "normal") mean.d <- as.vector(trend.data %*% beta)
+  if(beta.prior == "fixed" | beta.prior == "normal") mean.d <- as.vector(trend.data%*%beta)
   else mean.d <- 0
   if(sigmasq.prior != "fixed"){
     if(beta.prior == "flat") df.model <- n - beta.size + df.sigmasq
@@ -701,22 +710,16 @@
     if(beta.size > 1) ttvbetatt <- trend.data%*%beta.var%*%t(trend.data)
     else ttvbetatt <- trend.data%*%t(trend.data)*beta.var
   }  
-  else ttvbetatt <- NULL
+  else ttvbetatt <- 0
   if(sigmasq.prior == "fixed") {     ### implies that phi is fixed !
-    if(beta.prior == "normal"){
-      QQt <- chol(varcov.spatial(coords = coords.transf, cov.model = cov.model, kappa = kappa, cov.pars = c(1,phi),
-                                 nugget = tausq.rel)$varcov + ttvbetatt )
+    invcov <- varcov.spatial(coords = coords, cov.model = cov.model, kappa = kappa, nugget = tausq.rel*sigmasq,
+                               cov.pars = c(sigmasq,phi), inv = TRUE, func.inv = "cholesky",
+                               try.another.decomposition = FALSE)$inverse
+    if(beta.prior != "fixed"){
+      ivtt <- invcov%*%trend.data
+      ittivtt <- solve.geoR(crossprod(trend.data, ivtt) + ttvbetatt)
+      invcov <- invcov-ivtt%*%ittivtt%*%t(ivtt)
     }
-    else {
-      QQt <- varcov.spatial(coords = coords.transf, cov.model = cov.model, kappa = kappa, cov.pars = c(1,phi),
-                            nugget = tausq.rel, only.decomposition = TRUE, try.another.decomposition = FALSE)$sqrt.varcov
-    }
-    if(beta.prior == "flat"){
-      if(is.R()) QQtinvtt <- crossprod(solve(QQt),trend.data)
-      else QQtinvtt <- crossprod(solve.upper(QQt),trend.data)
-      Dmat <- diag(n) - QQtinvtt %*% solve.geoR(crossprod(QQtinvtt)) %*% t(QQtinvtt)
-    }
-    else Dmat <- NULL
   }
   ##
 ############----------PART 2 ------------##############################
@@ -724,12 +727,10 @@
   ##
   if(sigmasq.prior == "fixed"){ 
     if(lambda == 0){
-      gauss.post <- mcmc.pois.log(data = data, units.m = units.m, meanS = mean.d, QQ = sqrt(sigmasq)*t(QQt), mcmc.input = mcmc.input,
-                                Dmat = Dmat)
+      gauss.post <- mcmc.pois.log(data = data, units.m = units.m, meanS = mean.d, invcov=invcov, mcmc.input = mcmc.input)  
     }
     else{
-      gauss.post <- mcmc.pois.boxcox(data = data, units.m = units.m, meanS = mean.d, QQ = sqrt(sigmasq)*t(QQt), mcmc.input = mcmc.input,
-                                   lambda=lambda,  Dmat = Dmat)
+      gauss.post <- mcmc.pois.boxcox(data=data, units.m=units.m, meanS=mean.d, invcov=invcov, mcmc.input=mcmc.input, lambda=lambda)
     }
   } 
   else {
@@ -761,24 +762,16 @@
                                                   mcmc.input=mcmc.input, cov.model=cov.model,  kappa=kappa, tausq.rel = tausq.rel,
                                                   distcoords=distdiag(coords.transf),  ss.sigma = df.sigmasq*S2.prior, df = df.model,
                                                   phi.prior = phi.prior, phi.discrete = phi.discrete, phi = phi, lambda = lambda)
-      }       
+      }
     }
     kb.results$posterior$phi$sample <- gauss.post$phi.sample
     gauss.post <- gauss.post$Sdata
-  }  
+  }
   ## ######### removing junk #########################################
   if(is.R()){
-    if(sigmasq.prior == "fixed"){
-      remove(list = c("QQt", "Dmat"))
-      if(beta.prior == "flat") remove("QQtinvtt")
-    }
     remove("ttvbetatt") 
   }
   else {
-    if(sigmasq.prior == "fixed"){
-      remove(list = c("QQt", "Dmat"), frame = sys.nframe())
-      if(beta.prior == "flat") remove("QQtinvtt", frame = sys.nframe())
-    }
     remove("ttvbetatt", frame = sys.nframe())
   }  
   ##           
@@ -877,7 +870,7 @@
           }
         }
       }
-    }    
+    }
     if(is.R()) remove("temp.result")
     else remove("temp.result", frame = sys.nframe())
     if(do.prediction) {
@@ -1020,11 +1013,11 @@
         if(lambda == 0) transf.probab <- ifelse(probability.estimator > 0, log(probability.estimator), -1e+17)
           else transf.probab <- ifelse(probability.estimator > 0, (probability.estimator^lambda-1)/lambda, -1e+17)
         len.p <- length(probability.estimator)
-        if(len.p== 1){
+        if(len.p==1){
           kb.results$predictive$probability <- round(pmixed(transf.probab, temp.pred, df.model), digits = 3)
         }
         else{
-          kb.results$predictive$probability <- matrix(NA,ni,len.p)
+          kb.results$predictive$probability <- matrix(NA, ni,len.p)
           for(ii in 1:len.p){
             kb.results$predictive$probability[,ii] <- round(pmixed(transf.probab[ii], temp.pred, df.model), digits = 3)
           }
@@ -1060,7 +1053,7 @@
     else{
       kb.results$posterior$phi$mean <- mean(kb.results$posterior$phi$sample)
       kb.results$posterior$phi$var <- var(kb.results$posterior$phi$sample)
-    }    
+    }   
     ##
     ## Simulations from the posterior of parameters.
     ##

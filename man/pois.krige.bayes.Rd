@@ -152,12 +152,12 @@ function \code{krige.bayes.extnd}, which
 is an extension of \code{\link[geoR]{krige.bayes}} 
 allowing for more than one ``data set''. 
 
-For calculating the probability above a threshold for the predictive distribution given the data, we first calculate this 
+For calculating the probability below a threshold for the predictive distribution given the data, we first calculate this 
 probability
 for each of the simulated \eqn{S}{S}-``datasets''.
 This is done using the fact that the predictive distribution 
 for each of the simulated \eqn{S}{S}-``datasets'' is a multivariate \eqn{t}-distribution.
-Afterwards the probability above a threshold is calculated by taking the empirical mean of these conditional probabilities.
+Afterwards the probability below a threshold is calculated by taking the empirical mean of these conditional probabilities.
 
 Now the median and the 2.5 percent and 97.5 percent quantiles can be calculated by an iterative procedure, where first a guess
 of the value is made, and second this guess is checked by calculating the probability of being less than this value. In case
@@ -195,7 +195,7 @@ the guess is too low, it is adjusted upwards, and vise verse.
       \item{uncertainty}{a vector with the estimated uncertainty at the
         prediction locations, defined as the length of the \eqn{95\%} prediction interval divided by 4. }
       \item{quantile}{A matrix or vector with quantile estimators.  }
-      \item{probability}{A matrix or vector with probabilities above a threshold. Returned
+      \item{probability}{A matrix or vector with probabilities below a threshold. Returned
         only if the argument \code{threshold} is used.  }
       \cr
       \cr
@@ -240,7 +240,7 @@ test.5 <- pois.krige.bayes(y50, prior = prior.5, mcmc.input = mcmc.5)
 mcmc.5.new <- mcmc.control(S.scale = 0.08, thin = 100)
 test.5.new <- pois.krige.bayes(y50, locations = t(cbind(c(2.5,3), c(-6050,-3270))), 
                prior = prior.5, mcmc.input = mcmc.5.new, 
-               output = list(threshold = 10, quantile = c(0.2, 0.99)))
+               output = list(threshold = 10, quantile = c(0.49999, 0.99)))
 ## MCMC with random phi.
 ## Note here that we can start with the S.scale from above.
 mcmc.6 <- mcmc.control(S.scale = 0.08, n.iter = 2000, thin = 100, 
@@ -260,9 +260,9 @@ test.6.new <- pois.krige.bayes(y50,
 y9 <- list(data=y50$data[c(1:4,10:14)],coords=y50$coords[c(1:4,10:14),],units.m=y50$units.m[c(1:4,10:14)])
 class(y9) <- "geodata"
 mcmc5 <- mcmc.control(S.scale = 0.1, thin = 1, n.iter=10)
-test5 <- pois.krige.bayes(y9, locations = t(cbind(c(2,1),c(-6050,-3270),c(2.1,1.1))),
+test5 <- pois.krige.bayes(y9, locations = t(cbind(c(2,1),c(-6050,-3270),c(1.1,2.1),c(2,3))),
 prior = list(phi.prior = "fixed", phi= 1), mcmc.input = mcmc5,
-output = list(threshold = c(9,10), quantile = c(0.05,0.99))) 
+output = list(threshold = c(9,10), quantile = c(0.05,0.99), sim.predict=TRUE)) 
 prior6 <- prior.glm.control(phi.prior = "uniform", phi.discrete = c(0.98,1.02), tausq.rel = 0.05)
 mcmc6 <- list(S.scale = 0.1, thin = 1, n.iter=10, burn.in = 1, phi.scale = 0.01, phi.start = 1) 
 test6 <- pois.krige.bayes(y9, locations =t(cbind(c(2.5,3.5),c(-60,-37))), prior = prior6, mcmc.input = mcmc6)

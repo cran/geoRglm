@@ -112,43 +112,15 @@ krige.glm.control(type.krige = "ok", trend.d = "cte", trend.l = "cte",
 
 
 \details{
-  For simulating the conditional distribution of \eqn{S} given \eqn{y}, the truncated Langevin-Hastings algorithm 
-(see Christensen, Moller and Waagepetersen, 2001) is used. This algorithm is a Metropolis-Hastings algorithm, where the
-proposal distribution uses gradient information from the log-posterior distribution. The algorithm is described below for the case 
-where \eqn{\beta}{beta} is fixed.
+  For simulating the conditional distribution of \eqn{S} given \eqn{y}, the Langevin-Hastings algorithm 
+with the parametrisation in Papaspilliopoulus, Roberts and Skold (2002)
+is used. This algorithm is a Metropolis-Hastings algorithm, where the proposal distribution uses gradient information from the log-posterior distribution. 
 
-We use the following reparametrisation of \eqn{S}.
-Let \eqn{\sigma^2V} denote the
-covariance matrix of \eqn{S} and let \eqn{Q} be a Cholesky factorisation. so that 
- \eqn{V=QQ^T}.
- We can then assume that 
-\eqn{ S = D\beta + \sigma Q\Gamma }, where \eqn{\Gamma}
-follows a \eqn{n}-dimensional standard multivariate Gaussian
- distribution. Posterior simulations of \eqn{S} are obtained by transforming
-MCMC simulations from the conditional distribution of \eqn{\Gamma} given
-\eqn{Y=y}. 
-
-The log posterior density of
- \eqn{\Gamma} given \eqn{Y=y} is
-\deqn{
-\log f(\gamma|y)=const(y)-\frac{1}{2}\| \gamma \|^2 +\sum_{i=1}^n y_i s_i - \exp(s_i),
-}{
-log f(gamma|y)=const(y)-1/2 |gamma|^2 +sum_i y_i*s_i - exp(s_i),
-}
-where
-\eqn{(s_1,\ldots,s_n)^T=D\beta + \sigma Q \gamma}{(s_1,...,s_n)^T = D*beta + sigma*Q*gamma}.
-
-For the truncated Langevin-Hastings update we use a truncated form of the gradient (truncating by \eqn{H_i}) of the log target density,
-\deqn{
-\nabla(\gamma )^{trunc}= - \gamma +\sigma Q^T\left\{y_i-\exp(s_i)\wedge H_i \right\}_{i=1}^n .
-}{
-nabla(gamma)^{trunc}= - gamma + sigma*Q^T*{y_i - min{exp(s_i),H_i} }_{i=1}^n .
-}
-
-The proposal \eqn{\gamma'}{gamma'} follows a multivariate normal distribution with mean vector
-\eqn{\xi(\gamma)=\gamma+(h/2)\nabla(\gamma)^{trunc}}{xi(gamma)=gamma+(h/2)*nabla(gamma)^{trunc}} and covariance matrix \eqn{hI},
-where \eqn{h>0} is a user-specified ``proposal variance'' (called \code{S.scale}; see \code{mcmc.control}).
-  
+The proposal variance (called \code{S.scale}; see \code{mcmc.control})
+for the algorithm needs to be scaled
+such that approximately 60 percent of the proposals are accepted. We
+also recommend the user to study the autocorrelation.
+ 
 The prediction part of the program consist of performing log-Gaussian kriging on each of the simulated 
 \eqn{\exp(S)}{exp(S)}-``datasets'' from the conditional distribution. Afterwards the predictor is obtained by taking the mean of 
 prediction means, and the prediction variance
@@ -177,9 +149,13 @@ The log-Gaussian kriging is done by calling the function \code{krige.conv.extnd}
 }
 
 \references{
- Christensen, O. F., Moller, J. and Waagepetersen R. (2001). Geometric ergodicity of Metropolis-Hastings algorithms for 
-   conditional simulation in generalised linear mixed models. \emph{Methodology and Computing in Applied Probability}. (To appear).
-  
+  O. Papaspiliopoulus and G. O. Roberts and M. Skold
+  (2002). Non-centered parameterizations for hierarchical models and
+  data augmentation. \emph{Bayesian statistics 7} (eds. J. M. Bernardo,
+  S. Bayarri, J. O. Berger, A. P. Dawid, D. Heckerman, A. F. M. Smith
+  and M. West), Oxford University Press (to appear).
+}
+
 Further information about \bold{geoRglm} can be found at:\cr
   \url{http://www.maths.lancs.ac.uk/~christen/geoRglm}.
 }
@@ -195,31 +171,31 @@ Further information about \bold{geoRglm} can be found at:\cr
 }
 
 \examples{
-if(is.R()) data(y50)
 \testonly{library(geoR)}
 if(!exists(".Random.seed")) set.seed(1234)
+data(y50)
 # First we scale the algorithm, and study how well the chain is mixing.
 test <- pois.log.krige(y50, krige = list(cov.pars = c(1,1), beta = 1),
-      mcmc.input = mcmc.control(S.scale = 0.07, thin = 1))
+      mcmc.input = mcmc.control(S.scale = 0.2, thin = 1))
 plot(log(test$intensity[45,]), type = "l")
-if(is.R()) require(ts)
+require(ts)
 acf(log(test$intensity[45,]), type = "correlation", plot = TRUE)
-# Now we make prediction (we decide to thin to every 20),
-# where we now use S.scale = 0.07.
+# Now we make prediction (we decide to thin to every 10, which is the default),
+# where we now use S.scale = 0.55.
 \dontrun{test2 <- pois.log.krige(y50, locations = cbind(c(0.5,0.5), c(1,0.4)), 
       krige = krige.glm.control(cov.pars = c(1,1), beta = 1), 
-      mcmc.input = mcmc.control(S.scale = 0.07, thin = 20)) }
+      mcmc.input = mcmc.control(S.scale = 0.55)) }
 \testonly{
 y9 <- grf(grid = expand.grid(x = seq(1, 3, l = 3), y = seq(1, 3, l = 3)), cov.pars = c(0.1, 0.2))  
 y9$data <- rpois(9, lambda = exp(y9$data))
 model2 <- krige.glm.control(cov.pars = c(1,1), beta = 1)
 test2 <- pois.log.krige(y9, locations = cbind(c(0.5,0.5),c(1,0.4)),
-krige = model2, mcmc.input = mcmc.control(S.scale = 0.07, thin = 1, n.iter=10), output = list(sim.predict = TRUE))
+krige = model2, mcmc.input = mcmc.control(S.scale = 0.5, thin = 1, n.iter=10), output = list(sim.predict = TRUE))
 model2.u <- krige.glm.control(cov.pars = c(1,1), beta = 1, type.krige = "ok")
-test2.unif.beta <- pois.log.krige(y9, krige = model2.u, mcmc.input =list(S.scale = 0.07, thin = 1, n.iter=10))
+test2.unif.beta <- pois.log.krige(y9, krige = model2.u, mcmc.input =list(S.scale = 0.5, thin = 1, n.iter=10))
 model2 <- krige.glm.control(cov.pars = c(1,1), beta = 1, aniso.pars=c(1,2))
 test2 <- pois.log.krige(y9, locations = cbind(c(0.5,0.5),c(1,0.4)),
-krige = model2, mcmc.input = list(S.scale = 0.07, thin = 1, n.iter=10)) }
+krige = model2, mcmc.input = list(S.scale = 0.5, thin = 1, n.iter=10)) }
 }
 
 \keyword{spatial}

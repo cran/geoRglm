@@ -143,12 +143,12 @@ This Gaussian prediction is done by calling the function \code{krige.bayes.extnd
 is an extension of \code{\link[geoR]{krige.bayes}} 
 allowing for more than one ``data set''.
 
-For calculating the probability above a threshold for the predictive distribution given the data, we first calculate this 
+For calculating the probability below a threshold for the predictive distribution given the data, we first calculate this 
 probability
 for each of the simulated \eqn{S}{S}-``datasets''.
 This is done using the fact that the predictive distribution 
 for each of the simulated \eqn{S}{S}-``datasets'' is a multivariate \eqn{t}-distribution.
-Afterwards the probability above a threshold is calculated by taking the empirical mean of these conditional probabilities.
+Afterwards the probability below a threshold is calculated by taking the empirical mean of these conditional probabilities.
 
 Now the median and the 2.5 percent and 97.5 percent quantiles can be calculated by an iterative procedure, where first a guess
 of the value is made, and second this guess is checked by calculating the probability of being less than this value. In case
@@ -186,7 +186,7 @@ the guess is too low, it is adjusted upwards, and vise verse.
       \item{uncertainty}{a vector with the estimated uncertainty at the
         prediction locations, defined as the length of the \eqn{95\%} prediction interval divided by 4. }
       \item{quantile}{A matrix or vector with quantile estimators.  }
-      \item{probability}{A matrix or vector with probabilities above a threshold. Returned
+      \item{probability}{A matrix or vector with probabilities below a threshold. Returned
         only if the argument \code{threshold} is used.  }
       \cr
       \cr

@@ -207,7 +207,7 @@ function(n = NULL, grid, nx = round(sqrt(n)), ny = round(sqrt(n)), nsim = 1,
   cov.model <- match.arg(cov.model)
   work <- grf(n = n, grid = grid, nx = nx, ny = ny, nsim = nsim, xlims = xlims, ylims = ylims, cov.model = cov.model, cov.pars = 
               cov.pars, nugget = nugget, lambda = 1, kappa = kappa, method = method, messages.screen =  messages.screen, ...)
-  trend.data <- trend.spatial(trend = trend, geodata = work)
+  trend.data <- unclass(trend.spatial(trend = trend, geodata = work))
   n <- nrow(work$coords)
   if((length(beta) == 1) & trend == "cte")
     mu <- rep(beta, n)

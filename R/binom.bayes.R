@@ -486,14 +486,14 @@
   ##
   trend.d <- model$trend.d
   if(messages.screen) {
-    if(inherits(trend.d, "formula")) cat("binom.krige.bayes: analysis using covariates provided by the user\n")
-    else {
-      if(trend.d == "cte") cat("binom.krige.bayes: analysis assuming constant mean\n")
-      if(trend.d == "1st") cat("binom.krige.bayes: analysis assuming a 1st degree polynomial trend\n")
-      if(trend.d == "2nd") cat("binom.krige.bayes: analysis assuming a 2nd degree polynomial trend\n")
-    }
+    cat(switch(as.character(trend.d)[1],
+                 "cte" = "binom.krige.bayes: model with constant mean",
+                 "1st" = "binom.krige.bayes: model with mean given by a 1st degree polinomial on the coordinates",
+                 "2nd" = "binom.krige.bayes: model with mean given by a 2nd degree polinomial on the coordinates",
+                 "binom.krige.bayes: model with mean defined by covariates provided by the user"))
+    cat("\n")
   }
-  trend.data <- trend.spatial(trend = trend.d, geodata = geodata)
+  trend.data <- unclass(trend.spatial(trend=trend.d, geodata = geodata))
   dimnames(coords) <- list(NULL, NULL)
   dimnames(trend.data) <- list(NULL, NULL)
   beta.size <- ncol(trend.data)
@@ -528,10 +528,19 @@
     else locations <- as.matrix(locations)
     ni <- nrow(locations)
     if(is.null(trend.l)) stop("trend.l needed for prediction")
-    if(inherits(trend.l, "formula") | inherits(trend.d, "formula")) {
-      if(!(inherits(trend.l, "formula")) | !(inherits(trend.d, "formula"))) stop("trend.l and trend.d must have similar specification")
+    if(inherits(trend.d, "formula") | inherits(trend.l, "formula")){
+      if((!inherits(trend.d, "formula")) | (!inherits(trend.l, "formula")))
+        stop("trend.d and trend.l must have similar specification\n")
     }
-    else if(trend.l != trend.d) stop("trend.l is different from trend.d")
+    else{
+      if((!is.null(class(trend.d)) && class(trend.d)=="trend.spatial") & (!is.null(class(trend.l)) && class(trend.l)=="trend.spatial")){
+        if(ncol(trend.d) != ncol(trend.l))
+          stop("trend.d and trend.l do not have the same number of columns")
+      }
+      else if(trend.d != trend.l) stop("trend.l is different from trend.d")
+    }
+    if(nrow(unclass(trend.spatial(trend=model$trend.l, geodata = list(coords = locations)))) != ni)
+      stop("binom.krige.bayes: number of points to be estimated is different of the number of trend locations")
     kb.results <- list(posterior = list(), predictive = list())
   }
   else {
@@ -626,17 +635,9 @@
   }
   ## ######### removing junk #########################################
   if(is.R()){
-    if(sigmasq.prior == "fixed"){
-      remove(list = c("QQt", "Dmat"))
-      if(beta.prior == "flat") remove("QQtinvtt")
-    }
     remove("ttvbetatt") 
   }
   else {
-    if(sigmasq.prior == "fixed"){
-      remove(list = c("QQt", "Dmat"), frame = sys.nframe())
-      if(beta.prior == "flat") remove("QQtinvtt", frame = sys.nframe())
-    }
     remove("ttvbetatt", frame = sys.nframe())
   }
   ##           
@@ -741,135 +742,135 @@
       ##
       d0mat <- loccoords(coords, locations)
       loc.coincide <- (apply(d0mat < 1e-10, 2, sum) == 1)
-      ##
-      ##------- calculating medians and uncertainty
-      ##
-      temp.med <- apply(temp.pred$mean, 1, median)
-      temp.unc <- sqrt(apply(temp.pred$mean, 1, var) + apply(temp.pred$var, 1, median))
-      not.accurate <- (!loc.coincide)
-      diffe <- pmixed(temp.med, temp.pred,df.model)-0.5
-      temp.med.new <- temp.med[not.accurate]+0.1*(temp.med[not.accurate]+0.1) # to get started
-      inv.sl <- rep(0,ni)
-      parms.temp <- list()
-      while(any(not.accurate)){
-        parms.temp$mean<-temp.pred$mean[not.accurate,,drop=FALSE]
-        parms.temp$var<-temp.pred$var[not.accurate,,drop=FALSE]
-        diffe.new <- pmixed(temp.med.new, parms.temp,df.model)-0.5
-        inv.sl[not.accurate] <- (temp.med.new-temp.med[not.accurate])/(diffe.new-diffe[not.accurate])
-        temp.med[not.accurate] <- ifelse(abs(diffe[not.accurate]) > abs(diffe.new), temp.med.new,temp.med[not.accurate])
-        diffe[not.accurate] <- ifelse(abs(diffe[not.accurate]) > abs(diffe.new), diffe.new, diffe[not.accurate])
-        not.accurate[not.accurate] <- ifelse(abs(diffe[not.accurate])>0.0005, TRUE, FALSE)
-        temp.med.new <- temp.med[not.accurate] - diffe[not.accurate]*inv.sl[not.accurate]
-      }
-      temp.upper <- qnorm(rep(0.975, ni), mean = temp.med, sd = temp.unc)
-      not.accurate <- (!loc.coincide)
-      diffe <- pmixed(temp.upper, temp.pred,df.model)-0.975
-      temp.upper.new <- temp.upper[not.accurate]+0.5*(temp.upper[not.accurate]+0.5) # to get started
-      inv.sl <- rep(0,ni)      
-      while(any(not.accurate)){
-        parms.temp$mean<-temp.pred$mean[not.accurate,,drop=FALSE]
-        parms.temp$var<-temp.pred$var[not.accurate,,drop=FALSE]
-        diffe.new <- pmixed(temp.upper.new, parms.temp,df.model)-0.975
-        inv.sl[not.accurate] <- (temp.upper.new-temp.upper[not.accurate])/(diffe.new-diffe[not.accurate])
-        temp.upper[not.accurate] <- ifelse(abs(diffe[not.accurate]) > abs(diffe.new), temp.upper.new,temp.upper[not.accurate])
-        diffe[not.accurate] <- ifelse(abs(diffe[not.accurate]) > abs(diffe.new), diffe.new, diffe[not.accurate])
-        not.accurate[not.accurate] <- ifelse(abs(diffe[not.accurate])>0.0005, TRUE, FALSE)
-        temp.upper.new <- temp.upper[not.accurate] - diffe[not.accurate]*inv.sl[not.accurate]
-      }      
-      temp.lower <- qnorm(rep(0.025, ni), mean = temp.med, sd = temp.unc)
-      not.accurate <- (!loc.coincide)
-      diffe <- pmixed(temp.lower, temp.pred,df.model)-0.025
-      temp.lower.new <- temp.lower[not.accurate]+0.5*(temp.lower[not.accurate]+0.5) # to get started
-      inv.sl <- rep(0,ni)
-      while(any(not.accurate)){
-        parms.temp$mean<-temp.pred$mean[not.accurate,,drop=FALSE]
-        parms.temp$var<-temp.pred$var[not.accurate,,drop=FALSE]
-        diffe.new <- pmixed(temp.lower.new,parms.temp,df.model)-0.025
-        inv.sl[not.accurate] <- (temp.lower.new-temp.lower[not.accurate])/(diffe.new-diffe[not.accurate])
-        temp.lower[not.accurate] <- ifelse(abs(diffe[not.accurate]) > abs(diffe.new), temp.lower.new,temp.lower[not.accurate])
-        diffe[not.accurate] <- ifelse(abs(diffe[not.accurate]) > abs(diffe.new), diffe.new, diffe[not.accurate])
-        not.accurate[not.accurate] <- ifelse(abs(diffe[not.accurate])>0.0005, TRUE, FALSE)
-        temp.lower.new <- temp.lower[not.accurate] - diffe[not.accurate]*inv.sl[not.accurate]
-      }
-      if(any(loc.coincide)){
-        temp.med[loc.coincide] <- apply(temp.pred$mean[loc.coincide,,drop=FALSE], 1, median)
-        temp.upper[loc.coincide] <- apply(temp.pred$mean[loc.coincide,,drop=FALSE], 1, quantile, probs = 0.975)
-        temp.lower[loc.coincide] <- apply(temp.pred$mean[loc.coincide,,drop=FALSE], 1, quantile, probs = 0.025) 
-      }
-      kb.results$predictive$median <- logit.inv(temp.med)
-      kb.results$predictive$uncertainty <- (logit.inv(temp.upper) - logit.inv(temp.lower))/4
-      ## calculating quantiles
-      if(is.null(quantile.estimator)) {
-        kb.results$predictive$quantiles <- as.data.frame(cbind(logit.inv(temp.lower), logit.inv(temp.med), logit.inv(temp.upper)))
-      }
-      if(is.numeric(quantile.estimator)) {
-        nmq <- length(quantile.estimator)
-        if(nmq > 1) {
-          temp.quan <- matrix(NA, ni, nmq)
-          dig <- rep(3, nmq)
-          for(i in 1:nmq) {
-            while(quantile.estimator[i] != round(quantile.estimator[i], digits = dig[i])) dig[i] <-dig[i] + 1
-            temp.quan[, i] <- qnorm(rep(quantile.estimator[i], ni), mean = temp.med, sd = temp.unc)
-            if(any(loc.coincide)) temp.quan[loc.coincide, i] <- temp.med[loc.coincide]
+        ##
+        ##------- calculating medians and uncertainty
+        ##
+        temp.med <- apply(temp.pred$mean, 1, median)
+        temp.unc <- sqrt(apply(temp.pred$mean, 1, var) + apply(temp.pred$var, 1, median))
+        not.accurate <- (!loc.coincide)
+        diffe <- pmixed(temp.med, temp.pred,df.model)-0.5
+        temp.med.new <- temp.med[not.accurate]+0.1*(temp.med[not.accurate]+0.1) # to get started
+        inv.sl <- rep(0,ni)
+        parms.temp <- list()
+        while(any(not.accurate)){
+          parms.temp$mean<-temp.pred$mean[not.accurate,,drop=FALSE]
+          parms.temp$var<-temp.pred$var[not.accurate,,drop=FALSE]
+          diffe.new <- pmixed(temp.med.new, parms.temp,df.model)-0.5
+          inv.sl[not.accurate] <- (temp.med.new-temp.med[not.accurate])/(diffe.new-diffe[not.accurate])
+          temp.med[not.accurate] <- ifelse(abs(diffe[not.accurate]) > abs(diffe.new), temp.med.new,temp.med[not.accurate])
+          diffe[not.accurate] <- ifelse(abs(diffe[not.accurate]) > abs(diffe.new), diffe.new, diffe[not.accurate])
+          not.accurate[not.accurate] <- ifelse(abs(diffe[not.accurate])>0.0005, TRUE, FALSE)
+          temp.med.new <- temp.med[not.accurate] - diffe[not.accurate]*inv.sl[not.accurate]
+        }
+        temp.upper <- qnorm(rep(0.975, ni), mean = temp.med, sd = temp.unc)
+        not.accurate <- (!loc.coincide)
+        diffe <- pmixed(temp.upper, temp.pred,df.model)-0.975
+        temp.upper.new <- temp.upper[not.accurate]+0.5*(temp.upper[not.accurate]+0.5) # to get started
+        inv.sl <- rep(0,ni)      
+        while(any(not.accurate)){
+          parms.temp$mean<-temp.pred$mean[not.accurate,,drop=FALSE]
+          parms.temp$var<-temp.pred$var[not.accurate,,drop=FALSE]
+          diffe.new <- pmixed(temp.upper.new, parms.temp,df.model)-0.975
+          inv.sl[not.accurate] <- (temp.upper.new-temp.upper[not.accurate])/(diffe.new-diffe[not.accurate])
+          temp.upper[not.accurate] <- ifelse(abs(diffe[not.accurate]) > abs(diffe.new), temp.upper.new,temp.upper[not.accurate])
+          diffe[not.accurate] <- ifelse(abs(diffe[not.accurate]) > abs(diffe.new), diffe.new, diffe[not.accurate])
+          not.accurate[not.accurate] <- ifelse(abs(diffe[not.accurate])>0.0005, TRUE, FALSE)
+          temp.upper.new <- temp.upper[not.accurate] - diffe[not.accurate]*inv.sl[not.accurate]
+        }      
+        temp.lower <- qnorm(rep(0.025, ni), mean = temp.med, sd = temp.unc)
+        not.accurate <- (!loc.coincide)
+        diffe <- pmixed(temp.lower, temp.pred,df.model)-0.025
+        temp.lower.new <- temp.lower[not.accurate]+0.5*(temp.lower[not.accurate]+0.5) # to get started
+        inv.sl <- rep(0,ni)
+        while(any(not.accurate)){
+          parms.temp$mean<-temp.pred$mean[not.accurate,,drop=FALSE]
+          parms.temp$var<-temp.pred$var[not.accurate,,drop=FALSE]
+          diffe.new <- pmixed(temp.lower.new,parms.temp,df.model)-0.025
+          inv.sl[not.accurate] <- (temp.lower.new-temp.lower[not.accurate])/(diffe.new-diffe[not.accurate])
+          temp.lower[not.accurate] <- ifelse(abs(diffe[not.accurate]) > abs(diffe.new), temp.lower.new,temp.lower[not.accurate])
+          diffe[not.accurate] <- ifelse(abs(diffe[not.accurate]) > abs(diffe.new), diffe.new, diffe[not.accurate])
+          not.accurate[not.accurate] <- ifelse(abs(diffe[not.accurate])>0.0005, TRUE, FALSE)
+          temp.lower.new <- temp.lower[not.accurate] - diffe[not.accurate]*inv.sl[not.accurate]
+        }
+        if(any(loc.coincide)){
+          temp.med[loc.coincide] <- apply(temp.pred$mean[loc.coincide,,drop=FALSE], 1, median)
+          temp.upper[loc.coincide] <- apply(temp.pred$mean[loc.coincide,,drop=FALSE], 1, quantile, probs = 0.975)
+          temp.lower[loc.coincide] <- apply(temp.pred$mean[loc.coincide,,drop=FALSE], 1, quantile, probs = 0.025) 
+        }
+        kb.results$predictive$median <- logit.inv(temp.med)
+        kb.results$predictive$uncertainty <- (logit.inv(temp.upper) - logit.inv(temp.lower))/4
+        ## calculating quantiles
+        if(is.null(quantile.estimator)) {
+          kb.results$predictive$quantiles <- as.data.frame(cbind(logit.inv(temp.lower), logit.inv(temp.med), logit.inv(temp.upper)))
+        }
+        if(is.numeric(quantile.estimator)) {
+          nmq <- length(quantile.estimator)
+          if(nmq > 1) {
+            temp.quan <- matrix(NA, ni, nmq)
+            dig <- rep(3, nmq)
+            for(i in 1:nmq) {
+              while(quantile.estimator[i] != round(quantile.estimator[i], digits = dig[i])) dig[i] <-dig[i] + 1
+              temp.quan[, i] <- qnorm(rep(quantile.estimator[i], ni), mean = temp.med, sd = temp.unc)
+              if(any(loc.coincide)) temp.quan[loc.coincide, i] <- temp.med[loc.coincide]
+              not.accurate <- (!loc.coincide)
+              diffe <- pmixed(temp.quan[,i], temp.pred,df.model)-quantile.estimator[i]
+              numb <- 0.1+abs(quantile.estimator[i]-0.5)
+              temp.quan.new <- temp.quan[not.accurate,i]+numb*(temp.quan[not.accurate,i]+numb) # to get started
+              inv.sl <- rep(0,ni)
+              while(any(not.accurate)) {
+                parms.temp$mean <-temp.pred$mean[not.accurate,,drop=FALSE]
+                parms.temp$var <-temp.pred$var[not.accurate,,drop=FALSE]
+                diffe.new <- pmixed(temp.quan.new,parms.temp,df.model)-quantile.estimator[i]
+                inv.sl[not.accurate] <- (temp.quan.new-temp.quan[not.accurate, i])/(diffe.new-diffe[not.accurate])
+                temp.quan[not.accurate, i] <- ifelse(abs(diffe[not.accurate]) > abs(diffe.new), temp.quan.new,temp.quan[not.accurate, i])
+                diffe[not.accurate] <- ifelse(abs(diffe[not.accurate]) > abs(diffe.new), diffe.new, diffe[not.accurate])
+                not.accurate[not.accurate] <- ifelse(abs(diffe[not.accurate])>0.0005, TRUE, FALSE)
+                temp.quan.new <- temp.quan[not.accurate, i] - diffe[not.accurate]*inv.sl[not.accurate]
+              }
+              if(any(loc.coincide)){
+                temp.quan[loc.coincide,i] <- apply(temp.pred$mean[loc.coincide,,drop=FALSE], 1, quantile, probs = quantile.estimator[i])
+              }
+            }
+            kb.results$predictive$quantiles <- as.data.frame(logit.inv(temp.quan))
+          }
+          else {
+            dig <- 3
+            while(quantile.estimator != round(quantile.estimator,digits = dig)) dig <- dig + 1
+            temp.quan <- qnorm(rep(quantile.estimator,ni), mean = temp.med, sd = temp.unc)
             not.accurate <- (!loc.coincide)
-            diffe <- pmixed(temp.quan[,i], temp.pred,df.model)-quantile.estimator[i]
-            numb <- 0.1+abs(quantile.estimator[i]-0.5)
-            temp.quan.new <- temp.quan[not.accurate,i]+numb*(temp.quan[not.accurate,i]+numb) # to get started
+            diffe <- pmixed(temp.quan, temp.pred,df.model)-quantile.estimator
+            numb <- 0.1+abs(quantile.estimator-0.5)
+            temp.quan.new <- temp.quan[not.accurate]+numb*(temp.quan[not.accurate]+numb) # to get started
             inv.sl <- rep(0,ni)
             while(any(not.accurate)) {
               parms.temp$mean <-temp.pred$mean[not.accurate,,drop=FALSE]
               parms.temp$var <-temp.pred$var[not.accurate,,drop=FALSE]
-              diffe.new <- pmixed(temp.quan.new,parms.temp,df.model)-quantile.estimator[i]
-              inv.sl[not.accurate] <- (temp.quan.new-temp.quan[not.accurate, i])/(diffe.new-diffe[not.accurate])
-              temp.quan[not.accurate, i] <- ifelse(abs(diffe[not.accurate]) > abs(diffe.new), temp.quan.new,temp.quan[not.accurate, i])
+              diffe.new <- pmixed(temp.quan.new,parms.temp,df.model)-quantile.estimator
+              inv.sl[not.accurate] <- (temp.quan.new-temp.quan[not.accurate])/(diffe.new-diffe[not.accurate])
+              temp.quan[not.accurate] <- ifelse(abs(diffe[not.accurate]) > abs(diffe.new), temp.quan.new,temp.quan[not.accurate])
               diffe[not.accurate] <- ifelse(abs(diffe[not.accurate]) > abs(diffe.new), diffe.new, diffe[not.accurate])
               not.accurate[not.accurate] <- ifelse(abs(diffe[not.accurate])>0.0005, TRUE, FALSE)
-              temp.quan.new <- temp.quan[not.accurate, i] - diffe[not.accurate]*inv.sl[not.accurate]
-            }            
-            if(any(loc.coincide)){
-              temp.quan[loc.coincide,i] <- apply(temp.pred$mean[loc.coincide,,drop=FALSE], 1, quantile, probs = quantile.estimator[i])
+              temp.quan.new <- temp.quan[not.accurate] - diffe[not.accurate]*inv.sl[not.accurate]
             }
+            if(any(loc.coincide)){
+              temp.quan[loc.coincide] <- apply(temp.pred$mean[loc.coincide,,drop=FALSE], 1, quantile, probs = quantile.estimator)
+            }
+            kb.results$predictive$quantiles <- as.vector(logit.inv(temp.quan))
           }
-          kb.results$predictive$quantiles <- as.data.frame(logit.inv(temp.quan))
         }
-        else {
-          dig <- 3
-          while(quantile.estimator != round(quantile.estimator,digits = dig)) dig <- dig + 1
-          temp.quan <- qnorm(rep(quantile.estimator,ni), mean = temp.med, sd = temp.unc)
-          not.accurate <- (!loc.coincide)
-          diffe <- pmixed(temp.quan, temp.pred,df.model)-quantile.estimator
-          numb <- 0.1+abs(quantile.estimator-0.5)
-          temp.quan.new <- temp.quan[not.accurate]+numb*(temp.quan[not.accurate]+numb) # to get started
-          inv.sl <- rep(0,ni)
-          while(any(not.accurate)) {
-            parms.temp$mean <-temp.pred$mean[not.accurate,,drop=FALSE]
-            parms.temp$var <-temp.pred$var[not.accurate,,drop=FALSE]
-            diffe.new <- pmixed(temp.quan.new,parms.temp,df.model)-quantile.estimator
-            inv.sl[not.accurate] <- (temp.quan.new-temp.quan[not.accurate])/(diffe.new-diffe[not.accurate])
-            temp.quan[not.accurate] <- ifelse(abs(diffe[not.accurate]) > abs(diffe.new), temp.quan.new,temp.quan[not.accurate])
-            diffe[not.accurate] <- ifelse(abs(diffe[not.accurate]) > abs(diffe.new), diffe.new, diffe[not.accurate])
-            not.accurate[not.accurate] <- ifelse(abs(diffe[not.accurate])>0.0005, TRUE, FALSE)
-            temp.quan.new <- temp.quan[not.accurate] - diffe[not.accurate]*inv.sl[not.accurate]
-          }
-          if(any(loc.coincide)){
-            temp.quan[loc.coincide] <- apply(temp.pred$mean[loc.coincide,,drop=FALSE], 1, quantile, probs = quantile.estimator)
-          }
-          kb.results$predictive$quantiles <- as.vector(logit.inv(temp.quan))
+        if(is.null(quantile.estimator)) {
+          qname <- rep(0, 3)
+          qname[1] <- paste("q0.025", sep = "")
+          qname[2] <- paste("q0.5", sep = "")
+          qname[3] <- paste("q0.975", sep = "")
+          names(kb.results$predictive$quantiles) <- qname
         }
-      }
-      if(is.null(quantile.estimator)) {
-        qname <- rep(0, 3)
-        qname[1] <- paste("q0.025", sep = "")
-        qname[2] <- paste("q0.5", sep = "")
-        qname[3] <- paste("q0.975", sep = "")
-        names(kb.results$predictive$quantiles) <- qname
-      }
-      if(is.numeric(quantile.estimator) && nmq > 1) {
-        qname <- rep(0, length(quantile.estimator))
-        for(i in 1:length(quantile.estimator))
-          qname[i] <- paste("q", 100 * quantile.estimator[i], sep = "")
-        names(kb.results$predictive$quantiles) <- qname
-      }
+        if(is.numeric(quantile.estimator) && nmq > 1) {
+          qname <- rep(0, length(quantile.estimator))
+          for(i in 1:length(quantile.estimator))
+            qname[i] <- paste("q", 100 * quantile.estimator[i], sep = "")
+          names(kb.results$predictive$quantiles) <- qname
+        }
       ##
       ## ------ probability estimators
       ##
@@ -936,7 +937,7 @@
         }
       }
       else {
-        if(sigmasq.prior == "fixed") {
+        if(sigmasq.prior == "fixed"){
           if(beta.prior != "fixed")
             kb.results$posterior$beta$sample <- array(apply(temp.post$beta.var,3,multgauss),dim=c(beta.size, n.sim))+temp.post$beta.mean
         }
