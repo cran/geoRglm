@@ -108,14 +108,14 @@ function(geodata, coords = geodata$coords, units.m = "default", obj.covariog, mo
   ##
   ## generating simulations from the model with parameters provided
   ##
-  if(messages.screen == T) cat(paste("covariog.env: generating", nsim, "simulations(", obj.covariog$n.data, 
+  if(messages.screen) cat(paste("covariog.env: generating", nsim, "simulations(", obj.covariog$n.data, 
           "points). \n"))
   simula <- pois.log.grf(obj.covariog$n.data, grid = as.matrix(coords), units.m = units.m, beta = beta, cov.model = cov.model, 
           cov.pars = cov.pars, nugget = nugget, kappa = kappa, nsim = nsim, messages.screen = FALSE)
   ##
   ## computing empirical covariograms for the simulations
   ##
-  if(messages.screen == T) cat(paste("covariog.env: computing the empirical covariogram for the", nsim, "simulations\n"))
+  if(messages.screen) cat(paste("covariog.env: computing the empirical covariogram for the", nsim, "simulations\n"))
   simula.result <- covariog(simula, bins.lim = obj.covariog$bins.lim, units.m = units.m, estimator.type = obj.covariog$estimator.type,
             pairs.min = min(obj.covariog$n))
   ##
@@ -192,7 +192,7 @@ function(n = NULL, grid, nx = round(sqrt(n)), ny = round(sqrt(n)), nsim = 1,
         xlims = c(0, 1), ylims = c(0, 1), units.m = "default", trend = "cte", beta = stop("beta parameter(s) needed"), 
         cov.model = c("exponential", "matern", "gaussian", "spherical", "cubic", "wave", "powered.exponential", "cauchy",
         "gneiting", "gneiting.matern", "pure.nugget"), cov.pars = stop("covariance parameters (sigmasq and phi) needed"), nugget = 0,
-        kappa = 0.5, method = c("cholesky", "svd", "eigen", "circular.embedding"), plotgrid = F, messages.screen = TRUE, ...)
+        kappa = 0.5, method = c("cholesky", "svd", "eigen", "circular.embedding"), messages.screen = TRUE, ...)
 {
 #
 # function for simulation of a Poisson log-Gaussian random field.

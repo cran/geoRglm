@@ -121,7 +121,7 @@
   if(prior$beta.prior == "normal"){
     beta.var.std <- prior$beta.var.std
     inv.beta.var.std <- solve.geoR(beta.var.std)
-    betares <- list(iv = solve.geoR(beta.var.std), ivm = drop(solve.geoR(beta.var.std, beta)),
+    betares <- list(iv = inv.beta.var.std, ivm = drop(solve.geoR(beta.var.std, beta)),
                     mivm = drop(crossprod(beta, solve.geoR(beta.var.std, beta))))
   }
   if(prior$sigmasq.prior == "fixed") sigmasq.fixed <- prior$sigmasq
@@ -290,16 +290,12 @@
     else
       loc.coincide <- NULL
     if(!is.null(loc.coincide)){
-      temp.f <- function(x, data){return(data[x < 1e-10])}
-      data.coincide <- apply(get("d0", envir=pred.env)[,loc.coincide, drop=FALSE],
-                             2,temp.f, data=data)
+      temp.f <- function(x, data){return(data[x < 1e-10,])}
+      data.coincide <- t(apply(get("d0", envir=pred.env)[,loc.coincide, drop=FALSE],
+                             2,temp.f, data=data))
     }
     else data.coincide <- NULL
-    n.loc.coincide <- length(loc.coincide)
-    assign("loc.coincide", loc.coincide, envir=pred.env)
-    assign("data.coincide", data.coincide, envir=pred.env)
-    remove(data.coincide, loc.coincide)
-    if(is.R()) gc(verbose=FALSE)
+    n.loc.coincide <- length(loc.coincide)    
   }
   ##
   ## Preparing prior information on beta and sigmasq
@@ -333,7 +329,7 @@
   yiRy <- diagquadraticformXAX(data, iR$lower.inverse, iR$diag.inverse)
   xiRy.x <- bilinearformXAY(X = trend.data, lowerA = iR$lower.inverse,
                             diagA = iR$diag.inverse, Y = cbind(data, trend.data))
-  if(!is.matrix(xiRy.x)) xiRy.x <- is.matrix(xiRy.x, 1, n.datasets)
+  if(!is.matrix(xiRy.x)) xiRy.x <- is.matrix(xiRy.x, 1, n.datasets+beta.size)
   xiRx <- xiRy.x[,-(1:n.datasets), drop = FALSE]
   ## 1. Computing parameters of posterior for beta
   ##
@@ -343,7 +339,7 @@
     inv.beta.var.std.post <- Inf
   }
   else{
-    inv.beta.var.std.post <- as.matrix(beta.info$iv + xiRx)
+    inv.beta.var.std.post <- as.matrix(beta.info$iv + xiRx)    
     beta.var.std.post <- solve.geoR(inv.beta.var.std.post)
     beta.post <- beta.var.std.post %*% (beta.info$ivm + xiRy.x[,(1:n.datasets)])
   }
@@ -364,7 +360,7 @@
       S2.post <- sigmasq.info$n0S0 + beta.info$mivm + yiRy - diagquadraticformXAX(beta.post, inv.beta.var.std.post[lower.tri(inv.beta.var.std.post)], diag(inv.beta.var.std.post))     
     }
     S2.post <- drop(S2.post/df.post)
-  }
+  } 
   ##
   ## Preparing output of the posterior distribution
   ##
@@ -389,14 +385,15 @@
     b <- bilinearformXAY(X = as.vector(cbind(data, trend.data)),
                          lowerA = as.vector(iR$lower.inverse),
                          diagA = as.vector(iR$diag.inverse), 
-                         Y = as.vector(v0))
+                         Y = as.vector(v0))    
     tv0ivdata <- t(b[(1:n.datasets), , drop=FALSE])
     b <- t(get("trend.loc", envir=pred.env)) - b[-(1:n.datasets), , drop=FALSE]
     ##
     if(beta.info$iv == Inf) kb$predictive$mean <- tv0ivdata + as.vector(crossprod(b, beta.post))
     else kb$predictive$mean <- tv0ivdata + crossprod(b, beta.post)
-    if((tausq.rel.fixed < 1e-12) & (!is.null(get("loc.coincide", envir=pred.env))))
-      kb$predictive$mean[get("loc.coincide", envir=pred.env)] <- get("data.coincide", envir=pred.env)
+    if((tausq.rel.fixed < 1e-12) & (!is.null(loc.coincide))){
+      kb$predictive$mean[loc.coincide,] <- data.coincide
+    }
     ##
     R.riRr.bVb <- 1 - diagquadraticformXAX(X = v0, lowerA = iR$lower.inverse, diagA = iR$diag.inverse)
     if(all(beta.info$iv != Inf))
@@ -404,8 +401,8 @@
                                                       diagA = diag(beta.var.std.post))
     ##
     kb$predictive$variance <- as.vector(tausq.rel.fixed + R.riRr.bVb)%*%t(S2.post)
-    if(((tausq.rel.fixed < 1e-12) ) & !is.null(get("loc.coincide", envir=pred.env)))
-      kb$predictive$variance[get("loc.coincide", envir=pred.env)] <- 0
+    if(((tausq.rel.fixed < 1e-12) ) & !is.null(loc.coincide))
+      kb$predictive$variance[loc.coincide] <- 0
     kb$predictive$variance[kb$predictive$variance < 1e-16] <- 0
     if(sigmasq.info$df.sigmasq != Inf)
       kb$predictive$variance <- (df.post/(df.post-2)) * kb$predictive$variance
@@ -431,12 +428,12 @@
     tmean <- kb$predictive$mean
     tv0ivdata <- NULL        ### se efter om den kan fjernes foer
     Dval <-  1.0 + tausq.rel
-    if((tausq.rel < 1e-12) & (!is.null(get("loc.coincide", envir=pred.env))))
-      tmean[get("loc.coincide", envir=pred.env),] <- get("data.coincide", envir=pred.env)
-    coincide.cond <- ((tausq.rel < 1e-12) & !is.null(get("loc.coincide", envir=pred.env)))
+    if((tausq.rel < 1e-12) & (!is.null(loc.coincide)))
+      tmean[loc.coincide,] <- data.coincide
+    coincide.cond <- ((tausq.rel < 1e-12) & !is.null(loc.coincide))
     nloc <- ni - n.loc.coincide
     if(coincide.cond){
-      ind.not.coincide <- -(get("loc.coincide", envir=pred.env))
+      ind.not.coincide <- -loc.coincide
       v0 <- v0[, ind.not.coincide, drop=FALSE]
       tmean <- tmean[ind.not.coincide,]
       b <- b[,ind.not.coincide, drop=FALSE]
@@ -449,14 +446,14 @@
     kb$predictive$simulations <- matrix(NA, nrow=ni, ncol=n.datasets)
     kb$predictive$simulations[ind.not.coincide,] <-
       cond.sim(env.loc = base.env, env.iter = base.env,
-               loc.coincide = get("loc.coincide", envir=pred.env),
+               loc.coincide = loc.coincide,
                tmean = tmean,
                Rinv = iR,
                mod = list(beta.size = beta.size, nloc = nloc, Nsims = n.datasets, n = n, Dval = Dval,
                  df.model = df.post, s2 = S2.post, cov.model.number = cov.model.number, phi = phi.fixed, kappa = kappa),
                vbetai = beta.var.std.post,
                fixed.sigmasq = (sigmasq.info$df.sigmasq == Inf))
-    if(coincide.cond) kb$predictive$simulations[get("loc.coincide", envir=pred.env),] <- rep(get("data.coincide", envir=pred.env), Nsims)
+    if(coincide.cond) kb$predictive$simulations[loc.coincide,] <- rep(data.coincide, Nsims)
   }
   if(!do.prediction) kb$predictive <- "no prediction locations provided"
   kb$.Random.seed <- seed
@@ -741,16 +738,8 @@ function(geodata, coords = geodata$coords, data = geodata$data, locations, krige
       if(all(loc.coincide))
         stop("locations is a subset of coords; prediction not performed")
       loc.coincide <- (1:ni)[loc.coincide]
-      temp.f <- function(x, data)
-        {
-          return(data[x < 1e-10])
-        }
-      data.coincide <- apply(d0mat[, loc.coincide, drop = FALSE], 2, temp.f, data = data)
     }
-    else {
-      data.coincide <- NULL
-      loc.coincide <- NULL
-    }
+    else loc.coincide <- NULL
     d0mat <- NULL
     if(messages.screen) cat("krige.conv.extnd: sampling from the predictive distribution (conditional simulations)\n")    
     if(signal)
@@ -767,10 +756,10 @@ function(geodata, coords = geodata$coords, data = geodata$data, locations, krige
       v0 <- v0[,ind.not.coincide, drop=FALSE]
       b <- b[,ind.not.coincide, drop=FALSE]
     }
-    else ind.not.coincide <- TRUE  
+    else ind.not.coincide <- TRUE
     kc.result$simulations <- matrix(0, nrow = ni, ncol = n.datasets)
     kc.result$simulations[ind.not.coincide,  ] <- cond.sim(env.loc = base.env, env.iter = base.env,
-                         loc.coincide = loc.coincide, tmean = kc.result$predict[ind.not.coincide,  , drop = FALSE], Rinv = invcov,
+                         loc.coincide = loc.coincide, tmean = kc.result$predict[ind.not.coincide, , drop = FALSE], Rinv = invcov,
                          mod = list(beta.size = beta.size, nloc = nloc,
                            Nsims = n.datasets, n = n, Dval = Dval,
                            df.model = NULL, s2 = sill.partial,
@@ -797,8 +786,7 @@ function(geodata, coords = geodata$coords, data = geodata$data, locations, krige
       if(messages.screen) cat("krige.conv.extnd: back-transformation done by sampling from the predictive distribution\n")
       ap.warn <- options()$warn
       options(warn = -1)
-      temp.sim <- matrix(rnorm(ni * n.back.moments, mean = rep(0, ni * n.back.moments),
-                               sd = sqrt(kc.result$krige.var)), nrow = ni)
+      temp.sim <- matrix(rnorm(ni * n.back.moments, mean = rep(0, ni * n.back.moments), sd = sqrt(kc.result$krige.var)), nrow = ni)
       temp.sim[(kc.result$krige.var == 0),  ] <- 0
       predict.transf <- as.double(rep(0, ni * n.datasets))
       krige.var.transf <- as.double(rep(0, ni * n.datasets))
@@ -818,11 +806,11 @@ function(geodata, coords = geodata$coords, data = geodata$data, locations, krige
       kc.result$krige.var <- array(krige.var.transf, dim = c(ni, n.datasets))
       if(!is.R()) remove(list = c("krige.var.transf"), frame = 2)
     }
-    if(lambda < 0) {
+    if(lambda < 0){
       cat("krige.conv.extnd: resulting distribution has no mean for lambda < 0 - back transformation not performed\n")
     }
     if(n.predictive > 0) {
-        kc.result$simulations <- BCinv.aux(kc.result$simulations,lambda=lambda)
+        kc.result$simulations <- BC.inv(kc.result$simulations,lambda)
     }
   }
   kc.result <- c(kc.result, list(message = message, call = cl))

@@ -476,7 +476,7 @@ function (mcmc.obj, trend = "cte",
     cat("pois.likfit.sim: likelihood maximisation using the function ")
     if(is.R()) cat("optim.\n") else cat("nlminb.\n")     
   }
-  npars <- beta.size + 2 + sum(unlist(ip) == FALSE)
+  npars <- beta.size + 2 + sum(!unlist(ip))
   if(lik.type == "standard"){
      if(is.R()){
         if(boxcox){

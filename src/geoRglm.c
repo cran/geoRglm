@@ -540,7 +540,7 @@ void mcmcrun4(Integer *n, Real *data, Real *units, Real *DD, Integer *no_linpar,
     if((i+1)==(*burn_in) && (*burn_in)>0){
       if(*nmphi > 1)
 	printf("burn-in =  %d is finished; Acc.-rate = %1.2f ; Acc-rate-phi = %1.2f \n",(*burn_in), (Real) acc/(*burn_in), 
-	       (Real) acc_phi/PRN);
+	       (Real) acc_phi/(*burn_in));
       else
 	printf("burn-in =  %d is finished; Acc.-rate = %1.2f \n",(*burn_in), (Real) acc/(*burn_in));
       acc =0 ; acc_phi =0 ;
@@ -757,7 +757,7 @@ void mcmcrun4boxcox(Integer *n, Real *data, Real *units, Real *DD, Integer *no_l
         if((i+1)==(*burn_in) && (*burn_in)>0){
 	  if(*nmphi > 1)
 	    printf("burn-in =  %d is finished; Acc.-rate = %1.2f ; Acc-rate-phi = %1.2f \n",(*burn_in), (Real) acc/(*burn_in), 
-		   (Real) acc_phi/PRN);
+		   (Real) acc_phi/(*burn_in));
 	  else
 	    printf("burn-in =  %d is finished; Acc.-rate = %1.2f \n",(*burn_in), (Real) acc/(*burn_in));
 	  acc =0 ; acc_phi =0 ;
@@ -1308,7 +1308,7 @@ void mcmcrun4binom(Integer *n, Real *data, Real *units, Real *DD, Integer *no_li
 	if((i+1)==(*burn_in) && (*burn_in)>0){
 	  if(*nmphi > 1)
 	    printf("burn-in =  %d is finished; Acc.-rate = %1.2f ; Acc-rate-phi = %1.2f \n",(*burn_in), (Real) acc/(*burn_in), 
-		   (Real) acc_phi/PRN);
+		   (Real) acc_phi/(*burn_in));
 	  else
 	    printf("burn-in =  %d is finished; Acc.-rate = %1.2f \n",(*burn_in), (Real) acc/(*burn_in));
 	  acc =0 ; acc_phi =0 ;
@@ -1479,7 +1479,7 @@ void mcmcrun5binom(Integer *n, Real *data, Real *units, Real *meanS, Real *DDvbe
 	if((i+1)==(*burn_in) && (*burn_in)>0){
 	  if(*nmphi > 1)
 	    printf("burn-in =  %d is finished; Acc.-rate = %1.2f ; Acc-rate-phi = %1.2f \n",(*burn_in), (Real) acc/(*burn_in), 
-		   (Real) acc_phi/PRN);
+		   (Real) acc_phi/(*burn_in));
 	  else
 	    printf("burn-in =  %d is finished; Acc.-rate = %1.2f \n",(*burn_in), (Real) acc/(*burn_in));
 	  acc =0 ; acc_phi =0 ;
@@ -1679,7 +1679,7 @@ void mcmcrun5boxcox(Integer *n, Real *data, Real *units, Real *meanS, Real *DDvb
 	if((i+1)==(*burn_in) && (*burn_in)>0){
 	  if(*nmphi > 1)
 	    printf("burn-in =  %d is finished; Acc.-rate = %1.2f ; Acc-rate-phi = %1.2f \n",(*burn_in), (Real) acc/(*burn_in), 
-		   (Real) acc_phi/PRN);
+		   (Real) acc_phi/(*burn_in));
 	  else
 	    printf("burn-in =  %d is finished; Acc.-rate = %1.2f \n",(*burn_in), (Real) acc/(*burn_in));
 	  acc =0 ; acc_phi =0 ;
@@ -1855,7 +1855,7 @@ void mcmcrun5(Integer *n, Real *data, Real *units, Real *meanS, Real *DDvbetaDD,
 	if((i+1)==(*burn_in) && (*burn_in)>0){
 	  if(*nmphi > 1)
 	    printf("burn-in =  %d is finished; Acc.-rate = %1.2f ; Acc-rate-phi = %1.2f \n",(*burn_in), (Real) acc/(*burn_in), 
-		   (Real) acc_phi/PRN);
+		   (Real) acc_phi/(*burn_in));
 	  else
 	    printf("burn-in =  %d is finished; Acc.-rate = %1.2f \n",(*burn_in), (Real) acc/(*burn_in));
 	  acc =0 ; acc_phi =0 ;

@@ -1,19 +1,18 @@
-"cut0.calc.mixed.gauss" <- 
-  function(value, parms)
-{
-  if(ncol(parms$var)==1) parms$var <- as.vector(parms$var)
-  if(any(parms$var == 0)) parms$var[parms$var == 0] <- 1e-12
-  temp <- array(pnorm((value - parms$mean)/sqrt(parms$var)), dim = c(nrow(parms$mean), ncol(parms$mean)))
-  temp2 <- apply(temp, 1, mean)
-  return(temp2)
-}
 
-"cut0.calc.mixed.t" <- 
+"pmixed" <- 
   function(value, parms, df)
 {
   if(ncol(parms$var)==1) parms$var <- as.vector(parms$var)
-  if(any(parms$var == 0)) parms$var[parms$var == 0] <- 1e-12
-  temp <- array(pt((value - parms$mean)/sqrt((parms$var * (df - 2))/df), df = df), dim = c(nrow(parms$mean), ncol(parms$mean)))
+  if(df == Inf){
+    sd.error <- sqrt(parms$var)
+    if(any(sd.error < 1e-12)) sd.error[sd.error < 1e-12] <- 1e-12
+    temp <- array(pnorm((value - parms$mean)/sd.error), dim = c(nrow(parms$mean), ncol(parms$mean)))
+  }
+  else{
+    sd.error <- sqrt(parms$var*(df - 2)/df)
+    if(any(sd.error < 1e-12)) sd.error[sd.error < 1e-12] <- 1e-12
+    temp <- array(pt((value - parms$mean)/sd.error, df = df), dim = c(nrow(parms$mean), ncol(parms$mean)))
+  }
   temp2 <- apply(temp, 1, mean)
   return(temp2)
 }
@@ -208,10 +207,16 @@
   return(res)
 }
 
-"BCinv.aux" <- 
+"BC.inv" <- 
   function(z,lambda)
 {
-  return(BCtransform(z,lambda = lambda, inverse=TRUE)$data)
+  return(BCtransform(z, lambda = lambda, inverse=TRUE)$data)
+}
+
+"logit.inv" <- 
+  function(z)
+{
+  return(exp(z)/(1+exp(z)))
 }
 
 "output.glm.control" <-
@@ -235,7 +240,7 @@
     if(is.numeric(quantile.estimator))
       if(any(quantile.estimator) < 0 | any(quantile.estimator) > 1)
         stop("quantiles indicators must be numbers in the interval [0,1]\n")
-    if(any(quantile.estimator == TRUE)) quantile.estimator <- c(0.025, 0.5, 0.975)
+    if(any(quantile.estimator)) quantile.estimator <- c(0.025, 0.5, 0.975)
     if(!inference) {
       warning("prediction not performed; quantile.estimator is set to NULL \n")
       quantile.estimator <- NULL

@@ -30,7 +30,7 @@
     }
     else{
       result <- .C("mcmcrun",
-                   COPY = c(F, T, T, F, F, F, F, F, F, F, F, F, T),
+                   COPY = c(FALSE, TRUE, TRUE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, TRUE),
                    as.integer(n),
                    z = z,
                    S = S,
@@ -66,7 +66,7 @@
     }
     else{
       result <- .C("mcmcrun2",
-                   COPY = c(F, T, T, F, F, F, F, F, F, F, F, F, F, T),
+                   COPY = c(FALSE, TRUE, TRUE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, TRUE),
                    as.integer(n),
                    z = z,
                    S = S,
@@ -177,7 +177,7 @@
     }
     else{
       result <- .C("mcmcrunboxcox",
-                   COPY = c(F, T, T, F, F, F, F, F, F, F, F, F, F, T),
+                   COPY = c(FALSE, TRUE, TRUE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, TRUE),
                    as.integer(n),
                    z = z,
                    S = S,
@@ -216,7 +216,7 @@
     }
     else{
       result <- .C("mcmcrun2boxcox",
-                   COPY = c(F, T, T, F, F, F, F, F, F, F, F, F, F, F, T),
+                   COPY = c(FALSE, TRUE, TRUE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, TRUE),
                    as.integer(n),
                    z = z,
                    S = S,
@@ -331,7 +331,7 @@
       stop("pois.log.krige: anisotropy parameters must be provided as a numeric vector with two elements: the rotation angle (in radians) and the anisotropy ratio (a number greater than 1)")
   ##
   if(inherits(trend.d, "formula") | inherits(trend.l, "formula")){
-    if((inherits(trend.d, "formula") == FALSE) | (inherits(trend.l, "formula") == FALSE))
+    if((!inherits(trend.d, "formula")) | (!inherits(trend.l, "formula")))
       stop("pois.log.krige: trend.d and trend.l must have similar specification")
   }
   else{
@@ -549,7 +549,7 @@ function(geodata, coords = geodata$coords, data = geodata$data, units.m = "defau
     kpl.result$krige.var <- apply(kpl.result$krige.var, 1, mean) + apply(kpl.result$predict, 1, var)
     kpl.result$mcmc.error <- sqrt(asympvar(kpl.result$predict)/ncol(kpl.result$predict))
     kpl.result$predict <- apply(kpl.result$predict, 1, mean)
-    ##if(krige$signal == FALSE)
+    ##if(!krige$signal)
       ##kpl.result$krige.var <- kpl.result$krige.var + kpl.result$predict    #### to be done properly sometime !
     if(beta.prior == "flat") {
       kpl.result$beta.est <- apply(kpl.result$beta, 1, mean)

@@ -6,11 +6,10 @@
 \alias{mcmc.bayes.conj.pois.log}
 \alias{mcmc.bayes.conj.pois.boxcox}
 \alias{krige.bayes.extnd}
-\alias{cut0.calc.mixed.gauss}
-\alias{cut0.calc.mixed.t}
+\alias{pmixed}
 \alias{phi.number}
 \alias{multgauss}
-\alias{BCinv.aux}
+\alias{BC.inv}
 
 %- Also NEED an `\alias' for EACH other topic documented here.
 
@@ -257,18 +256,18 @@ test.6.new <- pois.krige.bayes(y50,
                  prior = prior.6, mcmc.input = mcmc.6.new)
 }
 \testonly{
-y9 <- grf(grid = expand.grid(x = seq(1, 3, l = 3), y = seq(1, 3, l = 3)), cov.pars = c(0.1, 0.2))
-y9$data <- rpois(9, lambda = exp(y9$data+1))
-mcmc5 <- mcmc.control(S.scale = 0.075, thin = 1, n.iter=10)
-test5 <- pois.krige.bayes(y9, locations =
-t(cbind(c(2.5,3),c(-6050,-3270))), prior = list(phi.prior = "fixed", phi= 0.1), mcmc.input = mcmc5,
+y9 <- list(data=y50$data[c(1:4,10:14)],coords=y50$coords[c(1:4,10:14),],units.m=y50$units.m[c(1:4,10:14)])
+class(y9) <- "geodata"
+mcmc5 <- mcmc.control(S.scale = 0.1, thin = 1, n.iter=10)
+test5 <- pois.krige.bayes(y9, locations = t(cbind(c(2,1),c(-6050,-3270))),
+prior = list(phi.prior = "fixed", phi= 1), mcmc.input = mcmc5,
 output = list(threshold = 10, quantile = c(0.05,0.99))) 
-prior6 <- prior.glm.control(phi.prior = "uniform", phi.discrete = c(0.2,0.25), tausq.rel = 0.05) 
-mcmc6 <- list(S.scale = 0.075, thin = 1, n.iter=10, burn.in = 1, phi.scale = 1.2, phi.start = 0.5) 
+prior6 <- prior.glm.control(phi.prior = "uniform", phi.discrete = c(0.98,1.02), tausq.rel = 0.05)
+mcmc6 <- list(S.scale = 0.1, thin = 1, n.iter=10, burn.in = 1, phi.scale = 0.01, phi.start = 1) 
 test6 <- pois.krige.bayes(y9, locations =t(cbind(c(2.5,3.5),c(-60,-37))), prior = prior6, mcmc.input = mcmc6)
-run2.y9 <- pois.krige.bayes(y9, prior = list(phi.prior = "fixed", phi= 0.1), mcmc.input = mcmc5,
+run2.y9 <- pois.krige.bayes(y9, prior = list(phi.prior = "fixed", phi= 1), mcmc.input = mcmc5,
 model = list(trend.d ="1st", trend.l ="1st", aniso.pars =c(1,2), kappa
-=1), locations = t(cbind(c(2.5,3.5),c(-60,-37))) ,
+=1, lambda= 0.5), locations = t(cbind(c(2.5,3.5),c(-60,-37))) ,
 output = output.glm.control(sim.predict = TRUE)) }
 }
 \keyword{spatial}

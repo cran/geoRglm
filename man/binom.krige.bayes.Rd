@@ -5,6 +5,7 @@
 \alias{mcmc.bayes.conj.binom.logit}
 \alias{mcmc.binom.aux}
 \alias{mcmc.binom.logit}
+\alias{logit.inv}
 
 %- Also NEED an `\alias' for EACH other topic documented here.
 
@@ -225,15 +226,16 @@ mcmc.10 <- mcmc.control(S.scale = 0.09, n.iter = 1000, phi.scale = 0.2,
 prior.10 <- prior.glm.control(phi.discrete = seq(0.2,5,0.2))
 test.10 <- binom.krige.bayes(b50, locations=t(cbind(c(2.5,3.5),c(-60,-37))),
               prior = prior.10, mcmc.input = mcmc.10)
-\testonly{ b9 <- grf(grid = expand.grid(x = seq(1.1, 7.1, l = 3), y = seq(1.1, 7.1, l = 3)), cov.pars = c(0.1, 2))
+\testonly{
+b9 <- grf(grid = expand.grid(x = seq(1, 7, l = 3), y = seq(1, 7, l = 3)), cov.pars = c(0.1, 2))
 b9$units.m <- rep(4,9)
 b9$data <- rbinom(9, size = rep(4,9), prob = exp(b9$data)/(1+exp(b9$data)))
 ##
 b9.pr <- prior.glm.control(phi.discrete = c(2.5, 3))
 b9.mcmc <- mcmc.control(S.scale = 0.1, phi.scale = 1.4,n.iter=10,thin=1) 
-grid <- expand.grid(x = c(1, 7), y = c(1, 7)) 
+grid <- expand.grid(x = c(1, 7), y = c(1, 6))
 run.b9 <- binom.krige.bayes(b9, locations = grid, prior = b9.pr, mcmc.input = b9.mcmc) 
-image.kriging(locations = grid, values = run.b9$pred$median )
+image.kriging(locations = grid, values = run.b9$pred$median)
 pred.grid <- expand.grid(x = seq(0.0125, 0.9875, l = 2), y = seq(0.0125, 0.9875, l = 2))
 prior.b9 <- prior.glm.control(beta.prior = "normal", beta = 0, beta.var.std = 1, phi.prior = "exponential", phi = 2.5, phi.discrete = c(2.5,3), sigmasq.prior = "sc.inv.chisq", df.sigmasq = 5, sigmasq = 0.5) 
 mcmc.b9 <- mcmc.control(S.scale = 0.05, phi.scale = 1.5, thin = 1, burn.in = 1, n.iter=10)

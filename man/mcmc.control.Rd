@@ -6,7 +6,7 @@
 
 \description{
   This auxiliary function defines options for the MCMC-algorithm used by
-  \code{\link{pois.krige.bayes}}, \code{\link{binom.krige.bayes}} and \code{\link{krige.conv}}.
+  \code{\link{pois.krige.bayes}}, \code{\link{binom.krige.bayes}} and \code{\link{pois.log.krige}}.
 }
 
 \usage{
@@ -39,7 +39,7 @@ in the algorithm.  }
 }
 
 \seealso{\code{\link{pois.krige.bayes}}, \code{\link{binom.krige.bayes}}
-and \code{\link{krige.conv}}.  }
+and \code{\link{pois.log.krige}}.  }
 
 \keyword{spatial}
 
