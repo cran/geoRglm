@@ -86,9 +86,8 @@
     acc.rate[i,2] <- mcmc.output$acc.rate
   }
   if(messages.screen) cat(paste("MCMC performed: n.iter. = ", n.iter, "; thinning = ", thin, "; burn.in = ", burn.in, "\n"))
-  if(burn.in > 0) acc.rate <- as.data.frame(rbind(acc.rate.burn.in,acc.rate))
-  else acc.rate <- as.data.frame(acc.rate)
-  names(acc.rate) <- c("iter.numb", "Acc.rate")
+  if(burn.in > 0) acc.rate <- rbind(acc.rate.burn.in,acc.rate)
+  colnames(acc.rate) <- c("iter.numb", " Acc.rate")
 #########
   return(list(Sdata=Sdata, acc.rate=acc.rate))
 }
@@ -183,9 +182,8 @@
     acc.rate[i,2] <- mcmc.output$acc.rate
   }
   if(messages.screen) cat(paste("MCMC performed: n.iter. = ", n.iter, "; thinning = ", thin, "; burn.in = ", burn.in, "\n"))
-  if(burn.in > 0) acc.rate <- as.data.frame(rbind(acc.rate.burn.in,acc.rate))
-  else acc.rate <- as.data.frame(acc.rate)
-  names(acc.rate) <- c("iter.numb", "Acc.rate")
+  if(burn.in > 0) acc.rate <- rbind(acc.rate.burn.in,acc.rate)
+  colnames(acc.rate) <- c("iter.numb", " Acc.rate")
   remove("z")
 #########
   return(list(Sdata=Sdata, acc.rate=acc.rate))
@@ -334,17 +332,18 @@ function(geodata, coords = geodata$coords, data = geodata$data, units.m = "defau
   }
   coords <- as.matrix(coords)
   dimnames(coords) <- list(NULL, NULL)
-  ## Checking for 1D prediction 
-  if(length(unique(locations[,1])) == 1 | length(unique(locations[,2])) == 1)
-    krige1d <- TRUE
-  else krige1d <- FALSE
   ##
   if(is.null(locations)) {
     if(messages.screen) cat(paste("locations need to be specified for prediction; prediction not performed \n"))
   }
   else {
+    locations <- check.locations(locations)
     if(is.null(trend.l))
       stop("trend.l needed for prediction")
+    ## Checking for 1D prediction 
+    if(length(unique(locations[,1])) == 1 | length(unique(locations[,2])) == 1)
+      krige1d <- TRUE
+    else krige1d <- FALSE
   }
   trend.data <- unclass(trend.spatial(trend=trend.d, geodata = geodata))
   beta.size <- ncol(trend.data)

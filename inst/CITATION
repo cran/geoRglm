@@ -1,0 +1,15 @@
+citHeader("To cite the package geoRglm in publications use:")
+
+citEntry(entry="Article",
+         title = "geoRglm - a package for generalised linear spatial models",
+         author = personList(as.person("O.F. Christensen"), 
+                             as.person("P.J. Ribeiro Jr")),
+	journal = "R-NEWS",
+         year         = 2002,
+	volume       = 2,
+	number       = 2,
+	pages        = "26-28",
+         note         = "ISSN 1609-3631",
+         url          = "http://cran.R-project.org/doc/Rnews",
+         textVersion =   paste("Christensen, O.F. & Ribeiro Jr., P.J. (2002) geoRglm: A package for generalised linear spatial models. R-NEWS, Vol 2, No 2, 26-28.")
+)

@@ -47,7 +47,7 @@
   if(is.vector(trend)) beta.size <- 1
   else beta.size <- ncol(trend)
   n.sim <- floor(n.iter/thin)
-  ## remeber this rather odd coding for telling that S.start is from the prior !!!
+  ## remember this rather odd coding for telling that S.start is from the prior !!!
   if(any(mcmc.input$S.start=="random")) Sdata <- as.double(as.vector(c(rep(0, n.sim*n - 1),1)))
   else Sdata <- as.double(as.vector(c(S, rep(0, (n.sim - 1) * n))))
   result <-  .C("mcmcrun4",
@@ -78,12 +78,12 @@
 		acc.rate = rep(0,floor(n.iter/1000)+1), 
 		acc.rate.phi = rep(0,floor(n.iter/1000)+1), DUP=FALSE, PACKAGE = "geoRglm")[c("Sdata", "phi.sample","acc.rate","acc.rate.phi" )]
   attr(result$Sdata, "dim") <- c(n, n.sim)
-  if(nmphi>1) result$acc.rate <- as.data.frame(cbind(burn.in + seq(0,floor(n.iter/1000))*1000, result$acc.rate,result$acc.rate.phi))
-  else result$acc.rate <- as.data.frame(cbind(burn.in + seq(0,floor(n.iter/1000))*1000, result$acc.rate))
+  if(nmphi>1) result$acc.rate <- cbind(burn.in + seq(0,floor(n.iter/1000))*1000, result$acc.rate,result$acc.rate.phi)
+  else result$acc.rate <- cbind(burn.in + seq(0,floor(n.iter/1000))*1000, result$acc.rate)
   result$acc.rate.phi <- NULL
-  if(burn.in==0) result$acc.rate <- result$acc.rate[-1,]
-  if(nmphi>1) names(result$acc.rate) <- c("iter.numb", "Acc.rate", "Acc.rate.phi")
-  else names(result$acc.rate) <- c("iter.numb", "Acc.rate")
+  if(burn.in==0) result$acc.rate <- result$acc.rate[-1,,drop=FALSE]
+  if(nmphi>1) colnames(result$acc.rate) <- c("iter.numb", "Acc.rate", "Acc.rate.phi")
+  else colnames(result$acc.rate) <- c("iter.numb", "Acc.rate")
   if(messages.screen) cat(paste("MCMC performed: n.iter. = ", n.iter, "; thinning = ", thin, "; burn.in = ", burn.in, "\n"))
   return(result)
 }
@@ -168,12 +168,12 @@
 		acc.rate = rep(0,floor(n.iter/1000)+1), 
 		acc.rate.phi = rep(0,floor(n.iter/1000)+1), DUP=FALSE, PACKAGE = "geoRglm")[c("Sdata", "phi.sample","acc.rate","acc.rate.phi" )]   
   attr(result$Sdata, "dim") <- c(n, n.sim)
-  if(nmphi>1) result$acc.rate <- as.data.frame(cbind(burn.in + seq(0,floor(n.iter/1000))*1000, result$acc.rate,result$acc.rate.phi))
-  else result$acc.rate <- as.data.frame(cbind(burn.in + seq(0,floor(n.iter/1000))*1000, result$acc.rate))
+  if(nmphi>1) result$acc.rate <- cbind(burn.in + seq(0,floor(n.iter/1000))*1000, result$acc.rate,result$acc.rate.phi)
+  else result$acc.rate <- cbind(burn.in + seq(0,floor(n.iter/1000))*1000, result$acc.rate)
   result$acc.rate.phi <- NULL
-  if(burn.in==0) result$acc.rate <- result$acc.rate[-1,]
-  if(nmphi>1) names(result$acc.rate) <- c("iter.numb", "Acc.rate", "Acc.rate.phi")
-  else names(result$acc.rate) <- c("iter.numb", "Acc.rate")
+  if(burn.in==0) result$acc.rate <- result$acc.rate[-1,,drop=FALSE]
+  if(nmphi>1) colnames(result$acc.rate) <- c("iter.numb", "Acc.rate", "Acc.rate.phi")
+  else colnames(result$acc.rate) <- c("iter.numb", "Acc.rate")
   if(messages.screen) cat(paste("MCMC performed: n.iter. = ", n.iter, "; thinning = ", thin, "; burn.in = ", burn.in, "\n"))
   return(result)
 }
@@ -256,12 +256,12 @@
 		acc.rate = rep(0,floor(n.iter/1000)+1), 
 		acc.rate.phi = rep(0,floor(n.iter/1000)+1), DUP=FALSE, PACKAGE = "geoRglm")[c("Sdata", "phi.sample","acc.rate","acc.rate.phi" )]
   attr(result$Sdata, "dim") <- c(n, n.sim) 
-  if(nmphi>1) result$acc.rate <- as.data.frame(cbind(burn.in + seq(0,floor(n.iter/1000))*1000, result$acc.rate,result$acc.rate.phi))
-  else result$acc.rate <- as.data.frame(cbind(burn.in + seq(0,floor(n.iter/1000))*1000, result$acc.rate))
+  if(nmphi>1) result$acc.rate <- cbind(burn.in + seq(0,floor(n.iter/1000))*1000, result$acc.rate,result$acc.rate.phi)
+  else result$acc.rate <- cbind(burn.in + seq(0,floor(n.iter/1000))*1000, result$acc.rate)
   result$acc.rate.phi <- NULL
-  if(burn.in==0) result$acc.rate <- result$acc.rate[-1,]
-  if(nmphi>1) names(result$acc.rate) <- c("iter.numb", "Acc.rate", "Acc.rate.phi")
-  else names(result$acc.rate) <- c("iter.numb", "Acc.rate")
+  if(burn.in==0) result$acc.rate <- result$acc.rate[-1,,drop=FALSE]
+  if(nmphi>1) colnames(result$acc.rate) <- c("iter.numb", "Acc.rate", "Acc.rate.phi")
+  else colnames(result$acc.rate) <- c("iter.numb", "Acc.rate")
   if(messages.screen) cat(paste("MCMC performed: n.iter. = ", n.iter, "; thinning = ", thin, "; burn.in = ", burn.in, "\n"))
   return(result)
 }
@@ -342,15 +342,15 @@
                 as.double(lambda),
                 Sdata = Sdata,
                 phi.sample = as.double(rep(phi, n.sim)), 
-		acc.rate = rep(0,floor(n.iter/1000)+1), 
+		acc.rate = rep(0,floor(n.iter/1000)+1),
 		acc.rate.phi = rep(0,floor(n.iter/1000)+1), DUP=FALSE, PACKAGE = "geoRglm")[c("Sdata", "phi.sample","acc.rate","acc.rate.phi" )]
   attr(result$Sdata, "dim") <- c(n, n.sim)
-  if(nmphi>1) result$acc.rate <- as.data.frame(cbind(burn.in + seq(0,floor(n.iter/1000))*1000, result$acc.rate,result$acc.rate.phi))
-  else result$acc.rate <- as.data.frame(cbind(burn.in + seq(0,floor(n.iter/1000))*1000, result$acc.rate))
+  if(nmphi>1) result$acc.rate <- cbind(burn.in + seq(0,floor(n.iter/1000))*1000, result$acc.rate,result$acc.rate.phi)
+  else result$acc.rate <- cbind(burn.in + seq(0,floor(n.iter/1000))*1000, result$acc.rate)
   result$acc.rate.phi <- NULL
-  if(burn.in==0) result$acc.rate <- result$acc.rate[-1,]
-  if(nmphi>1) names(result$acc.rate) <- c("iter.numb", "Acc.rate", "Acc.rate.phi")
-  else names(result$acc.rate) <- c("iter.numb", "Acc.rate")
+  if(burn.in==0) result$acc.rate <- result$acc.rate[-1,,drop=FALSE]
+  if(nmphi>1) colnames(result$acc.rate) <- c("iter.numb", "Acc.rate", "Acc.rate.phi")
+  else colnames(result$acc.rate) <- c("iter.numb", "Acc.rate")
   if(messages.screen) cat(paste("MCMC performed: n.iter. = ", n.iter, "; thinning = ", thin, "; burn.in = ", burn.in, "\n"))
   return(result)
 }
@@ -360,6 +360,7 @@
   n.sim <- ncol(S)
   ni <- nrow(locations)
   do.prediction <- ifelse(all(locations == "no"), FALSE, TRUE)
+  locations <- check.locations(locations)
   beta.size <- ncol(unclass(trend.spatial(trend=model$trend.d, geodata = list(coords=coords))))
   lambda <- model$lambda
   ##
@@ -678,16 +679,9 @@
   ## checking prediction locations
   ##
   if((inference) & (do.prediction)){
+    locations <- check.locations(locations)
     ## Checking the consistency between coords, locations, and trends
     trend.l <- model$trend.l
-    if(is.vector(locations)) {
-      if(length(locations) == 2) {
-        locations <- t(as.matrix(locations))
-        warning("only one location to be predicted (in two-dimensional space) \n")
-      }
-      else locations <- as.matrix(cbind(locations, 0))
-    }
-    else locations <- as.matrix(locations)
     ni <- nrow(locations)
     ## Checking for 1D prediction 
     if(length(unique(locations[,1])) == 1 | length(unique(locations[,2])) == 1)
@@ -850,7 +844,7 @@
     }
     else {
       kb.results$predictive <- "no locations to perform prediction were provided"
-      if(messages.screen) cat(paste("Only Bayesian estimation of model parameters "))
+      if(messages.screen) cat("Only Bayesian estimation of model parameters \n")
     }
     ##
     ##----- calculating posterior summaries ----------------##

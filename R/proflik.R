@@ -6,7 +6,6 @@
   ##
   ## Checking input
   ##
-  geodata <- list(coords=mcmc.obj$coords)
   call.fc <- match.call()
   temp.list <- list()
   if(missing(messages))
@@ -29,10 +28,10 @@
     temp.list$z <- mcmc.obj$S 
     est.boxcox <- FALSE
   }
-  if(is.null(aniso.pars)) coords <- as.matrix(mcmc.obj$coords)
-  else coords <- coords.aniso(coords = as.matrix(mcmc.obj$coords), aniso.pars = aniso.pars)
+  if(is.null(aniso.pars)) coords <- as.matrix(mcmc.obj$geodata$coords)
+  else coords <- coords.aniso(coords = as.matrix(mcmc.obj$geodata$coords), aniso.pars = aniso.pars)
   temp.list$xmat <- obj.likfit.glsm$trend.matrix
-  temp.list$xmat <- unclass(trend.spatial(trend=obj.likfit.glsm$trend, geodata = geodata))
+  temp.list$xmat <- unclass(trend.spatial(trend=obj.likfit.glsm$trend, geodata = mcmc.obj$geodata))
   temp.list$beta.size <- dim(temp.list$xmat)[2]
   temp.list$coords <- coords
   temp.list$cov.model <- cov.model

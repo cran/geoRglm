@@ -32,7 +32,8 @@ binom.krige.bayes(geodata, coords = geodata$coords, data = geodata$data,
   \item{units.m}{\eqn{n}-dimensional vector giving the number of trials for the data. 
     By default (\code{units.m = "default"}),
     it takes \code{geodata$units.m} in case this exist and else a vector of 1's.  }
-  \item{locations}{an \eqn{N \times 2}{N x 2} matrix or data frame with the 2-D
+  \item{locations}{an \eqn{N \times 2}{N x 2} matrix or data frame, or a
+    list with the 2-D
     coordinates of the \eqn{N} prediction locations.  }
   \item{model}{a list defining the components of the model. It can take an output from \code{model.glm.control} or
     a list with elements as for the arguments in \code{model.glm.control}.
@@ -209,7 +210,7 @@ the guess is too low, it is adjusted upwards, and vise verse.
 }
 
 \author{
-  Ole F. Christensen \email{olefc@birc.dk}, \cr
+  Ole F. Christensen \email{olefc@birc.au.dk}, \cr
   Paulo J. Ribeiro Jr. \email{Paulo.Ribeiro@est.ufpr.br}.
 }
 

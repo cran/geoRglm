@@ -120,14 +120,14 @@ Summary and print methods for summarising and printing the output also exist.
 
 \references{
   Christensen, O. F. (2004). Monte Carlo maximum likelihood in model-based geostatistics.
-  Journal of computational and graphical statistics \bold{13} (to appear).
+  Journal of computational and graphical statistics \bold{13} 702-718.
    
   Further information about \bold{geoRglm} can be found at:\cr
   \url{http://www.maths.lancs.ac.uk/~christen/geoRglm}.
 }
 
 \author{
-  Ole F. Christensen \email{olef.birc.dk}, \cr
+  Ole F. Christensen \email{olef.birc.au.dk}, \cr
   Paulo J. Ribeiro Jr. \email{Paulo.Ribeiro@est.ufpr.br}.
 }
 

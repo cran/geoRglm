@@ -30,7 +30,7 @@
 
 
 \author{
-  Ole F. Christensen \email{olefc@birc.dk}, \cr
+  Ole F. Christensen \email{olefc@birc.au.dk}, \cr
   Paulo J. Ribeiro Jr. \email{Paulo.Ribeiro@est.ufpr.br}.
 }
 

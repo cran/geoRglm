@@ -24,12 +24,13 @@
   if(missing(locations))
     stop("locations need to be specified for prediction; prediction not performed")
   else {
+    locations <- check.locations(locations)
     if(is.null(trend.l))
       stop("trend.l needed for prediction")
-  } 
-  if(length(unique(locations[,1])) == 1 | length(unique(locations[,2])) == 1)
-    krige1d <- TRUE
-  else krige1d <- FALSE
+    if(length(unique(locations[,1])) == 1 | length(unique(locations[,2])) == 1)
+      krige1d <- TRUE
+    else krige1d <- FALSE
+  }
   ##
   beta.size <- length(beta)
   if(beta.size > 1) beta.names <- paste("beta", (0:(beta.size-1)), sep="")

@@ -36,7 +36,8 @@ binom.krige(geodata, coords = geodata$coords, data = geodata$data,
     element \code{data} of the argument \code{geodata}.  } 
   \item{units.m}{ \eqn{n}-dimensional vector of observation times for the data. By default (\code{units.m = "default"}), 
     it takes \code{geodata$units.m} in case this exist and else a vector of 1's.  }
-  \item{locations}{an \eqn{N \times 2}{N x 2} matrix or data frame with the 2-D
+  \item{locations}{an \eqn{N \times 2}{N x 2} matrix or data frame, or a
+    list with the 2-D
     coordinates of the \eqn{N} prediction locations.  }
   \item{borders}{optional. If a two column matrix defining a polygon is
     provided the prediction is performed only at locations inside this
@@ -91,7 +92,7 @@ logit function \eqn{g^{-1}}{g^{-1}}.
     \eqn{n.sim} being the number of MCMC simulations. containing \eqn{g^{-1}(S_i)}. Each column 
     corresponds to a conditional simulation of the conditional distribution of \eqn{g^{-1}(S_i)} at the data locations. 
     Only returned when no prediction locations are given.  }
-  \item{acc.rate}{a data frame with acceptance rates from MCMC.
+  \item{acc.rate}{matrix with acceptance rates from MCMC.
     Only returned when no prediction locations are given.  }
   \item{simulations}{an \eqn{ni \times n.sim}{ni x n.sim} matrix where \eqn{ni} is the number of prediction locations and \eqn{n.sim}
   is the number of MCMC simulations. Each column 
@@ -112,7 +113,7 @@ Further information about \bold{geoRglm} can be found at:\cr
 }
 
 \author{
-  Ole F. Christensen \email{olefc@birc.dk}, \cr
+  Ole F. Christensen \email{olefc@birc.au.dk}, \cr
   Paulo J. Ribeiro Jr. \email{Paulo.Ribeiro@est.ufpr.br}.
 }
 

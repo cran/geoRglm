@@ -18,7 +18,8 @@ micro.scale=NULL, dist.epsilon= 1e-10, output)
 \arguments{
   \item{mcmc.output}{an output file from the function
     \code{\link{glsm.mcmc}}.  }
-  \item{locations}{an \eqn{N \times 2}{N x 2} matrix or data frame with the 2-D
+  \item{locations}{an \eqn{N \times 2}{N x 2} matrix or data frame, or a
+    list with the 2-D
     coordinates of the \eqn{N} prediction locations.  }
   \item{borders}{optional. If a two column matrix defining a polygon is
     provided the prediction is performed only at locations inside this
@@ -76,7 +77,7 @@ micro.scale=NULL, dist.epsilon= 1e-10, output)
 }
 
 \author{
-  Ole F. Christensen \email{olefc@birc.dk}, \cr
+  Ole F. Christensen \email{olefc@birc.au.dk}, \cr
   Paulo J. Ribeiro Jr. \email{Paulo.Ribeiro@est.ufpr.br}.
 }
 

@@ -45,11 +45,11 @@
       logJ <- apply(log(S*lambda+1),2,sum)*(lambda-1)/lambda
       mu <- (S*lambda+1)^(1/lambda)
     }
-    return(list(family=mcmc.output$model$family, link=mcmc.output$model$link, mu = mu, trend = mcmc.output$model$trend, coords = mcmc.output$geodata$coords,
+    return(list(family=mcmc.output$model$family, link=mcmc.output$model$link, mu = mu, geodata = mcmc.output$geodata, trend = mcmc.output$model$trend,
                 aniso.pars = mcmc.output$model$aniso.pars, lambda = lambda, log.f.sim = log.f.sim + logJ))
   }
   else{
-    return(list(family=mcmc.output$model$family, link=mcmc.output$model$link, S = S, coords = mcmc.output$geodata$coords, trend = mcmc.output$model$trend,
+    return(list(family=mcmc.output$model$family, link=mcmc.output$model$link, S = S, geodata = mcmc.output$geodata, trend = mcmc.output$model$trend,
                 aniso.pars = mcmc.output$model$aniso.pars, lambda = lambda, log.f.sim = log.f.sim))
   }
 }
@@ -239,7 +239,6 @@
   ##
   ## Checking input
   ##
-  geodata <- list(coords=mcmc.obj$coords)
   call.fc <- match.call()
   temp.list <- list()
   if(missing(messages))
@@ -274,20 +273,20 @@
     temp.list$z <- mcmc.obj$S 
     another.boxcox <- FALSE
   }
-  if (n != nrow(mcmc.obj$coords)) stop("Number of locations does not match with number of data")
+  coords <- mcmc.obj$geodata$coords
+  if (n != nrow(coords)) stop("Number of locations does not match with number of data")
   if(!is.null(aniso.pars)){
     if(length(aniso.pars) != 2 | !is.numeric(aniso.pars))
       stop("anisotropy parameters must be a vector with two elements: rotation angle (in radians) and anisotropy ratio (a number > 1)")
-    coords <- coords.aniso(coords = as.matrix(mcmc.obj$coords), aniso.pars = aniso.pars)
+    coords <- coords.aniso(coords = coords, aniso.pars = aniso.pars)
   }
   else{
     if(!is.null(mcmc.obj$aniso.pars)){
-      coords <- coords.aniso(coords = as.matrix(mcmc.obj$coords), aniso.pars = mcmc.obj$aniso.pars)
+      coords <- coords.aniso(coords = coords, aniso.pars = mcmc.obj$aniso.pars)
       aniso.pars <- mcmc.obj$aniso.pars
     }
-    else coords <- as.matrix(mcmc.obj$coords)
   }
-  temp.list$xmat <- unclass(trend.spatial(trend = trend, geodata=geodata))
+  temp.list$xmat <- unclass(trend.spatial(trend = trend, geodata=mcmc.obj$geodata))
   beta.size <- temp.list$beta.size <- dim(temp.list$xmat)[2]
   ##
   temp.list$coords <- coords

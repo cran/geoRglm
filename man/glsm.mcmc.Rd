@@ -103,7 +103,7 @@ also recommend that the user to studies plots of the autocorrelations.
     \eqn{n.sim} being the number of MCMC simulations. containing \eqn{S_i}. Each column 
     corresponds to a conditional simulation of the conditional distribution of \eqn{S_i} at the data locations. 
     }
-  \item{acc.rate}{a data frame with acceptance rates from MCMC.
+  \item{acc.rate}{matrix with acceptance rates from MCMC.
     Only returned when no prediction locations are given.  }
   \item{model}{Information about the model parameters, link function and
     error distribution family used.  }
@@ -123,7 +123,7 @@ also recommend that the user to studies plots of the autocorrelations.
 }
 
 \author{
-  Ole F. Christensen \email{olefc@birc.dk}, \cr
+  Ole F. Christensen \email{olefc@birc.au.dk}, \cr
   Paulo J. Ribeiro Jr. \email{Paulo.Ribeiro@est.ufpr.br}.
 }
 

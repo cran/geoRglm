@@ -1,10 +1,10 @@
 "geoRglmdefunct" <- function()
 {
   cat("\n")
-  cat("The following functions are no longer used in geoRglm:")
-  cat("---------------------------------------------------")
-  cat(" pois.log.krige: use pois.krige instead")
-  cat(" y50: use p50 instead")
+  cat("The following functions are no longer used in geoRglm: \n")
+  cat("---------------------------------------------------:\n")
+  cat(" pois.log.krige: use pois.krige instead\n")
+  cat(" y50: use p50 instead\n")
   cat("\n")
 }
 

@@ -108,8 +108,7 @@ function(geodata, coords = geodata$coords, units.m = "default", obj.covariog, mo
   ##
   ## generating simulations from the model with parameters provided
   ##
-  if(messages.screen) cat(paste("covariog.env: generating", nsim, "simulations(", obj.covariog$n.data, 
-          "points). \n"))
+  if(messages.screen) cat(paste("covariog.env: generating", nsim, "simulations(", obj.covariog$n.data,  "points). \n"))
   simula <- pois.log.grf(obj.covariog$n.data, grid = as.matrix(coords), units.m = units.m, beta = beta, cov.model = cov.model, 
           cov.pars = cov.pars, nugget = nugget, kappa = kappa, nsim = nsim, messages = FALSE)
   ##

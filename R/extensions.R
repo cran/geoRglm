@@ -201,18 +201,7 @@
     stop("krige.bayes.extnd: size of beta incompatible with the trend model (covariates)")
   ##
   if(do.prediction) {
-    ##
-    ## Checking the spatial dimension for prediction
-    ##  1 (data/prediction on a transect) or 2 (data/prediction on an area)
-    ##
-    if(is.vector(locations)) {
-      if(length(locations) == 2) {
-        locations <- t(as.matrix(locations))
-        warning("krige.bayes.extnd: FUNCTION IS CONSIDERING YOU HAVE ENTERED WITH 1 LOCATION TO BE PREDICTED IN A 2-DIM. REGION\n")
-      }
-      else locations <- as.matrix(cbind(locations, 0))
-    }
-    else locations <- as.matrix(locations)
+    locations <- check.locations(locations)
     ##
     ## Checking trend specification
     ##
@@ -570,17 +559,7 @@ function(geodata, coords = geodata$coords, data = geodata$data, locations, krige
     warning("vector of coordinates: one spatial dimension assumed")
   }
   coords <- as.matrix(coords)
-  if(is.vector(locations)) {
-    if(length(locations) == 2) {
-      locations <- t(as.matrix(locations))
-      warning("assuming that there is 1 prediction point")
-    }
-    else {
-      warning("vector of locations: one spatial dimension assumed")
-      locations <- as.matrix(cbind(locations, 0))
-    }
-  }
-  else locations <- as.matrix(locations)
+  locations <- check.locations(locations)
   dimnames(coords) <- list(NULL, NULL)
   dimnames(locations) <- list(NULL, NULL)
   ##
