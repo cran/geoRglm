@@ -24,7 +24,12 @@ output.glm.control(sim.posterior, sim.predict, keep.mcmc.sim, quantile,
     locations are provided in the argument \code{locations}. Default is \code{sim.predict = FALSE}.   }
   \item{keep.mcmc.sim}{logical. Indicates
     whether or not the MCMC-sample from the posterior distribution of
-    \eqn{\exp(S)}{exp(S)} should be returned. Default is
+    the signal should be returned. Here the signal
+     is the inverse link function of the random effect
+     \eqn{g^{-1}(S)}{g^{-1}(S)}, which equals
+    \eqn{\exp(S)}{exp(S)} for the Poison model with \eqn{\log}{log}-link,
+    \eqn{(\lambda S +1)^{\lambda}}{(lambda S + 1)^{lambda}} for the Poison model with Box-Cox-link
+    or \eqn{\exp(S)/(1+\exp(S))}{exp(S)/(1+exp(S))} for the binomial model with logit-link. Default is
     \code{keep.mcmc.sim = TRUE}.  }
   \item{quantile}{indicates whether quantiles of the
     simulations from the

@@ -9,8 +9,18 @@
 #define Integer long
 #define Real double
 
+
+/* OFC: Updated 15 August 2002 */
+
+
 Real geoRmatern(Real uphi, Real kappa)
 {   
+  
+  /* 
+     WARNING: THIS FUNCTION IS COPIED IN geoRglmm
+     NOTIFY OLE ABOUT ANY CHANGE 
+  */
+  
   Real ans,cte;
   
   if (uphi==0) return 1;
@@ -18,7 +28,7 @@ Real geoRmatern(Real uphi, Real kappa)
     if (kappa==0.5) 
       ans = exp(-uphi);
     else {
-      cte = pow(2, (-(kappa-1)))/gammafn(kappa); 
+      cte = R_pow(2, (-(kappa-1)))/gammafn(kappa); 
       ans = cte * R_pow(uphi, kappa) * bessel_k(uphi,kappa,1); 
     }
   }
@@ -29,24 +39,28 @@ Real geoRmatern(Real uphi, Real kappa)
 Real corrfctvalue(Real phi, Real kappa, Real h, Integer cornr)
 {
   
-  /* Correlation functions implemented and their numbers
+  /* 
+     WARNING: THIS FUNCTION IS COPIED IN geoRglmm
+     NOTIFY OLE ABOUT ANY CHANGE 
      
-  1: PURE NUGGET
-  2: EXPONENTIAL
-  3: SPHERICAL
-  4: GAUSSIAN
-  5: WAVE (hole effect)
-  6: CUBIC
-  7: POWER
-  8: POWERED EXPONENTIAL
-  9: CAUCHY
-  10: GNEITING
-  11: CIRCULAR
-  12: MATERN
-  13: GNEITING-MATERN (NOT YET IMPLEMENTED)
-  
-  WARNING: codes above must be the same as in the geoR/geoS function
-  "cor.number"
+     Correlation functions implemented and their numbers
+     
+     1: PURE NUGGET
+     2: EXPONENTIAL
+     3: SPHERICAL
+     4: GAUSSIAN
+     5: WAVE (hole effect)
+     6: CUBIC
+     7: POWER
+     8: POWERED EXPONENTIAL
+     9: CAUCHY
+     10: GNEITING
+     11: CIRCULAR
+     12: MATERN
+     13: GNEITING-MATERN (NOT YET IMPLEMENTED)
+     
+     WARNING: codes above must be the same as in the geoR/geoS function
+     "cor.number"
   */
   
   Real hphi, hphi2, hphi4;
@@ -81,7 +95,8 @@ Real corrfctvalue(Real phi, Real kappa, Real h, Integer cornr)
       else
 	return 0 ;
       break;
-    case 7: /* power: care here this is a variogram value (not correlation) */
+    case 7: /* power: for the power variogram, the correlation function does not exists 
+	     The value returned here corresponds to the variogram */
       return  R_pow(h, phi) ;
       break;
     case 8: /* powered.exponential */
@@ -92,7 +107,7 @@ Real corrfctvalue(Real phi, Real kappa, Real h, Integer cornr)
       break;
     case 10:  /* gneiting */
       hphi4 = 1 - hphi;
-      if (hphi4 > 0) hphi4 = pow(hphi4, 8);
+      if (hphi4 > 0) hphi4 = R_pow(hphi4, 8);
       else hphi4 = 0 ;
       hphi2 = hphi * hphi ;
       return (1 + 8 * hphi + 25 * hphi2 + 32 * (hphi2 * hphi)) * hphi4 ;
@@ -117,4 +132,5 @@ Real corrfctvalue(Real phi, Real kappa, Real h, Integer cornr)
     }
   }
 }
+
 

@@ -410,11 +410,10 @@
                                                       diagA = diag(beta.var.std.post))
     ##
     kb$predictive$variance <- as.vector(tausq.rel.fixed + R.riRr.bVb)%*%t(S2.post)
-    if(((tausq.rel.fixed < 1e-12) ) & !is.null(loc.coincide))
-      kb$predictive$variance[loc.coincide] <- 0
+    if(((tausq.rel.fixed < 1e-12) ) & !is.null(loc.coincide)) kb$predictive$variance[loc.coincide] <- 0
     kb$predictive$variance[kb$predictive$variance < 1e-16] <- 0
     if(sigmasq.info$df.sigmasq != Inf)
-      kb$predictive$variance <- (df.post/(df.post-2)) * kb$predictive$variance
+      kb$predictive$variance <- (df.post/(df.post-2))*kb$predictive$variance
     kb$predictive$distribution <- ifelse(prior$sigmasq.prior == "fixed", "normal", "t")
     remove("R.riRr.bVb","yiRy","xiRy.x","xiRx")  
   }
@@ -437,14 +436,13 @@
     tmean <- kb$predictive$mean
     tv0ivdata <- NULL        ### se efter om den kan fjernes foer
     Dval <-  1.0 + tausq.rel
-    if((tausq.rel < 1e-12) & (!is.null(loc.coincide)))
-      tmean[loc.coincide,] <- data.coincide
-    coincide.cond <- ((tausq.rel < 1e-12) & !is.null(loc.coincide))
+    signal <- TRUE ################## this is part of the bug that needs to be changed.
+    coincide.cond <- (any(loc.coincide) &  ((round(1e12 * tausq.rel.fixed) == 0) | !signal))
     nloc <- ni - n.loc.coincide
     if(coincide.cond){
       ind.not.coincide <- (-loc.coincide)
       v0 <- v0[, ind.not.coincide, drop=FALSE]
-      tmean <- tmean[ind.not.coincide,]
+      tmean <- tmean[ind.not.coincide, , drop=FALSE]
       b <- b[,ind.not.coincide, drop=FALSE]
     }
     else ind.not.coincide <- TRUE
@@ -453,9 +451,10 @@
       n.predictive <- 1
     }
     kb$predictive$simulations <- matrix(NA, nrow=ni, ncol=n.datasets)
-    if(any(ind.not.coincide)){
+    if(nloc>0){
       kb$predictive$simulations[ind.not.coincide,] <- cond.sim(env.loc = base.env, env.iter = base.env,
-                                                               loc.coincide = loc.coincide, tmean = tmean,
+                                                               loc.coincide = loc.coincide,
+                                                               coincide.cond = coincide.cond, tmean = tmean,
                                                                Rinv = list(lower=iR$lower.inverse, diag=iR$diag.inverse),
                                                                mod = list(beta.size = beta.size, nloc = nloc, Nsims = n.datasets, n = n,
                                                                  Dval = Dval, df.model = df.post, s2 = S2.post,
@@ -758,7 +757,7 @@ function(geodata, coords = geodata$coords, data = geodata$data, locations, krige
       vbetai <- matrix(0, ncol = beta.size, nrow = beta.size)
     else
       vbetai <- matrix(ittivtt, ncol = beta.size, nrow = beta.size)
-    coincide.cond <- (((round(1e12 * nugget) == 0) | signal) & (!is.null(loc.coincide)))
+    coincide.cond <- (((round(1e12 * nugget) == 0) | !signal) & (!is.null(loc.coincide)))
     nloc <- ni - length(loc.coincide)
     if(coincide.cond){
       ind.not.coincide <- -(loc.coincide) 
@@ -767,9 +766,11 @@ function(geodata, coords = geodata$coords, data = geodata$data, locations, krige
     }
     else ind.not.coincide <- TRUE
     kc.result$simulations <- matrix(0, nrow = ni, ncol = n.datasets)
-    if(any(ind.not.coincide)){
+    if(nloc>0){
       kc.result$simulations[ind.not.coincide,  ] <- cond.sim(env.loc = base.env, env.iter = base.env,  loc.coincide = loc.coincide,
-                                                             tmean = kc.result$predict[ind.not.coincide, , drop = FALSE], Rinv = invcov,
+                                                             coincide.cond = coincide.cond,
+                                                             tmean = kc.result$predict[ind.not.coincide, , drop = FALSE],
+                                                             Rinv = invcov,
                                                              mod = list(beta.size = beta.size, nloc = nloc,
                                                                Nsims = n.datasets, n = n, Dval = Dval,
                                                                df.model = NULL, s2 = sill.partial,
