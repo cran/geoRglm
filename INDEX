@@ -5,6 +5,7 @@ binom.krige             Conditional Simulation and Prediction for the
                         Binomial-logit Spatial model
 binom.krige.bayes       Bayesian Posterior Simulation and Prediction
                         for the Binomial Spatial model
+cite.geoRglm            Citing Package geoRglm in Publications
 covariog                Empirical Covariogram for a Model with
                         log-link and an Underlying Gaussian Field
 covariog.model.env      Envelope for Empirical Covariogram for the

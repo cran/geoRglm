@@ -11,7 +11,7 @@ Useful for estimation of the variance of a Markov Chain Monte Carlo estimate.
 }
 
 \usage{
-asympvar(timeseries, type="mon", lag.max = 100, messages.screen=TRUE)
+asympvar(timeseries, type="mon", lag.max = 100, messages)
 }
 
 
@@ -21,7 +21,7 @@ asympvar(timeseries, type="mon", lag.max = 100, messages.screen=TRUE)
   \code{"all"} gives both. Default is \code{type="mon"}.  }
 \item{lag.max}{maximum lag at which to calculate the asymptotic
   variance.  Default is \code{lag.max = 100}.  }
-\item{messages.screen}{logical. If \code{TRUE}, the default, status messages
+\item{messages}{logical. If \code{TRUE}, the default, status messages
     are printed while the function is running.  }
 }
 

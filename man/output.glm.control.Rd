@@ -12,7 +12,7 @@
 
 \usage{
 output.glm.control(sim.posterior, sim.predict, keep.mcmc.sim, quantile,
-                   threshold, inference, messages.screen)
+                   threshold, inference, messages)
 }
 
 
@@ -59,7 +59,7 @@ output.glm.control(sim.posterior, sim.predict, keep.mcmc.sim, quantile,
     Setting \code{inference=FALSE} is useful in an initial stage, when 
     tuning the MCMC algorithm (choosing \code{S.scale} and \code{phi.scale} appropriate). 
   }
-  \item{messages.screen}{logical. Indicates whether or not status messages are printed on the screen (or other output device)
+  \item{messages}{logical. Indicates whether or not status messages are printed on the screen (or other output device)
     while the function is running.  }
 }
 

@@ -1,10 +1,7 @@
-#include <stdio.h>
-#include <stdlib.h> /* for malloc & free */
-#include "memory.h"
-#include <math.h> 
-#include <R.h>
+/* #include <math.h> */ 
+/* #include <R.h> */
 #include <Rmath.h>
-#include <S.h>
+/* #include <S.h> */
 
 #define Integer long
 #define Real double

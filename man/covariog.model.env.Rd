@@ -15,7 +15,7 @@
 \usage{ 
 covariog.model.env(geodata, coords = geodata$coords, units.m = "default",
      obj.covariog, model.pars, nsim = 500, prob = c(0.025, 0.975),
-     messages.screen = TRUE)
+     messages)
 }
 
 %- maybe also `usage' for other objects documented here.
@@ -51,7 +51,7 @@ covariog.model.env(geodata, coords = geodata$coords, units.m = "default",
   }
   \item{nsim}{number of simulations used to compute the envelope. Default is \code{nsim = 500}.  }
   \item{prob}{the quantiles used for constructing the envelopes. Default is 2.5\% and 97.5\%  }
-  \item{messages.screen}{logical. If \code{TRUE}, the default, status messages
+  \item{messages}{logical. If \code{TRUE}, the default, status messages
     are printed while the function is running.  }
 }
 

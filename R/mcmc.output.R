@@ -1,7 +1,11 @@
 "asympvar" <- 
-  function(timeseries, type = "mon", lag.max = 100, messages.screen=TRUE)
+  function(timeseries, type = "mon", lag.max = 100, messages)
 {
-  if(is.R()) require(ts) 
+  if(missing(messages))
+    messages.screen <- ifelse(is.null(getOption("geoR.messages")), TRUE, getOption("geoR.messages"))
+  else messages.screen <- messages
+  ##
+  require(ts)
   if(is.vector(timeseries)) n.series <- 1
   else n.series <- nrow(timeseries) 
   if(type == "mon" | type == "all" | type == "pos") {

@@ -33,9 +33,10 @@
   else {
     phi.scale <- mcmc.input$phi.scale
     if(nmphi > 1 && pnorm((phi.discrete[nmphi] - phi.discrete[1])/(nmphi - 1), sd = sqrt(phi.scale)) > 0.975)
-      print("Consider making the grid in phi.discrete more dense. The algorithm may have problems moving.")
+      warning("Consider making the grid in phi.discrete more dense. The algorithm may have problems moving.")
   }
-  messages.screen <- ifelse(messages.screen,1,0)
+  messages.C <- ifelse(messages.screen,1,0) ## for C-code
+  ##
   ##                                                                      
   ## ---------- sampling ----------- ###### 
   cov.model.number <- cor.number(cov.model)
@@ -45,9 +46,6 @@
   ## remeber this rather odd coding for telling that S.start is from the prior !!!
   if(any(mcmc.input$S.start=="random")) Sdata <- as.double(as.vector(c(rep(0, n.sim*n - 1),1)))
   else Sdata <- as.double(as.vector(c(S, rep(0, (n.sim - 1) * n))))
-  phi.sample <- as.double(rep(phi, n.sim))
-  acc.rate <- rep(0,floor(n.iter/1000)+1)
-  acc.rate.phi <- rep(0,floor(n.iter/1000)+1)
   result <-  .C("mcmcrun4binom",
                 as.integer(n),
                 as.double(data),
@@ -64,16 +62,16 @@
                 as.integer(n.iter),
                 as.integer(thin),
                 as.integer(burn.in),
-                as.integer(messages.screen),
+                as.integer(messages.C),
                 as.double(ss.sigma),
                 as.integer(df),
                 as.double(phi.prior),
                 as.double(phi.discrete),
                 as.integer(nmphi),
                 Sdata = Sdata,
-                phi.sample = phi.sample,
-		acc.rate = acc.rate, 
-		acc.rate.phi = acc.rate.phi, DUP=FALSE, PACKAGE = "geoRglm")[c("Sdata", "phi.sample","acc.rate","acc.rate.phi" )]
+                phi.sample = as.double(rep(phi, n.sim)),
+		acc.rate = rep(0,floor(n.iter/1000)+1), 
+		acc.rate.phi = rep(0,floor(n.iter/1000)+1), DUP=FALSE, PACKAGE = "geoRglm")[c("Sdata", "phi.sample","acc.rate","acc.rate.phi" )]
   attr(result$Sdata, "dim") <- c(n, n.sim)
   if(nmphi>1) result$acc.rate <- as.data.frame(cbind(burn.in + seq(0,floor(n.iter/1000))*1000, result$acc.rate,result$acc.rate.phi))
   else result$acc.rate <- as.data.frame(cbind(burn.in + seq(0,floor(n.iter/1000))*1000, result$acc.rate))
@@ -81,7 +79,7 @@
   if(burn.in==0) result$acc.rate <- result$acc.rate[-1,]
   if(nmphi>1) names(result$acc.rate) <- c("iter.numb", "Acc.rate", "Acc.rate.phi")
   else names(result$acc.rate) <- c("iter.numb", "Acc.rate")
-  cat(paste("MCMC performed: n.iter. = ", n.iter, "; thinning = ", thin, "; burn.in = ", burn.in, "\n")) 
+  if(messages.screen) cat(paste("MCMC performed: n.iter. = ", n.iter, "; thinning = ", thin, "; burn.in = ", burn.in, "\n")) 
   return(result)
 }
 
@@ -118,10 +116,10 @@
   else {
     phi.scale <- mcmc.input$phi.scale
     if(nmphi > 1 && pnorm((phi.discrete[nmphi] - phi.discrete[1])/(nmphi - 1), sd = sqrt(phi.scale)) > 0.975)
-      print("Consider making the grid in phi.discrete more dense. The algorithm may have problems moving.")
+      warning("Consider making the grid in phi.discrete more dense. The algorithm may have problems moving.")
   }
-  messages.screen <- ifelse(messages.screen,1,0)
-  ##                                                                
+  messages.C <- ifelse(messages.screen,1,0) ## for C-code
+  ##
   ## ---------- sampling ----------- ###### 
   cov.model.number <- cor.number(cov.model)
   if(is.null(ttvbetatt)) ttvbetatt <- matrix(0,beta.size,beta.size)
@@ -129,9 +127,6 @@
   ## remeber this rather odd coding for telling that S.start is from the prior !!!
   if(any(mcmc.input$S.start=="random")) Sdata <- as.double(as.vector(c(rep(0, n.sim*n - 1),1)))
   else Sdata <- as.double(as.vector(c(S, rep(0, (n.sim - 1) * n))))
-  phi.sample <- as.double(rep(phi, n.sim))
-  acc.rate <- rep(0,floor(n.iter/1000)+1)
-  acc.rate.phi <- rep(0,floor(n.iter/1000)+1)
   result <-  .C("mcmcrun5binom",
                 as.integer(n),
                 as.double(data),
@@ -148,16 +143,16 @@
                 as.integer(n.iter),
                 as.integer(thin),
                 as.integer(burn.in),
-                as.integer(messages.screen),
+                as.integer(messages.C),
                 as.double(ss.sigma),
                 as.integer(df),
                 as.double(phi.prior),
                 as.double(phi.discrete),
                 as.integer(nmphi),
                 Sdata = Sdata,
-                phi.sample= phi.sample,
-		acc.rate = acc.rate, 
-		acc.rate.phi = acc.rate.phi, DUP=FALSE, PACKAGE = "geoRglm")[c("Sdata", "phi.sample","acc.rate","acc.rate.phi" )]
+                phi.sample= as.double(rep(phi, n.sim)),
+		acc.rate = rep(0,floor(n.iter/1000)+1), 
+		acc.rate.phi = rep(0,floor(n.iter/1000)+1), DUP=FALSE, PACKAGE = "geoRglm")[c("Sdata", "phi.sample","acc.rate","acc.rate.phi" )]
   attr(result$Sdata, "dim") <- c(n, n.sim)
   if(nmphi>1) result$acc.rate <- as.data.frame(cbind(burn.in + seq(0,floor(n.iter/1000))*1000, result$acc.rate,result$acc.rate.phi))
   else result$acc.rate <- as.data.frame(cbind(burn.in + seq(0,floor(n.iter/1000))*1000, result$acc.rate))
@@ -165,7 +160,7 @@
   if(burn.in==0) result$acc.rate <- result$acc.rate[-1,]
   if(nmphi>1) names(result$acc.rate) <- c("iter.numb", "Acc.rate", "Acc.rate.phi")
   else names(result$acc.rate) <- c("iter.numb", "Acc.rate")
-  cat(paste("MCMC performed: n.iter. = ", n.iter, "; thinning = ", thin, "; burn.in = ", burn.in, "\n"))
+  if(messages.screen) cat(paste("MCMC performed: n.iter. = ", n.iter, "; thinning = ", thin, "; burn.in = ", burn.in, "\n"))
   return(result)
 }
 
@@ -175,7 +170,7 @@
 ###########
   if(missing(geodata))
     geodata <- list(coords=coords, data=data, units.m=units.m)
-  if(is.R()) require(mva)
+  require(mva)
   call.fc <- match.call()
   seed <- get(".Random.seed", envir=.GlobalEnv, inherits = FALSE)
   do.prediction <- ifelse(all(locations == "no"), FALSE, TRUE)
@@ -482,7 +477,7 @@
   attr(kb.results, "prediction.locations") <- call.fc$locations
   if(do.prediction) attr(kb.results, 'sp.dim') <- ifelse(krige1d, "1d", "2d")
   if(!is.null(call.fc$borders)) attr(kb.results, "borders") <- call.fc$borders
-  attr(kb.results, "class") <- "glm.krige.bayes"
+  class(kb.results) <- "glm.krige.bayes"
   if(messages.screen) cat("binom.krige.bayes: done!\n")
   return(kb.results)
 }

@@ -1,24 +1,20 @@
-#include <math.h> 
-#include <stdio.h>
-#include <memory.h>
-#include <R.h>
-#include <Rmath.h>
-#include <S.h>
 
+#include <R.h>
 #include "geoR.h"
 
 
-#define FREE_ARG char*
 #define Real double
+#define Integer int
 
+#define RANDIN  GetRNGstate()
+#define RANDOUT PutRNGstate()
+#define RUNIF unif_rand()
+#define RNORM norm_rand()
 
-# define Integer int
-# define UNIF unif_rand()
-# define RNORM norm_rand()
-# define Salloc(n,t) (t*)S_alloc(n,sizeof(t))
+#ifndef Salloc
+#define Salloc(n,t) (t*)S_alloc(n,sizeof(t))
+#endif
 
-# define RANDIN seed_in((long *)NULL)
-# define RANDOUT seed_out((long *)NULL)
 
 
 void binitprod(Integer *n, Real *xc, Real *yc, Real *sim, Integer *nbins, Real *lims, Real *maxdist, Integer *cbin, Real *vbin)
@@ -257,13 +253,12 @@ void mcmcrun4(Integer *n, Real *data, Real *units, Real *DD, Integer *no_linpar,
     jphi=floor((phi-phi_discrete[0])/phistep+0.5);
     if(jphi<0) jphi=0;   
     if(jphi>(*nmphi)-1) jphi=(*nmphi)-1;          
-    for (j=0;j<*nmphi;j++){  
-      phi=phi_discrete[0]+j*phistep;
+    for (j=0;j<*nmphi;j++){
       BB[j] = Salloc(dim2,Real);
       for (l=0; l<(*n); l++){
 	for (k=0; k<l; k++){
 	  distcoords = sqrt( pow(coords1[k]-coords1[l],2) + pow(coords2[k]-coords2[l],2));
-	  AA[(*n)*k - k*(k+1)/2+l]=corrfct(phi,(*kappa),distcoords,(*cornr));
+	  AA[(*n)*k - k*(k+1)/2+l]=corrfct(phi_discrete[j],(*kappa),distcoords,(*cornr));
 	}
 	AA[(*n)*l - l*(l+1)/2+l] = 1+ (*tausq); 
       }
@@ -271,7 +266,7 @@ void mcmcrun4(Integer *n, Real *data, Real *units, Real *DD, Integer *no_linpar,
       DDDMAT[j] = Salloc(dim2,Real) ;
       calc_Dmat(BB[j], DD, DDDMAT[j], &det_DDivDD[j], (*n), (*no_linpar), sqivD, DivD, sqDivD, temp2);
     }  
-    phi=phi_discrete[0]+jphi*phistep; 
+    phi=phi_discrete[jphi]; 
     Q=BB[jphi];
     Dmat=DDDMAT[jphi];
   }
@@ -301,7 +296,7 @@ void mcmcrun4(Integer *n, Real *data, Real *units, Real *DD, Integer *no_linpar,
   logp_z = -0.5*(*df)*log(ss4)+log(det_DDivDD[jphi]); 
   logp_phi = log(phiprior[jphi]);
   itr = (*niter) + (*burn_in) ;
-  acc= 0; acc_phi = 0 ; 
+  acc= 0; acc_phi = 0 ;
   
   for (i=0; i<itr; i++){  
     for (l=0; l<(*n); l++) zprop[l]=z[l]+0.5*gradz[l]*(*scale) + RNORM*sqrt(*scale);
@@ -315,7 +310,7 @@ void mcmcrun4(Integer *n, Real *data, Real *units, Real *DD, Integer *no_linpar,
     }
     logq*=(-0.5/(*scale));
     logqprop*=(-0.5/(*scale)); 
-    if (log(UNIF)<logfprop+logp_zprop+logqprop-logq-logf-logp_z){  
+    if (log(RUNIF)<logfprop+logp_zprop+logqprop-logq-logf-logp_z){  
       /*accept */
       logf=logfprop;
       logp_z=logp_zprop;
@@ -339,12 +334,12 @@ void mcmcrun4(Integer *n, Real *data, Real *units, Real *DD, Integer *no_linpar,
     }
     else jstep=0;
     if ( jphi+jstep > -1 && jphi+jstep < (*nmphi) && !(jstep == 0)){  /* if within limits */  
-      phiprop=phi+phistep*jstep;
+      phiprop=phi_discrete[jphi+jstep];
       logp_phiprop = log(phiprior[jphi+jstep]); 
       conddensity4(Sprop,BB[jphi+jstep],&logfprop,data,z,units,(*n));                              
       ss4prop = calc4_ss(z,DDDMAT[jphi+jstep],(*n))+(*ss_sigma);                 
       logp_zprop = -0.5*(*df)*log(ss4prop)+log(det_DDivDD[jphi+jstep]);        
-      if (log(UNIF)<logfprop-logf+logp_phiprop-logp_phi+logp_zprop-logp_z){    
+      if (log(RUNIF)<logfprop-logf+logp_phiprop-logp_phi+logp_zprop-logp_z){    
 	phi=phiprop;
 	logf=logfprop;
 	logp_phi=logp_phiprop;
@@ -358,7 +353,7 @@ void mcmcrun4(Integer *n, Real *data, Real *units, Real *DD, Integer *no_linpar,
 	Sprop=temp;
 	acc_phi++;
 	gradient4(S,gradz,Q,Dmat,z,data,units,Htrunc,(*n),ss4,(*df)); 
-      } 
+      }
     }         
     if (((i+1-(*burn_in))%(*subsample))==0 && (i+1)>(*burn_in)){
       for (l=0; l<(*n); l++) SS[((i+1-(*burn_in))/(*subsample)-1)*(*n)+l] = S[l]; 
@@ -477,12 +472,11 @@ void mcmcrun4boxcox(Integer *n, Real *data, Real *units, Real *DD, Integer *no_l
     if(jphi<0) jphi=0;   
     if(jphi>(*nmphi)-1) jphi=(*nmphi)-1;          
     for (j=0;j<*nmphi;j++){  
-      phi=phi_discrete[0]+j*phistep;
       BB[j] = Salloc(dim2,Real) ;
       for (l=0; l<(*n); l++){
 	for (k=0; k<l; k++){
 	  distcoords = sqrt( pow(coords1[k]-coords1[l],2) + pow(coords2[k]-coords2[l],2));
-	  AA[(*n)*k - k*(k+1)/2+l]=corrfct(phi,(*kappa),distcoords,(*cornr));
+	  AA[(*n)*k - k*(k+1)/2+l]=corrfct(phi_discrete[j],(*kappa),distcoords,(*cornr));
 	}
 	AA[(*n)*l - l*(l+1)/2+l] = 1+ (*tausq); 
       }
@@ -490,7 +484,7 @@ void mcmcrun4boxcox(Integer *n, Real *data, Real *units, Real *DD, Integer *no_l
       DDDMAT[j] = Salloc(dim2,Real) ;
       calc_Dmat(BB[j], DD, DDDMAT[j], &det_DDivDD[j], (*n), (*no_linpar), sqivD, DivD, sqDivD, temp2);
     }  
-    phi=phi_discrete[0]+jphi*phistep; 
+    phi=phi_discrete[jphi]; 
     Q=BB[jphi];
     Dmat=DDDMAT[jphi];
   }
@@ -546,7 +540,7 @@ void mcmcrun4boxcox(Integer *n, Real *data, Real *units, Real *DD, Integer *no_l
       }
       logq*=(-0.5/(*scale));
       logqprop*=(-0.5/(*scale)); 
-      if (log(UNIF)<logfprop+logp_zprop+logqprop-logq-logf-logp_z){  
+      if (log(RUNIF)<logfprop+logp_zprop+logqprop-logq-logf-logp_z){  
 	/*accept */
 	logf=logfprop;
 	logp_z=logp_zprop;
@@ -572,7 +566,7 @@ void mcmcrun4boxcox(Integer *n, Real *data, Real *units, Real *DD, Integer *no_l
     }
     else jstep=0;
     if( jphi+jstep > -1 && jphi+jstep < (*nmphi) && !(jstep == 0)){  /* if within limits */  
-      phiprop=phi+phistep*jstep;
+      phiprop=phi_discrete[jphi+jstep];
       logp_phiprop = log(phiprior[jphi+jstep]); 
       conddensity4boxcox(Sprop,BB[jphi+jstep],&logfprop,data,z,units,(*n),(*lambda));
       ctrl1 = 0;
@@ -584,7 +578,7 @@ void mcmcrun4boxcox(Integer *n, Real *data, Real *units, Real *DD, Integer *no_l
       if(ctrl1 == 0){                  
 	ss4prop = calc4_ss(z,DDDMAT[jphi+jstep],(*n))+(*ss_sigma);          
 	logp_zprop = -0.5*(*df)*log(ss4prop)+log(det_DDivDD[jphi+jstep]);        
-	if (ctrl1 == 0 && log(UNIF)<logfprop-logf+logp_phiprop-logp_phi+logp_zprop-logp_z){    
+	if (ctrl1 == 0 && log(RUNIF)<logfprop-logf+logp_phiprop-logp_phi+logp_zprop-logp_z){    
 	  phi=phiprop;
 	  logf=logfprop;
 	  logp_phi=logp_phiprop;
@@ -711,12 +705,11 @@ void mcmcrun4binom(Integer *n, Real *data, Real *units, Real *DD, Integer *no_li
     if(jphi<0) jphi=0;   
     if(jphi>(*nmphi)-1) jphi=(*nmphi)-1;          
     for (j=0;j<(*nmphi);j++){  
-      phi=phi_discrete[0]+j*phistep;
       BB[j] = Salloc(dim2,Real);
       for (l=0; l<(*n); l++){
 	for (k=0; k<l; k++){
 	  distcoords = sqrt( pow(coords1[k]-coords1[l],2) + pow(coords2[k]-coords2[l],2));
-	  AA[(*n)*k - k*(k+1)/2+l]=corrfct(phi,(*kappa),distcoords,(*cornr));
+	  AA[(*n)*k - k*(k+1)/2+l]=corrfct(phi_discrete[j],(*kappa),distcoords,(*cornr));
 	}
 	AA[(*n)*l - l*(l+1)/2+l] = 1+ (*tausq); 
       }
@@ -724,7 +717,7 @@ void mcmcrun4binom(Integer *n, Real *data, Real *units, Real *DD, Integer *no_li
       DDDMAT[j] = Salloc(dim2,Real) ;
       calc_Dmat(BB[j], DD, DDDMAT[j], &det_DDivDD[j], (*n), (*no_linpar), sqivD, DivD, sqDivD, temp2);
     }  
-    phi=phi_discrete[0]+jphi*phistep; 
+    phi=phi_discrete[jphi]; 
     Q=BB[jphi];
     Dmat=DDDMAT[jphi];
   }
@@ -768,7 +761,7 @@ void mcmcrun4binom(Integer *n, Real *data, Real *units, Real *DD, Integer *no_li
     }
     logq*=(-0.5/(*scale));
     logqprop*=(-0.5/(*scale)); 
-    if(log(UNIF)<logfprop+logp_zprop+logqprop-logq-logf-logp_z){  
+    if(log(RUNIF)<logfprop+logp_zprop+logqprop-logq-logf-logp_z){  
       /*accept */
       logf=logfprop;
       logp_z=logp_zprop;
@@ -792,12 +785,12 @@ void mcmcrun4binom(Integer *n, Real *data, Real *units, Real *DD, Integer *no_li
     }
     else jstep=0;
     if( jphi+jstep > -1 && jphi+jstep < (*nmphi) && !(jstep == 0)){  /* if within limits */  
-      phiprop=phi+phistep*jstep;
+      phiprop=phi_discrete[jphi+jstep];
       logp_phiprop = log(phiprior[jphi+jstep]); 
       conddensity4binom(Sprop,BB[jphi+jstep],&logfprop,data,z,units,(*n));                              
       ss4prop = calc4_ss(z,DDDMAT[jphi+jstep],(*n))+(*ss_sigma);                 
       logp_zprop = -0.5*(*df)*log(ss4prop)+log(det_DDivDD[jphi+jstep]);        
-      if (log(UNIF)<logfprop-logf+logp_phiprop-logp_phi+logp_zprop-logp_z){    
+      if (log(RUNIF)<logfprop-logf+logp_phiprop-logp_phi+logp_zprop-logp_z){    
 	phi=phiprop;
 	logf=logfprop;
 	logp_phi=logp_phiprop;
@@ -883,7 +876,7 @@ void mcmcrun5binom(Integer *n, Real *data, Real *units, Real *meanS, Real *DDvbe
 		   Integer *burn_in, Integer *messages, Real *ss_sigma, Integer *df, Real *phiprior,  Real *phi_discrete, Integer *nmphi, 
 		   Real *SS, Real *phisamples, Real *acc_rate, Real *acc_rate_phi){
   
-  typedef Real *Doublearray;  
+  typedef Real *Doublearray;
 #define PRN 1000           
   Integer i, j, jj, l, k, acc, acc_phi, dim2, itr, jstep, jphi; 
   Real logfprop, logp_zprop,logf, logp_z, logq, logqprop, ss5, ss5prop, phi, phiprop, phistep, logp_phi, logp_phiprop, temp_phi ;   
@@ -920,19 +913,18 @@ void mcmcrun5binom(Integer *n, Real *data, Real *units, Real *meanS, Real *DDvbe
     jphi=floor((phi-phi_discrete[0])/phistep+0.5);
     if(jphi<0) jphi=0;   
     if(jphi>(*nmphi)-1) jphi=(*nmphi)-1;          
-    for (j=0;j<(*nmphi);j++){  
-      phi=phi_discrete[0]+j*phistep;
+    for (j=0;j<(*nmphi);j++){
       BB[j] = Salloc(dim2,Real) ;
       for (l=0; l<(*n); l++){
 	for (k=0; k<l; k++){
 	  distcoords = sqrt( pow(coords1[k]-coords1[l],2) + pow(coords2[k]-coords2[l],2));
-	  AA[(*n)*k - k*(k+1)/2+l]=corrfct(phi,(*kappa),distcoords,(*cornr)) + DDvbetaDD[l*(*n)+k];
+	  AA[(*n)*k - k*(k+1)/2+l]=corrfct(phi_discrete[j],(*kappa),distcoords,(*cornr)) + DDvbetaDD[l*(*n)+k];
 	}
 	AA[(*n)*l - l*(l+1)/2+l]= 1 + DDvbetaDD[l*(*n)+l] + (*tausq);  
       }
       cholesky(AA,BB[j],(*n));
     }
-    phi=phi_discrete[0]+jphi*phistep; 
+    phi=phi_discrete[jphi]; 
     Q=BB[jphi];
   }
   else{
@@ -974,7 +966,7 @@ void mcmcrun5binom(Integer *n, Real *data, Real *units, Real *meanS, Real *DDvbe
     }
     logq*=(-0.5/(*scale));
     logqprop*=(-0.5/(*scale)); 
-    if (log(UNIF)<logfprop+logp_zprop+logqprop-logq-logf-logp_z){  
+    if (log(RUNIF)<logfprop+logp_zprop+logqprop-logq-logf-logp_z){  
       /*accept */
       logf=logfprop;
       logp_z=logp_zprop;
@@ -998,10 +990,10 @@ void mcmcrun5binom(Integer *n, Real *data, Real *units, Real *meanS, Real *DDvbe
     }
     else jstep=0;
     if ( jphi+jstep > -1 && jphi+jstep < (*nmphi) && !(jstep == 0)){  /* if within limits */  
-      phiprop=phi+phistep*jstep;
+      phiprop=phi_discrete[jphi+jstep];
       logp_phiprop = log(phiprior[jphi+jstep]);
       conddensity5binom(Sprop,BB[jphi+jstep],&logfprop,data,z,meanS,units,(*n));
-      if (log(UNIF)<logfprop-logf+logp_phiprop-logp_phi){    
+      if (log(RUNIF)<logfprop-logf+logp_phiprop-logp_phi){    
 	phi=phiprop;
 	logf=logfprop;
 	logp_phi=logp_phiprop;
@@ -1123,19 +1115,18 @@ void mcmcrun5boxcox(Integer *n, Real *data, Real *units, Real *meanS, Real *DDvb
     jphi=floor((phi-phi_discrete[0])/phistep+0.5);
     if(jphi<0) jphi=0;   
     if(jphi>(*nmphi)-1) jphi=(*nmphi)-1;          
-    for (j=0;j<(*nmphi);j++){  
-      phi=phi_discrete[0]+j*phistep;
+    for (j=0;j<(*nmphi);j++){
       BB[j] = Salloc(dim2,Real) ;
       for (l=0; l<(*n); l++){
 	for (k=0; k<l; k++){
 	  distcoords = sqrt( pow(coords1[k]-coords1[l],2) + pow(coords2[k]-coords2[l],2));
-	  AA[(*n)*k - k*(k+1)/2+l]=corrfct(phi,(*kappa),distcoords,(*cornr)) + DDvbetaDD[l*(*n)+k];
+	  AA[(*n)*k - k*(k+1)/2+l]=corrfct(phi_discrete[j],(*kappa),distcoords,(*cornr)) + DDvbetaDD[l*(*n)+k];
 	}
 	AA[(*n)*l - l*(l+1)/2+l]= 1 + DDvbetaDD[l*(*n)+l] + (*tausq);  
       }
       cholesky(AA,BB[j],(*n));
     }  
-    phi=phi_discrete[0]+jphi*phistep; 
+    phi=phi_discrete[jphi]; 
     Q=BB[jphi];
   }
   else{
@@ -1189,7 +1180,7 @@ void mcmcrun5boxcox(Integer *n, Real *data, Real *units, Real *meanS, Real *DDvb
       }
       logq*=(-0.5/(*scale));
       logqprop*=(-0.5/(*scale)); 
-      if (log(UNIF)<logfprop+logp_zprop+logqprop-logq-logf-logp_z){  
+      if (log(RUNIF)<logfprop+logp_zprop+logqprop-logq-logf-logp_z){  
 	/*accept */
 	logf=logfprop;
 	logp_z=logp_zprop;
@@ -1215,7 +1206,7 @@ void mcmcrun5boxcox(Integer *n, Real *data, Real *units, Real *meanS, Real *DDvb
     }
     else jstep=0;
     if (jphi+jstep > -1 && jphi+jstep < (*nmphi) && !(jstep == 0)){  /* if within limits */ 
-      phiprop=phi+phistep*jstep;
+      phiprop=phi_discrete[jphi+jstep];
       logp_phiprop = log(phiprior[jphi+jstep]);
       conddensity5boxcox(Sprop,BB[jphi+jstep],&logfprop,data,z,meanS,units,(*n),(*lambda));
       ctrl1 = 0;
@@ -1225,7 +1216,7 @@ void mcmcrun5boxcox(Integer *n, Real *data, Real *units, Real *meanS, Real *DDvb
 	}
       }
       if(ctrl1 == 0){ 
-	if(log(UNIF)<logfprop-logf+logp_phiprop-logp_phi){    
+	if(log(RUNIF)<logfprop-logf+logp_phiprop-logp_phi){    
 	  phi=phiprop;
 	  logf=logfprop;
 	  logp_phi=logp_phiprop;
@@ -1333,27 +1324,26 @@ void mcmcrun5(Integer *n, Real *data, Real *units, Real *meanS, Real *DDvbetaDD,
     z[l]=gradz[l]=gradzprop[l]=zprop[l]=Sprop[l]=0;
   }
   for (jj=0; jj<dim2; jj++){
-    AA[jj]=Q[jj]=Qprop[jj]=0;   
+    AA[jj]=Q[jj]=Qprop[jj]=0;
   }    
   phi = phisamples[0];
   if(*nmphi > 1){
     phistep=phi_discrete[1]-phi_discrete[0];
     jphi=floor((phi-phi_discrete[0])/phistep+0.5);
-    if(jphi<0) jphi=0;   
+    if(jphi<0) jphi=0;
     if(jphi>(*nmphi)-1) jphi=(*nmphi)-1;          
     for (j=0;j<(*nmphi);j++){  
-      phi=phi_discrete[0]+j*phistep;
       BB[j] = Salloc(dim2,Real) ;
       for (l=0; l<(*n); l++){
 	for (k=0; k<l; k++){
 	  distcoords = sqrt( pow(coords1[k]-coords1[l],2) + pow(coords2[k]-coords2[l],2));
-	  AA[(*n)*k - k*(k+1)/2+l]=corrfct(phi,(*kappa),distcoords,(*cornr)) + DDvbetaDD[l*(*n)+k];
+	  AA[(*n)*k - k*(k+1)/2+l]=corrfct(phi_discrete[j],(*kappa),distcoords,(*cornr)) + DDvbetaDD[l*(*n)+k];
 	}
 	AA[(*n)*l - l*(l+1)/2+l]= 1 + DDvbetaDD[l*(*n)+l] + (*tausq);  
       }
       cholesky(AA,BB[j],(*n));
-      }  
-    phi=phi_discrete[0]+jphi*phistep; 
+      }
+    phi=phi_discrete[jphi]; 
     Q=BB[jphi];
   }
   else{
@@ -1395,7 +1385,7 @@ void mcmcrun5(Integer *n, Real *data, Real *units, Real *meanS, Real *DDvbetaDD,
     }
     logq*=(-0.5/(*scale));
     logqprop*=(-0.5/(*scale)); 
-    if(log(UNIF)<logfprop+logp_zprop+logqprop-logq-logf-logp_z){  
+    if(log(RUNIF)<logfprop+logp_zprop+logqprop-logq-logf-logp_z){  
       /*accept */
       logf=logfprop;
       logp_z=logp_zprop;
@@ -1419,10 +1409,10 @@ void mcmcrun5(Integer *n, Real *data, Real *units, Real *meanS, Real *DDvbetaDD,
     }
     else jstep=0;
     if( jphi+jstep > -1 && jphi+jstep < (*nmphi) && !(jstep == 0)){  /* if within limits */  
-      phiprop=phi+phistep*jstep;
+      phiprop=phi_discrete[jphi+jstep];
       logp_phiprop = log(phiprior[jphi+jstep]);
       conddensity5(Sprop,BB[jphi+jstep],&logfprop,data,z,meanS,units,(*n));
-      if (log(UNIF)<logfprop-logf+logp_phiprop-logp_phi){    
+      if (log(RUNIF)<logfprop-logf+logp_phiprop-logp_phi){    
 	phi=phiprop;
 	logf=logfprop;
 	logp_phi=logp_phiprop;

@@ -1,6 +1,4 @@
-/* #define Integer long
-#define Real double
-*/
+
 
 #define corrfct  corrfctvalue
 

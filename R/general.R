@@ -135,7 +135,7 @@
 
 
 "output.glm.control" <-
-  function(sim.posterior, sim.predict, keep.mcmc.sim, quantile, threshold, inference, messages.screen)
+  function(sim.posterior, sim.predict, keep.mcmc.sim, quantile, threshold, inference, messages)
 {
   ##
   ## Assigning default values
@@ -148,8 +148,9 @@
   if(missing(threshold)) probability.estimator <- NULL 
   else probability.estimator <- threshold
   if(missing(inference) || is.null(inference)) inference <- TRUE
-  if(missing(messages.screen) || is.null(messages.screen)) messages.screen <- TRUE
-  ##
+  if(missing(messages))
+    messages.screen <- ifelse(is.null(getOption("geoR.messages")), TRUE, getOption("geoR.messages"))
+  else messages.screen <- messages
   ##
   if(is.null(quantile.estimator)) quantile.estimator <- TRUE
   else{
@@ -176,8 +177,6 @@
   return(res)
 }
 
-## else output <- output.glm.check.aux(output, fct = "binom.krige.bayes")
-
 "output.glm.check.aux" <-
   function(output, fct)
 {
@@ -200,7 +199,7 @@
                                    sim.predict = output$sim.predict,
                                    keep.mcmc.sim = output$keep.mcmc.sim, quantile = output$quantile,
                                    threshold = output$threshold, inference = output$inference,
-                                   messages.screen = output$messages.screen)
+                                   messages = output$messages.screen)
     }
   }
   return(output)

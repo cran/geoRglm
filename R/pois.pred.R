@@ -3,30 +3,25 @@
 "mcmc.aux" <- 
   function(z, data, meanS, QQ, Htrunc, S.scale, nsim, thin, QtivQ)
 {
-#
+  ##
 ###### ------------------------ doing the mcmc-steps ----------- ############# 
-#  
+  ##
   n <- length(data)
-  randnormal <- rnorm(n * nsim * thin) * sqrt(S.scale)
-  randunif <- runif(nsim * thin)
-  z <-  as.double(z)
-  S <-  as.double(rep(0, nsim * n))
-  acc.rate <-  as.double(1)
   result <- .C("mcmc1poislog",
                as.integer(n),
-               z = z,
-               S = S,
+               z = as.double(z),
+               S = as.double(rep(0, nsim * n)),
                as.double(data),
                as.double(meanS),
                as.double(as.vector(t(QQ))),
                as.double(as.vector(QtivQ)),
-               as.double(randnormal),
-               as.double(randunif),
+               as.double(rnorm(n * nsim * thin) * sqrt(S.scale)),
+               as.double(runif(nsim * thin)),
                as.double(Htrunc),
                as.double(S.scale),
                as.integer(nsim),
                as.integer(thin),
-               acc.rate = acc.rate, DUP=FALSE, PACKAGE = "geoRglm")[c("z", "S", "acc.rate")]
+               acc.rate = as.double(1), DUP=FALSE, PACKAGE = "geoRglm")[c("z", "S", "acc.rate")]
   attr(result$S, "dim") <- c(n, nsim)
   return(result)
 }
@@ -35,7 +30,6 @@
 "mcmc.pois.log" <- 
   function(data, units.m, meanS, invcov, mcmc.input, messages.screen)
 {
-####
   ## This is the MCMC engine for the spatial Poisson log Normal model ----
   ##
   n <- length(data)
@@ -97,7 +91,6 @@
   names(acc.rate) <- c("iter.numb", "Acc.rate")
 #########
   return(list(Sdata=Sdata, acc.rate=acc.rate))
-
 }
 
 
@@ -108,28 +101,23 @@
 ###### ------------------------ doing the mcmc-steps ----------- ############# 
   ##
   n <- length(data)
-  randnormal <- rnorm(n * nsim * thin) * sqrt(S.scale)
-  randunif <- runif(nsim * thin)
-  z <-  as.double(z)
-  S <-  as.double(rep(0, nsim * n))
-  acc.rate <-  as.double(1)  
   result <- .C("mcmc1poisboxcox",
                as.integer(n),
-               z = z,
-               S = S,
+               z = as.double(z),
+               S = as.double(rep(0, nsim * n)),
                as.double(data),
                as.double(units.m),
                as.double(meanS),
                as.double(as.vector(t(QQ))),
                as.double(as.vector(QtivQ)),
-               as.double(randnormal),
-               as.double(randunif),
+               as.double(rnorm(n * nsim * thin) * sqrt(S.scale)),
+               as.double(runif(nsim * thin)),
                as.double(Htrunc),
                as.double(S.scale),
                as.integer(nsim),
                as.integer(thin),
                as.double(lambda),
-               acc.rate = acc.rate, DUP=FALSE, PACKAGE = "geoRglm")[c("z", "S", "acc.rate")]
+               acc.rate = as.double(1), DUP=FALSE, PACKAGE = "geoRglm")[c("z", "S", "acc.rate")]
   attr(result$S, "dim") <- c(n, nsim)
   return(result)
 }
@@ -137,7 +125,6 @@
 "mcmc.pois.boxcox" <- 
   function(data, units.m, meanS, invcov, mcmc.input, messages.screen, lambda)
 {
-####
   ## This is the MCMC engine for the spatial Poisson - Normal model with link from the box-cox-family ----
   ##
   n <- length(data)
@@ -360,7 +347,7 @@ function(geodata, coords = geodata$coords, data = geodata$data, units.m = "defau
   else krige1d <- FALSE
   ##
   if(is.null(locations)) {
-    cat(paste("locations need to be specified for prediction; prediction not performed \n"))
+    if(messages.screen) cat(paste("locations need to be specified for prediction; prediction not performed \n"))
   }
   else {
     if(is.null(trend.l))
@@ -399,13 +386,13 @@ function(geodata, coords = geodata$coords, data = geodata$data, units.m = "defau
     ivtt <- invcov%*%trend.data
     invcov <- invcov-ivtt%*%solve.geoR(crossprod(trend.data, ivtt),t(ivtt))
   }
-  if(lambda == 0){ 
-    intensity <- mcmc.pois.log(data = data, units.m = units.m, meanS = mean.d, invcov=invcov, mcmc.input = mcmc.input, messages.screen)
+  if(lambda == 0){
+    intensity <- mcmc.pois.log(data = data, units.m = units.m, meanS = mean.d, invcov=invcov, mcmc.input = mcmc.input, messages.screen=messages.screen)
     acc.rate <- intensity$acc.rate
     intensity <- exp(intensity$Sdata)
   }
   else{
-    intensity <- mcmc.pois.boxcox(data=data, units.m=units.m, meanS=mean.d, invcov=invcov, mcmc.input=mcmc.input, messages.screen, lambda=lambda)  
+    intensity <- mcmc.pois.boxcox(data=data, units.m=units.m, meanS=mean.d, invcov=invcov, mcmc.input=mcmc.input, messages.screen=messages.screen, lambda=lambda)
     acc.rate <- intensity$acc.rate
     intensity <- BC.inv(intensity$Sdata, lambda)    
   }
@@ -424,7 +411,7 @@ function(geodata, coords = geodata$coords, data = geodata$data, units.m = "defau
                   cov.pars = cov.pars, kappa = kappa, nugget = nugget, micro.scale = micro.scale, dist.epsilon = dist.epsilon, 
                   aniso.pars = aniso.pars, lambda = lambda)
     kpl.result <- krige.conv.extnd(data = intensity, coords = coords, locations = locations, krige = krige,
-                                   output = list(n.predictive = ifelse(sim.predict,1,0), signal = TRUE, messages.screen = FALSE))
+                                   output = list(n.predictive = ifelse(sim.predict,1,0), signal = TRUE, messages = FALSE))
     remove(list = c("intensity"))
     kpl.result$krige.var <- rowMeans(kpl.result$krige.var) + apply(kpl.result$predict, 1, var) 
     if(nrow(locations) > 1) kpl.result$mcmc.error <- sqrt(asympvar(kpl.result$predict)/ncol(kpl.result$predict))

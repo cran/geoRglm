@@ -11,7 +11,7 @@
   ##
   if(missing(geodata))
     geodata <- list(coords=coords, data=data)
-  if(is.R()) require(mva)
+  require(mva)
   call.fc <- match.call()
   seed <- get(".Random.seed", envir=.GlobalEnv, inherits = FALSE)
   do.prediction <- ifelse(all(locations == "no"), FALSE, TRUE)
@@ -192,7 +192,7 @@
                                  simulations.predictive = output$simulations.predictive,
                                  mean.var = output$mean.var, quantile = output$quantile,
                                  threshold = output$threshold, signal = output$signal,
-                                 messages.screen = output$messages.screen)
+                                 messages = output$messages.screen)
       }
     }
   }
@@ -444,7 +444,7 @@
     }
     else ind.not.coincide <- TRUE
     if(n.predictive > 1){
-      print("n.predictive > 1 is not implemented, n.predictive = 1")
+      warning("n.predictive > 1 is not implemented, n.predictive = 1")
       n.predictive <- 1
     }
     kb$predictive$simulations <- matrix(NA, nrow=ni, ncol=n.datasets)
@@ -466,7 +466,7 @@
   kb$max.dist <- data.dist.max
   kb$call <- call.fc
   attr(kb, "prediction.locations") <- call.fc$locations
-  class(kb) <- c("krige.bayes", "kriging")
+  ##class(kb) <- c("krige.bayes", "kriging")
   if(messages.screen) cat("krige.bayes.extnd: done!\n")
   return(kb)
 }
@@ -583,7 +583,7 @@ function(geodata, coords = geodata$coords, data = geodata$data, locations, krige
                                  simulations.predictive = output$simulations.predictive,
                                  mean.var = output$mean.var, quantile = output$quantile,
                                  threshold = output$threshold, signal = output$signal,
-                                 messages.screen = output$messages.screen)
+                                 messages = output$messages.screen)
       }
     }
   }
@@ -612,8 +612,7 @@ function(geodata, coords = geodata$coords, data = geodata$data, locations, krige
   if(is.vector(locations)) {
     if(length(locations) == 2) {
       locations <- t(as.matrix(locations))
-      if(messages.screen)
-        warning("assuming that there is 1 prediction point")
+      warning("assuming that there is 1 prediction point")
     }
     else {
       warning("vector of locations: one spatial dimension assumed")
@@ -675,11 +674,10 @@ function(geodata, coords = geodata$coords, data = geodata$data, locations, krige
   kc.result <- list()
   invcov <- varcov.spatial(coords = coords, cov.model = cov.model, kappa = kappa, nugget = nugget, cov.pars = cov.pars, 
                            inv = TRUE, only.inv.lower.diag = TRUE)
-  temp <- bilinearformXAY(trend.data, invcov$lower.inverse, invcov$diag.inverse, trend.data)
-  ittivtt <- solve.geoR(temp)
+  ## From a numerical perspective there quite a few ugly bits here. See R-help e-mails from Bates and Ripley about LS/GLS. However, changing is not simple.
+  ittivtt <- solve.geoR(bilinearformXAY(trend.data, invcov$lower.inverse, invcov$diag.inverse, trend.data))
   if(beta.prior == "flat") {
-    temp <- bilinearformXAY(trend.data, invcov$lower.inverse, invcov$diag.inverse, data)
-    beta.flat <- ittivtt %*% temp
+    beta.flat <- ittivtt %*% bilinearformXAY(trend.data, invcov$lower.inverse, invcov$diag.inverse, data)
   }
   temp <- NULL
   d0mat <- loccoords(coords, locations)
@@ -691,8 +689,7 @@ function(geodata, coords = geodata$coords, data = geodata$data, locations, krige
     v0 <- cov.spatial(obj = d0mat, cov.model = cov.model, kappa = kappa, cov.pars = cov.pars)
   }
   tv0ivv0 <- diagquadraticformXAX(v0, invcov$lower.inverse, invcov$diag.inverse)
-  b <- bilinearformXAY(v0, invcov$lower.inverse, invcov$diag.inverse, trend.data)
-  b <- trend.l - b
+  b <- trend.l - bilinearformXAY(v0, invcov$lower.inverse, invcov$diag.inverse, trend.data)
   tv0ivdata <- bilinearformXAY(v0, invcov$lower.inverse, invcov$diag.inverse, data)
   if(n.predictive == 0) {
     remove(list = c("v0", "invcov"))
@@ -716,10 +713,9 @@ function(geodata, coords = geodata$coords, data = geodata$data, locations, krige
     remove("beta.flat")
   }
   if(any(round(kc.result$krige.var, dig=12) < 0))
-    cat("krige.conv.extnd: negative kriging variance found! Investigate why this is happening.\n")
-  message <- "krige.conv.extnd: Kriging performed using global neighbourhood"
-  if(messages.screen)
-    cat(paste(message, "\n"))
+    warning("krige.conv.extnd: negative kriging variance found! Investigate why this is happening.\n")
+  out.message <- "krige.conv.extnd: Kriging performed using global neighbourhood"
+  if(messages.screen) cat(paste(out.message, "\n"))
 ############## Sampling from the resulting distribution #####################
   if(n.predictive > 0) {
     ## checking coincident data points and prediction locations
@@ -778,7 +774,7 @@ function(geodata, coords = geodata$coords, data = geodata$data, locations, krige
       remove("ivBC")
     }
     if(lambda < 0){
-      cat("krige.conv.extnd: resulting distribution has no mean for lambda < 0 - back transformation not performed\n")
+      if(messages.screen) cat("krige.conv.extnd: resulting distribution has no mean for lambda < 0 - back transformation not performed\n")
     }
     if(n.predictive > 0) {
       kc.result$simulations <- BC.inv(kc.result$simulations,lambda)
@@ -791,6 +787,6 @@ function(geodata, coords = geodata$coords, data = geodata$data, locations, krige
   }
   kc.result <- c(kc.result, list(message = message, call = cl))
 #######################################
-  class(kc.result) <- "kriging"
+  ##class(kc.result) <- "kriging"
   return(kc.result)
 }

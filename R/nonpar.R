@@ -1,10 +1,9 @@
 
 
-"covariog" <- 
-  function(geodata, coords = geodata$coords, data = geodata$data, units.m = "default", uvec = "default", bins.lim = "default",
+"covariog" <-  function(geodata, coords = geodata$coords, data = geodata$data, units.m = "default", uvec = "default", bins.lim = "default",
            estimator.type = c("poisson", "not-poisson"), max.dist = NULL, pairs.min = 2)
 {
-  if(is.R()) require(mva)
+  require(mva)
   call.fc <- match.call()
   estimator.type <- match.arg(estimator.type)
   coords <- as.matrix(coords)
@@ -46,7 +45,6 @@
   temp.list <- list(n.data = n.data, coords = coords, data = data1, nbins = nbins, bins.lim = bins.lim, max.dist = max.dist)
   bin.f <- function(data, temp.list)
     {
-      cbin <- vbin <- rep(0, temp.list$nbins)
       result <- .C("binitprod",
                    as.integer(temp.list$n.data),
                    as.double(as.vector(temp.list$coords[, 1])),
@@ -55,8 +53,8 @@
                    as.integer(temp.list$nbins),
                    as.double(as.vector(temp.list$bins.lim)),
                    as.double(temp.list$max.dist),
-                   cbin = as.integer(cbin),
-                   vbin = as.double(vbin), PACKAGE = "geoRglm")[c("vbin", "cbin")]
+                   cbin = as.integer(rep(0, temp.list$nbins)),
+                   vbin = as.double(rep(0, temp.list$nbins)), DUP=FALSE, PACKAGE = "geoRglm")[c("vbin", "cbin")]
       return(result)
     }
   result <- array(unlist(lapply(as.data.frame(data1), bin.f, temp.list = temp.list)), dim = c(nbins, 2, n.datasets))
@@ -77,9 +75,12 @@
 
 "covariog.model.env" <- 
 function(geodata, coords = geodata$coords, units.m = "default", obj.covariog, model.pars, nsim = 500, prob = c(0.025, 0.975), 
-     messages.screen = TRUE)
+     messages)
 {
   call.fc <- match.call()
+  if(missing(messages))
+    messages.screen <- ifelse(is.null(getOption("geoR.messages")), TRUE, getOption("geoR.messages"))
+  else messages.screen <- messages
   ##
   ## reading input
   ##
@@ -111,7 +112,7 @@ function(geodata, coords = geodata$coords, units.m = "default", obj.covariog, mo
   if(messages.screen) cat(paste("covariog.env: generating", nsim, "simulations(", obj.covariog$n.data, 
           "points). \n"))
   simula <- pois.log.grf(obj.covariog$n.data, grid = as.matrix(coords), units.m = units.m, beta = beta, cov.model = cov.model, 
-          cov.pars = cov.pars, nugget = nugget, kappa = kappa, nsim = nsim, messages.screen = FALSE)
+          cov.pars = cov.pars, nugget = nugget, kappa = kappa, nsim = nsim, messages = FALSE)
   ##
   ## computing empirical covariograms for the simulations
   ##
@@ -191,7 +192,7 @@ function(n = NULL, grid, nx = round(sqrt(n)), ny = round(sqrt(n)), nsim = 1,
         xlims = c(0, 1), ylims = c(0, 1), units.m = "default", trend = "cte", beta = stop("beta parameter(s) needed"), 
         cov.model = c("exponential", "matern", "gaussian", "spherical", "cubic", "wave", "powered.exponential", "cauchy",
         "gneiting", "gneiting.matern", "pure.nugget"), cov.pars = stop("covariance parameters (sigmasq and phi) needed"), nugget = 0,
-        kappa = 0.5, method = c("cholesky", "svd", "eigen", "circular.embedding"), messages.screen = TRUE, ...)
+        kappa = 0.5, method = c("cholesky", "svd", "eigen", "circular.embedding"), messages, ...)
 {
 #
 # function for simulation of a Poisson log-Gaussian random field.
@@ -201,11 +202,15 @@ function(n = NULL, grid, nx = round(sqrt(n)), ny = round(sqrt(n)), nsim = 1,
 ## trend  : by default a constant mean
 ## units.m   : n-vector of observation-times for data (default is 1 for all observations) 
 #        
+  if(missing(messages))
+    messages.screen <- ifelse(is.null(getOption("geoR.messages")), TRUE, getOption("geoR.messages"))
+  else messages.screen <- messages
+  ##
   call.fc <- match.call()
   method <- match.arg(method)
   cov.model <- match.arg(cov.model)
   work <- grf(n = n, grid = grid, nx = nx, ny = ny, nsim = nsim, xlims = xlims, ylims = ylims, cov.model = cov.model, cov.pars = 
-              cov.pars, nugget = nugget, lambda = 1, kappa = kappa, method = method, messages.screen =  messages.screen, ...)
+              cov.pars, nugget = nugget, lambda = 1, kappa = kappa, method = method, messages =  messages.screen, ...)
   trend.data <- unclass(trend.spatial(trend = trend, geodata = work))
   n <- nrow(work$coords)
   if((length(beta) == 1) & trend == "cte")
@@ -221,10 +226,7 @@ function(n = NULL, grid, nx = round(sqrt(n)), ny = round(sqrt(n)), nsim = 1,
                   mu = mu, units.m = units.m, messages = work$messages, method = method)
   results$.Random.seed <- work$.Random.seed
   results$call <- call.fc
-  if(is.R())
-    attr(results, "class") <- "geodata"
-  else
-    attr(results, "class") <- setOldClass("geodata")
+  class(results) <- "geodata"
   return(results)
 }
 

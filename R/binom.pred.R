@@ -2,31 +2,26 @@
 
 "mcmc.binom.aux" <- function(z, data, units.m, meanS, QQ, S.scale, nsim, thin, QtivQ)
 {
-#
+  ##
 ###### ------------------------ doing the mcmc-steps -----------
 ###### 
-#  
+  ##
   n <- length(data)
-  randnormal <- rnorm(n * nsim * thin) * sqrt(S.scale)
-  randunif <- runif(nsim * thin)
-  z <-  as.double(z)
-  S <-  as.double(rep(0, nsim * n))
-  acc.rate <-  as.double(1)
   result <- .C("mcmc1binom",
                as.integer(n),
-               z = z,
-               S = S,
+               z = as.double(z),
+               S = as.double(rep(0, nsim * n)),
                as.double(data),
 	       as.double(units.m),
                as.double(meanS),
                as.double(as.vector(t(QQ))),
                as.double(as.vector(QtivQ)),
-               as.double(randnormal),
-               as.double(randunif),
+               as.double(rnorm(n * nsim * thin) * sqrt(S.scale)),
+               as.double(runif(nsim * thin)),
                as.double(S.scale),
                as.integer(nsim),
                as.integer(thin),
-               acc.rate = acc.rate, DUP=FALSE, PACKAGE = "geoRglm")[c("z", "S", "acc.rate")]
+               acc.rate = as.double(1), DUP=FALSE, PACKAGE = "geoRglm")[c("z", "S", "acc.rate")]
   attr(result$S, "dim") <- c(n, nsim) 
   return(result)
 }
@@ -138,7 +133,7 @@
   else krige1d <- FALSE
   ##
   if(is.null(locations)) {
-    cat(paste("locations need to be specified for prediction; prediction not performed \n"))
+    if(messages.screen) cat(paste("locations need to be specified for prediction; prediction not performed \n"))
   }
   else {
     if(is.null(trend.l))
@@ -185,17 +180,15 @@
   if(!is.null(locations)) {
     if(!is.null(borders)){
       locations <- locations.inside(locations, borders)
-      if(nrow(locations) == 0)
-        stop(" binom.krige : there are no prediction locations inside the borders")
-      if(messages.screen)
-        cat(" binom.krige: results will be returned only for prediction locations inside the borders\n")
+      if(nrow(locations) == 0) stop(" binom.krige : there are no prediction locations inside the borders")
+      if(messages.screen) cat(" binom.krige: results will be returned only for prediction locations inside the borders\n")
     }
     krige <- list(type.krige = krige$type.krige, beta = beta, trend.d = trend.d, trend.l = trend.l, cov.model = cov.model, 
                   cov.pars = cov.pars, kappa = kappa, nugget = nugget, micro.scale = micro.scale, dist.epsilon = dist.epsilon, 
                   aniso.pars = aniso.pars, link = "logit")
     kpl.result <- glm.krige.aux(data = res.mcmc$Sdata, coords = coords, locations = locations, krige = krige,
 					output = list(n.predictive = ifelse(sim.predict,1,0),
-					      signal = TRUE, messages.screen = FALSE))			   
+					      signal = TRUE, messages=FALSE))			   
     remove(list = c("res.mcmc"))
     kpl.result$krige.var <- rowMeans(kpl.result$krige.var) + apply(kpl.result$predict, 1, var)
     if(nrow(locations) > 1) kpl.result$mcmc.error <- sqrt(asympvar(kpl.result$predict)/ncol(kpl.result$predict))
@@ -233,7 +226,6 @@ function(data, coords, locations, krige, output)
   ##
   ##################### Back-transforming predictions
   ## using second order taylor-expansion + facts for N(0,1) [third moment = 0 ; fourth moment = 12].
-  if(output$messages.screen) cat("binom.krige: back-transforming predictions using 2. order Taylor expansion for g^{-1}() \n")
   ivlogit2 <- ifelse(kc.result$predict<700, exp(kc.result$predict)*(-expm1(kc.result$predict))/(1+exp(kc.result$predict))^3, 0)
   kc.result$predict <- plogis(kc.result$predict) + 0.5*ivlogit2*kc.result$krige.var
   kc.result$krige.var <- ifelse(kc.result$predict<700, exp(kc.result$predict)/(1+exp(kc.result$predict))^2, 0)^2*kc.result$krige.var+(11/4)*ivlogit2^2*kc.result$krige.var^2
