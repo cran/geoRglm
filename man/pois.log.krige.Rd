@@ -26,7 +26,7 @@ pois.log.krige(geodata, coords = geodata$coords, data = geodata$data,
                mcmc.input, krige, output)
 krige.glm.control(type.krige = "ok", trend.d = "cte", trend.l = "cte",
                   obj.model = NULL, beta, cov.model, cov.pars, kappa,
-                  nugget, micro.scale = 0, dist.epsilon = 1e-10, 
+                  nugget, micro.scale, dist.epsilon = 1e-10, 
                   aniso.pars, lambda)
 }
 
@@ -89,9 +89,12 @@ krige.glm.control(type.krige = "ok", trend.d = "cte", trend.l = "cte",
   \item{nugget}{the value of the nugget parameter
     \eqn{\tau^2}{tau^2} for the underlying Gaussian field. Default is
     \code{nugget = 0}.  }
-  \item{micro.scale}{micro-scale variance. If different from zero, the
-    nugget variance is divided into 2 terms: \emph{micro-scale variance}
-    and \emph{measurement error}.  This option is not implemented.  }
+  \item{micro.scale}{micro-scale variance. If specified, the
+    nugget is divided into 2 terms: \emph{micro-scale variance}
+    and \emph{measurement error}.
+    This has effect on prediction where the ``signal'' part of \eqn{S}
+    (without the measurement error part of the nugget) is predicted. The
+    default is \code{micro.scale = nugget}.  }
   \item{dist.epsilon}{a numeric value. Locations which are separated
     by a distance less than this value
     are considered co-located.  }

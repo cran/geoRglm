@@ -16,7 +16,13 @@
   if(any(mcmc.input$S.start=="default")) {
     S <- as.vector(ifelse(data > 0, log(data), 0) - log(units.m))
   }
-  else S <- as.vector(mcmc.input$S.start)
+  else{
+    if(is.numeric(mcmc.input$S.start)){
+      if(length(mcmc.input$S.start) != n) stop("dimension of mcmc-starting-value must equal dimension of data")
+      S <- as.vector(mcmc.input$S.start)
+    }
+    else  stop(" S.start must be a vector of same dimension as data ")
+  }
   burn.in <- mcmc.input$burn.in
   thin <- mcmc.input$thin
   n.iter <- mcmc.input$n.iter
@@ -33,11 +39,8 @@
   }
   else {
     phi.scale <- mcmc.input$phi.scale
-    if(nmphi > 1) {
-      p.discr.rejects <- 1 - 2 * pnorm((phi.discrete[nmphi] - phi.discrete[1])/(2 * (nmphi - 1)), sd = sqrt(phi.scale), lower.tail = FALSE )
-      if(p.discr.rejects > 0.2)
-         warning(paste("probability of rejecting phi-proposal because of discr. is \n", p.discr.rejects))
-    }
+    if(nmphi > 1 && pnorm((phi.discrete[nmphi] - phi.discrete[1])/(nmphi - 1), sd = sqrt(phi.scale)) > 0.975)
+      print("Consider making the grid in phi.discrete more dense. The algorithm may have problems moving.")
   }
   ##                                                                      
 ##### ---------- sampling ----------- ###### 
@@ -125,7 +128,13 @@
   if(any(mcmc.input$S.start=="default")) {
     S <- as.vector(ifelse(data > 0, ((data/units.m)^lambda -1)/lambda, 0) )         
   }
-  else S <- as.vector(mcmc.input$S.start)
+  else{
+    if(is.numeric(mcmc.input$S.start)){
+      if(length(mcmc.input$S.start) != n) stop("dimension of mcmc-starting-value must equal dimension of data")
+      S <- as.vector(mcmc.input$S.start)
+    }
+    else  stop(" S.start must be a vector of same dimension as data ")
+  }
   if(any(mcmc.input$Htrunc=="default")) Htrunc <- 2*data + 5 
   else {
     if(is.vector(mcmc.input$Htrunc) & length(mcmc.input$Htrunc) == n) Htrunc <- mcmc.input$Htrunc
@@ -147,11 +156,8 @@
   }
   else {
     phi.scale <- mcmc.input$phi.scale
-    if(nmphi > 1) {
-      p.discr.rejects <- 1 - 2 * pnorm((phi.discrete[nmphi] - phi.discrete[1])/(2 * (nmphi - 1)), sd = sqrt(phi.scale),  lower.tail = FALSE)
-      if(p.discr.rejects > 0.2)
-         warning(paste("probability of rejecting phi-proposal because of discr. is \n", p.discr.rejects))
-    }
+    if(nmphi > 1 && pnorm((phi.discrete[nmphi] - phi.discrete[1])/(nmphi - 1), sd = sqrt(phi.scale)) > 0.975)
+      print("Consider making the grid in phi.discrete more dense. The algorithm may have problems moving. ")
   }
   ##                                                                      
 ##### ---------- sampling ----------- ###### 
@@ -240,9 +246,15 @@
   n <- length(data)
   S.scale <- mcmc.input$S.scale
   if(any(mcmc.input$S.start == "default")) {
-    S <- as.vector(ifelse(data > 0, log(data), 0) - log(units.m))
+    S <- as.vector(ifelse(data > 0, log(data), 0) - log(units.m)) - meanS
   }
-  else S <- as.vector(mcmc.input$S.start)
+  else{
+    if(is.numeric(mcmc.input$S.start)){
+      if(length(mcmc.input$S.start) != n) stop("dimension of mcmc-starting-value must equal dimension of data")
+      S <- as.vector(mcmc.input$S.start)
+    }
+    else  stop(" S.start must be a vector of same dimension as data ")
+  }
   if(any(mcmc.input$Htrunc=="default")) Htrunc <- 2*data + 5 
   else {
     if(is.vector(mcmc.input$Htrunc) & length(mcmc.input$Htrunc) == n) Htrunc <- mcmc.input$Htrunc
@@ -264,11 +276,8 @@
   }
   else {
     phi.scale <- mcmc.input$phi.scale
-    if(nmphi > 1) {
-      p.discr.rejects <- 1 - 2 * pnorm((phi.discrete[nmphi] - phi.discrete[1])/(2 * (nmphi - 1)), sd = sqrt(phi.scale),  lower.tail = FALSE)
-      if(p.discr.rejects > 0.2)
-        warning(paste("probability of rejecting phi-proposal because of discr. is \n", p.discr.rejects))
-    }
+    if(nmphi > 1 && pnorm((phi.discrete[nmphi] - phi.discrete[1])/(nmphi - 1), sd = sqrt(phi.scale)) > 0.975)
+      print("Consider making the grid in phi.discrete more dense. The algorithm may have problems moving. ")
   }
   ##                                                                      
   ## ---------- sampling ----------- ###### 
@@ -284,60 +293,30 @@
   n.sim <- floor(n.iter/thin)
   Sdata <- as.double(as.vector(c(S, rep(0, (n.sim - 1) * n))))
   phi.sample <- as.double(rep(phi, n.sim)) 
-  if(is.R()){
-    result <-  .C("mcmcrun5",
-                  as.integer(n),
-                  as.double(data),
-                  as.double(units.m),
-                  as.double(as.vector(meanS)),
-                  as.double(as.vector(ttvbetatt)),
-                  as.integer(cov.model.number),
-                  as.double(kappa),
-                  as.double(tausq.rel),
-                  as.double(distcoords),
-                  as.double(S.scale),
-                  as.double(phi.scale),
-                  as.double(Htrunc),
-                  as.integer(n.iter),
-                  as.integer(thin),
-                  as.integer(burn.in),
-                  as.double(ss.sigma),
-                  as.integer(df),
-                  as.integer(phi.prior.number),
-                  as.double(phi.discrete),
-                  as.integer(nmphi),
-                  as.double(e.mean),
-                  Sdata = Sdata,
-                  phi.sample = phi.sample, DUP=FALSE, PACKAGE = "geoRglm")[c("Sdata", "phi.sample")]
-  }
-  else{
-    result <- .C("mcmcrun5",
-                 COPY = c(FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE,
-                   FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, TRUE, TRUE),
-                 as.integer(n),
-                 as.double(data),
-                 as.double(units.m),
-                 as.double(as.vector(meanS)),
-                 as.double(as.vector(ttvbetatt)),
-                 as.integer(cov.model.number),
-                 as.double(kappa),
-                 as.double(tausq.rel),
-                 as.double(distcoords),
-                 as.double(S.scale),
-                 as.double(phi.scale),
-                 as.double(Htrunc),
-                 as.integer(n.iter),
-                 as.integer(thin),
-                 as.integer(burn.in),
-                 as.double(ss.sigma),
-                 as.integer(df),
-                 as.integer(phi.prior.number),
-                 as.double(phi.discrete),
-                 as.integer(nmphi),
-                 as.double(e.mean),
-                 Sdata = Sdata,
-                 phi.sample = phi.sample)[c("Sdata", "phi.sample")]
-  }
+  result <-  .C("mcmcrun5",
+                as.integer(n),
+                as.double(data),
+                as.double(units.m),
+                as.double(as.vector(meanS)),
+                as.double(as.vector(ttvbetatt)),
+                as.integer(cov.model.number),
+                as.double(kappa),
+                as.double(tausq.rel),
+                as.double(distcoords),
+                as.double(S.scale),
+                as.double(phi.scale),
+                as.double(Htrunc),
+                as.integer(n.iter),
+                as.integer(thin),
+                as.integer(burn.in),
+                as.double(ss.sigma),
+                as.integer(df),
+                as.integer(phi.prior.number),
+                as.double(phi.discrete),
+                as.integer(nmphi),
+                as.double(e.mean),
+                Sdata = Sdata,
+                phi.sample = phi.sample, DUP=FALSE, PACKAGE = "geoRglm")[c("Sdata", "phi.sample")]
   attr(result$Sdata, "dim") <- c(n, n.sim)
   cat(paste("MCMC performed: n.iter. = ", n.iter, "; thinning = ", thin, "; burn.in = ", burn.in, "\n"))
   return(result)
@@ -353,9 +332,15 @@
   n <- length(data)
   S.scale <- mcmc.input$S.scale
   if(any(mcmc.input$S.start == "default")) {
-    S <- as.vector(ifelse(data > 0, ((data/units.m)^lambda -1)/lambda, 0) )  
+    S <- as.vector(ifelse(data > 0, ((data/units.m)^lambda -1)/lambda, 0) ) - meanS
   }
-  else S <- as.vector(mcmc.input$S.start)
+  else{
+    if(is.numeric(mcmc.input$S.start)){
+      if(length(mcmc.input$S.start) != n) stop("dimension of mcmc-starting-value must equal dimension of data")
+      S <- as.vector(mcmc.input$S.start)
+    }
+    else  stop(" S.start must be a vector of same dimension as data ")
+  }
   if(any(mcmc.input$Htrunc=="default")) Htrunc <- 2*data + 5 
   else {
     if(is.vector(mcmc.input$Htrunc) & length(mcmc.input$Htrunc) == n) Htrunc <- mcmc.input$Htrunc
@@ -377,11 +362,8 @@
   }
   else {
     phi.scale <- mcmc.input$phi.scale
-    if(nmphi > 1) {
-      p.discr.rejects <- 1 - 2 * pnorm((phi.discrete[nmphi] - phi.discrete[1])/(2 * (nmphi - 1)), sd = sqrt(phi.scale), lower.tail = FALSE )
-      if(p.discr.rejects > 0.2)
-        warning(paste("probability of rejecting phi-proposal because of discr. is \n", p.discr.rejects))
-    }
+    if(nmphi > 1 && pnorm((phi.discrete[nmphi] - phi.discrete[1])/(nmphi - 1), sd = sqrt(phi.scale)) > 0.975)
+      print("Consider making the grid in phi.discrete more dense. The algorithm may have problems moving. ")
   }
   ##                                         
   ## ---------- sampling ----------- ###### 
@@ -397,62 +379,31 @@
   n.sim <- floor(n.iter/thin)
   Sdata <- as.double(as.vector(c(S, rep(0, (n.sim - 1) * n))))
   phi.sample <- as.double(rep(phi, n.sim)) 
-  if(is.R()){
-    result <-  .C("mcmcrun5boxcox",
-                  as.integer(n),
-                  as.double(data),
-                  as.double(units.m),
-                  as.double(as.vector(meanS)),
-                  as.double(as.vector(ttvbetatt)),
-                  as.integer(cov.model.number),
-                  as.double(kappa),
-                  as.double(tausq.rel),
-                  as.double(distcoords),
-                  as.double(S.scale),
-                  as.double(phi.scale),
-                  as.double(Htrunc),
-                  as.integer(n.iter),
-                  as.integer(thin),
-                  as.integer(burn.in),
-                  as.double(ss.sigma),
-                  as.integer(df),
-                  as.integer(phi.prior.number),
-                  as.double(phi.discrete),
-                  as.integer(nmphi),
-                  as.double(e.mean),
-                  as.double(lambda),
-                  Sdata = Sdata,
-                  phi.sample = phi.sample, DUP=FALSE, PACKAGE = "geoRglm")[c("Sdata", "phi.sample")]
-  }
-  else{
-    result <- .C("mcmcrun5boxcox",
-                 COPY = c(FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE,
-                   FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, TRUE, TRUE),
-                 as.integer(n),
-                 as.double(data),
-                 as.double(units.m),
-                 as.double(as.vector(meanS)),
-                 as.double(as.vector(ttvbetatt)),
-                 as.integer(cov.model.number),
-                 as.double(kappa),
-                 as.double(tausq.rel),
-                 as.double(distcoords),
-                 as.double(S.scale),
-                 as.double(phi.scale),
-                 as.double(Htrunc),
-                 as.integer(n.iter),
-                 as.integer(thin),
-                 as.integer(burn.in),
-                 as.double(ss.sigma),
-                 as.integer(df),
-                 as.integer(phi.prior.number),
-                 as.double(phi.discrete),
-                 as.integer(nmphi),
-                 as.double(e.mean),
-                 as.double(lambda),
-                 Sdata = Sdata,
-                 phi.sample = phi.sample)[c("Sdata", "phi.sample")]
-  }
+  result <-  .C("mcmcrun5boxcox",
+                as.integer(n),
+                as.double(data),
+                as.double(units.m),
+                as.double(as.vector(meanS)),
+                as.double(as.vector(ttvbetatt)),
+                as.integer(cov.model.number),
+                as.double(kappa),
+                as.double(tausq.rel),
+                as.double(distcoords),
+                as.double(S.scale),
+                as.double(phi.scale),
+                as.double(Htrunc),
+                as.integer(n.iter),
+                as.integer(thin),
+                as.integer(burn.in),
+                as.double(ss.sigma),
+                as.integer(df),
+                as.integer(phi.prior.number),
+                as.double(phi.discrete),
+                as.integer(nmphi),
+                as.double(e.mean),
+                as.double(lambda),
+                Sdata = Sdata,
+                phi.sample = phi.sample, DUP=FALSE, PACKAGE = "geoRglm")[c("Sdata", "phi.sample")]
   attr(result$Sdata, "dim") <- c(n, n.sim)
   cat(paste("MCMC performed: n.iter. = ", n.iter, "; thinning = ", thin, "; burn.in = ", burn.in, "\n"))
   return(result)
@@ -795,7 +746,7 @@
       }
       else {
         num.pred <- 0
-        kb.results$predictive$simulations <- " no simulations from the preditive distribution "
+        kb.results$predictive$simulations <- " no simulations from the predictive distribution "
       }
     }
     else num.pred <- 0

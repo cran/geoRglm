@@ -72,11 +72,7 @@
   function(S.scale, Htrunc="default", S.start, burn.in=0, thin=10, n.iter=1000*thin, phi.start="default",  phi.scale=NULL)
 {
   if(missing(S.scale)) stop("S.scale parameter must to be provided for MCMC-proposal")
-  if(missing(S.start)) S.start<-"default"
-  if(is.numeric(S.start))
-    if(length(S.start) != n) stop("dimension of mcmc-starting-value must equal dimension of data")
-  else   
-    if(!any(S.start == "default")) stop(" S.start must be a vector of same dimension as data ")              
+  if(missing(S.start)) S.start<- "default"
   res <- list(S.scale = S.scale, Htrunc = Htrunc, S.start = S.start, burn.in = burn.in, thin = thin, n.iter = n.iter,
               phi.start = phi.start, phi.scale=phi.scale)
   class(res) <- "mcmc.geoRglm"
@@ -216,7 +212,8 @@
 "logit.inv" <- 
   function(z)
 {
-  return(exp(z)/(1+exp(z)))
+  logit <- ifelse(z<700, exp(z)/(1+exp(z)), 1)
+  return(logit)
 }
 
 "output.glm.control" <-

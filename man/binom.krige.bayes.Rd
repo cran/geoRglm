@@ -61,7 +61,7 @@ binom.krige.bayes(geodata, coords = geodata$coords, data = geodata$data,
 \details{
 
  \code{binom.krige.bayes} is a function for Bayesian geostatistical 
-  analysis in the bionomial-logit spatial model.
+  analysis in the binomial-logit spatial model.
   
   The Bayesian algorithm is using a discretized version of the prior
   distribution for the parameter \eqn{\phi}{phi}. This means that the prior for \eqn{\phi}{phi} is always a proper prior.
@@ -132,6 +132,8 @@ that algorithm easily can move between the discrete values in \code{prior$phi.di
   The arguments for the control functions are described in their
   respective help files.
   
+In the prediction part of the function we want to predict
+\eqn{\exp(S^*)/(1+\exp(S^*))}{exp(S^*)/(1+exp(S^*))} at locations of interest.
 For the prediction part of the algorithm, we use the median of the 
 predictive distribution as the predictor and 1/4 of the length of the 95 percent predictive interval as a measure of the prediction 
 uncertainty. Below we describe the procedure for doing calculating these quantities.
@@ -167,7 +169,7 @@ the guess is too low, it is adjusted upwards, and vise verse.
       for the parameter \eqn{\sigma^2}{sigma^2}.  }
     \item{phi}{summary of the posterior distribution
       of the parameter \eqn{\phi}{phi}.  }
-    \item{simulations}{sample from the posterior distribution of \eqn{\exp(S)/(1+\exp(S))}{exp(S)/(1+exp(S))} at the data locations. 
+    \item{simulations}{sample from the posterior distribution of \eqn{\exp(S^*)/(1+\exp(S^*))}{exp(S^*)/(1+exp(S^*))} at the data locations. 
       Returned only if \code{keep.mcmc.sim = TRUE}.  }
     \cr
     \cr

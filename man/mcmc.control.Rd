@@ -19,7 +19,7 @@ mcmc.control(S.scale, Htrunc, S.start, burn.in, thin, n.iter, phi.start,
 \item{S.scale}{proposal variance for the update of \eqn{S} in the algorithm.  }
     \item{Htrunc}{truncation parameter for the MCMC-algorithm. Either a number or a vector of the same dimension as the data. 
      Default is Htrunc = 2*data + 5.  }
-    \item{S.start}{starting value for \code{S} in the MCMC-algorithm. Default value exist.  }
+    \item{S.start}{starting value for \code{S} (without the mean !!) in the MCMC-algorithm. Default value exist.  }
     \item{burn.in}{length of the burn-in period.  Default is 0.  }
     \item{thin}{thinning: only every \code{thin} scan is stored. Default is \code{thin=10}.  }
     \item{n.iter}{number of iterations performed. Default is

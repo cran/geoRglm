@@ -436,8 +436,7 @@
     tmean <- kb$predictive$mean
     tv0ivdata <- NULL        ### se efter om den kan fjernes foer
     Dval <-  1.0 + tausq.rel
-    signal <- TRUE ################## this is part of the bug that needs to be changed.
-    coincide.cond <- (any(loc.coincide) &  ((round(1e12 * tausq.rel.fixed) == 0) | !signal))
+    coincide.cond <- any(loc.coincide)
     nloc <- ni - n.loc.coincide
     if(coincide.cond){
       ind.not.coincide <- (-loc.coincide)
@@ -538,7 +537,7 @@ function(geodata, coords = geodata$coords, data = geodata$data, locations, krige
         
       }
     }
-  }    
+  }
   cov.model <- krige$cov.model
   kappa <- krige$kappa
   lambda <- krige$lambda
@@ -773,7 +772,7 @@ function(geodata, coords = geodata$coords, data = geodata$data, locations, krige
                                                              Rinv = invcov,
                                                              mod = list(beta.size = beta.size, nloc = nloc,
                                                                Nsims = n.datasets, n = n, Dval = Dval,
-                                                               df.model = NULL, s2 = sill.partial,
+                                                               df.model = NULL, s2 = sigmasq,
                                                                cov.model.number = cor.number(cov.model),
                                                                phi = phi, kappa = kappa),
                                                              vbetai = vbetai, fixed.sigmasq = TRUE)

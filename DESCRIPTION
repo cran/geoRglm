@@ -1,6 +1,6 @@
 Package: geoRglm
-Version: 0.5-5
-Date: 2002/08/29
+Version: 0.5-10
+Date: 2002/10/04
 Title: geoRglm - a package for generalised linear spatial models
 Author: Ole F. Christensen <o.christensen@lancaster.ac.uk> and  Paulo J. Ribeiro Jr <Paulo.Ribeiro@est.ufpr.br>
 Maintainer: Ole Christensen <o.christensen@lancaster.ac.uk>

@@ -1,9 +1,9 @@
- 
+
 "mcmc.binom.aux" <- 
   function(z, data, units.m, meanS, QQ, S.scale, nsim, thin, Dmat)
 {
   ##
-  ## #### ------------------------ doing the mcmc-steps ----------- ############# 
+  ##### ------------------------ doing the mcmc-steps ----------- ############ 
   ##  
   n <- length(data)
   randnormal <- rnorm(n * nsim * thin) * sqrt(S.scale)
@@ -12,74 +12,36 @@
   S <-  as.double(rep(0, nsim * n))
   acc.rate <-  as.double(1)
   if(is.null(Dmat)) {
-    if(is.R()){
-      result <- .C("mcmcrunbinom",
-                   as.integer(n),
-                   z = z,
-                   S = S,
-                   as.double(data),
-                   as.double(units.m),
-                   as.double(meanS),
-                   as.double(as.vector(t(QQ))),
-                   as.double(randnormal),
-                   as.double(randunif),
-                   as.double(S.scale),
-                   as.integer(nsim),
-                   as.integer(thin),
-                   acc.rate = acc.rate, DUP=FALSE, PACKAGE = "geoRglm")[c("z", "S", "acc.rate")]
-    }
-    else{
-      result <- .C("mcmcrunbinom",
-                   COPY = c(FALSE, TRUE, TRUE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, TRUE),
-                   as.integer(n),
-                   z = z,
-                   S = S,
-                   as.double(data),
-                   as.double(units.m),
-                   as.double(meanS),
-                   as.double(as.vector(t(QQ))),
-                   as.double(randnormal),
-                   as.double(randunif),
-                   as.double(S.scale),
-                   as.integer(nsim),
-                   as.integer(thin),  
-                   acc.rate = acc.rate)[c("z", "S", "acc.rate")]
-    }
+    result <- .C("mcmcrunbinom",
+                 as.integer(n),
+                 z = z,
+                 S = S,
+                 as.double(data),
+                 as.double(units.m),
+                 as.double(meanS),
+                 as.double(as.vector(t(QQ))),
+                 as.double(randnormal),
+                 as.double(randunif),
+                 as.double(S.scale),
+                 as.integer(nsim),
+                 as.integer(thin),
+                 acc.rate = acc.rate, DUP=FALSE, PACKAGE = "geoRglm")[c("z", "S", "acc.rate")]
   }
   else{
-    if(is.R()){
-      result <- .C("mcmcrun2binom",
-                   as.integer(n),
-                   z = z,
-                   S = S,
-                   as.double(data),
-                   as.double(units.m),
-                   as.double(as.vector(t(QQ))),
-                   as.double(as.vector(Dmat)),
-                   as.double(randnormal),
-                   as.double(randunif),
-                   as.double(S.scale),
-                   as.integer(nsim),
-                   as.integer(thin),
-                   acc.rate = acc.rate, DUP=FALSE, PACKAGE = "geoRglm")[c("z", "S", "acc.rate")]
-    }
-    else{
-      result <- .C("mcmcrun2binom",
-                   COPY = c(FALSE, TRUE, TRUE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, TRUE),
-                   as.integer(n),
-                   z = z,
-                   S = S,
-                   as.double(data),
-                   as.double(units.m),
-                   as.double(as.vector(t(QQ))),
-                   as.double(as.vector(Dmat)),
-                   as.double(randnormal),
-                   as.double(randunif),
-                   as.double(S.scale),
-                   as.integer(nsim),
-                   as.integer(thin),
-                   acc.rate = acc.rate)[c("z", "S", "acc.rate")]
-    }
+    result <- .C("mcmcrun2binom",
+                 as.integer(n),
+                 z = z,
+                 S = S,
+                 as.double(data),
+                 as.double(units.m),
+                 as.double(as.vector(t(QQ))),
+                 as.double(as.vector(Dmat)),
+                 as.double(randnormal),
+                 as.double(randunif),
+                 as.double(S.scale),
+                 as.integer(nsim),
+                 as.integer(thin),
+                 acc.rate = acc.rate, DUP=FALSE, PACKAGE = "geoRglm")[c("z", "S", "acc.rate")]
   }
   attr(result$S, "dim") <- c(n, nsim)
   return(result)
@@ -93,10 +55,16 @@
   S.scale <- mcmc.input$S.scale
   if(is.null(meanS)) meanS <- rep(0,n)
   if(any(mcmc.input$S.start=="default")){
-    S <- as.vector(ifelse(data > 0, log(data), -1) - ifelse(units.m-data > 0, log(units.m-data), -1) )         
+    S <- as.vector(ifelse(data > 0, log(data), -1) - ifelse(units.m-data > 0, log(units.m-data), -1) ) - meanS      
     z <- as.vector(solve(QQ,S))
   }
-  else z <- as.vector(solve(QQ,mcmc.input$S.start))
+  else{
+    if(is.numeric(mcmc.input$S.start)){
+      if(length(mcmc.input$S.start) != n) stop("dimension of mcmc-starting-value must equal dimension of data")
+      z <- as.vector(solve(QQ,mcmc.input$S.start))
+    }
+    else  stop(" S.start must be a vector of same dimension as data ")
+  }
   burn.in <- mcmc.input$burn.in
   thin <- mcmc.input$thin
   n.iter <- mcmc.input$n.iter
@@ -137,7 +105,13 @@
   if(any(mcmc.input$S.start=="default")) {
     S <- as.vector(ifelse(data > 0, log(data), -1) - ifelse(units.m-data > 0, log(units.m-data), -1) )
   }
-  else S <- as.vector(mcmc.input$S.start)
+  else{
+    if(is.numeric(mcmc.input$S.start)){
+      if(length(mcmc.input$S.start) != n) stop("dimension of mcmc-starting-value must equal dimension of data")
+      S <- as.vector(mcmc.input$S.start)
+    }
+    else  stop(" S.start must be a vector of same dimension as data ")
+  }
   burn.in <- mcmc.input$burn.in
   thin <- mcmc.input$thin
   n.iter <- mcmc.input$n.iter
@@ -154,11 +128,8 @@
   }
   else {
     phi.scale <- mcmc.input$phi.scale
-    if(nmphi > 1) {
-      p.discr.rejects <- 1 - 2 * pnorm((phi.discrete[nmphi] - phi.discrete[1])/(2 * (nmphi - 1)), lower.tail = FALSE, sd = sqrt(phi.scale))
-      if(p.discr.rejects > 0.2)
-        warning(paste("probability of rejecting phi-proposal because of discr. is \n", p.discr.rejects))
-    }
+    if(nmphi > 1 && pnorm((phi.discrete[nmphi] - phi.discrete[1])/(nmphi - 1), sd = sqrt(phi.scale)) > 0.975)
+      print("Consider making the grid in phi.discrete more dense. The algorithm may have problems moving.")
   }
   ##                                                                      
   ## ---------- sampling ----------- ###### 
@@ -242,9 +213,15 @@
   n <- length(data)
   S.scale <- mcmc.input$S.scale
   if(any(mcmc.input$S.start=="default")) {
-    S <- as.vector(ifelse(data > 0, log(data), -1) - ifelse(units.m-data > 0, log(units.m-data), -1) )
+    S <- as.vector(ifelse(data > 0, log(data), -1) - ifelse(units.m-data > 0, log(units.m-data), -1) ) - meanS
   }
-  else S <- as.vector(mcmc.input$S.start)
+  else{
+    if(is.numeric(mcmc.input$S.start)){
+      if(length(mcmc.input$S.start) != n) stop("dimension of mcmc-starting-value must equal dimension of data")
+      S <- as.vector(mcmc.input$S.start)
+    }
+    else  stop(" S.start must be a vector of same dimension as data ")
+  }
   burn.in <- mcmc.input$burn.in
   thin <- mcmc.input$thin
   n.iter <- mcmc.input$n.iter
@@ -261,13 +238,10 @@
   }
   else {
     phi.scale <- mcmc.input$phi.scale
-    if(nmphi > 1) {
-      p.discr.rejects <- 1 - 2 * pnorm((phi.discrete[nmphi] - phi.discrete[1])/(2 * (nmphi - 1)), lower.tail = FALSE, sd = sqrt(phi.scale))
-      if(p.discr.rejects > 0.2)
-        warning(paste("probability of rejecting phi-proposal because of discr. is \n", p.discr.rejects))
-    }
+    if(nmphi > 1 && pnorm((phi.discrete[nmphi] - phi.discrete[1])/(nmphi - 1), sd = sqrt(phi.scale)) > 0.975)
+      print("Consider making the grid in phi.discrete more dense. The algorithm may have problems moving.")
   }
-  ##                                                                      
+  ##                                                                
   ## ---------- sampling ----------- ###### 
   cov.model.number <- cor.number(cov.model)
   phi.prior.number <- phi.number(phi.prior)
@@ -661,7 +635,7 @@
       }
       else {
         num.pred <- 0
-        kb.results$predictive$simulations <- " no simulations from the preditive distribution "
+        kb.results$predictive$simulations <- " no simulations from the predictive distribution "
       }
     }
     else num.pred <- 0
@@ -684,7 +658,7 @@
         temp.pred$mean <- temp.result$predictive$mean
         temp.pred$var <- temp.result$predictive$variance
         if(output$sim.predict)
-          kb.results$predictive$simulations <- exp(temp.result$predictive$simulations)/(1+exp(temp.result$predictive$simulations))
+          kb.results$predictive$simulations <- logit.inv(temp.result$predictive$simulations)
       }
     }
     else {
@@ -715,7 +689,7 @@
             temp.pred$mean[, indic.phi[i, 1]] <- temp.result$predictive$mean
             temp.pred$var[, indic.phi[i, 1]] <- temp.result$predictive$variance
             if(output$sim.predict) {
-              kb.results$predictive$simulations[, indic.phi[i, 1]] <- exp(temp.result$predictive$simulations)/(1+exp(temp.result$predictive$simulations))
+              kb.results$predictive$simulations[, indic.phi[i, 1]] <- logit.inv(temp.result$predictive$simulations)
             }
           }
         }
@@ -730,7 +704,7 @@
             temp.pred$mean[, indic.phi[i, 1:phi.table[i]]] <- temp.result$predictive$mean
             temp.pred$var[, indic.phi[i, 1:phi.table[i]]] <- temp.result$predictive$variance
             if(output$sim.predict) {
-              kb.results$predictive$simulations[ , indic.phi[i, 1:phi.table[i]]] <- exp(temp.result$predictive$simulations)/(1+exp(temp.result$predictive$simulations))
+              kb.results$predictive$simulations[ , indic.phi[i, 1:phi.table[i]]] <- logit.inv(temp.result$predictive$simulations)
             }
           }
         }
@@ -955,7 +929,7 @@
     if(is.R()) remove("temp.post")
     else remove("temp.post", frame = sys.nframe())
   }
-  if(output$keep.mcmc.sim) kb.results$posterior$simulations <- exp(log.odds)/(1+exp(log.odds))  
+  if(output$keep.mcmc.sim) kb.results$posterior$simulations <- logit.inv(log.odds)  
   model$lambda <- NULL
   kb.results$model <- model
   kb.results$prior <- prior$priors.info

@@ -52,7 +52,13 @@
   if(any(mcmc.input$S.start=="default")) {
     z <- as.vector(solve(QQ,ifelse(data > 0, log(data), 0) - meanS - log(units.m)))
   }
-  else z <- as.vector(solve(QQ,mcmc.input$S.start))
+  else{
+    if(is.numeric(mcmc.input$S.start)){
+      if(length(mcmc.input$S.start) != n) stop("dimension of mcmc-starting-value must equal dimension of data")
+      else z <- as.vector(solve(QQ,mcmc.input$S.start))
+    }
+    else  stop(" S.start must be a vector of same dimension as data ")
+  }
   burn.in <- mcmc.input$burn.in
   thin <- mcmc.input$thin
   n.iter <- mcmc.input$n.iter
@@ -141,7 +147,13 @@
     S <- as.vector(ifelse(data > 0, (data/units.m)^lambda-1, 0)/lambda - meanS )         
     z <- as.vector(solve(QQ,S))
   }
-  else z <- as.vector(solve(QQ,mcmc.input$S.start))
+  else{
+    if(is.numeric(mcmc.input$S.start)){
+      if(length(mcmc.input$S.start) != n) stop("dimension of mcmc-starting-value must equal dimension of data")
+      else z <- as.vector(solve(QQ,mcmc.input$S.start))
+    }
+    else  stop(" S.start must be a vector of same dimension as data ")
+  }
   if(any(mcmc.input$Htrunc=="default")) Htrunc <- 2*data + 5
   else {
     if(is.vector(mcmc.input$Htrunc) & length(mcmc.input$Htrunc) == n)
@@ -182,7 +194,7 @@
 
 "krige.glm.control" <-
   function (type.krige = "ok", trend.d = "cte", trend.l = "cte", obj.model = NULL, beta, cov.model, cov.pars, kappa,
-            nugget, micro.scale = 0, dist.epsilon = 1e-10, aniso.pars, lambda)
+            nugget, micro.scale, dist.epsilon = 1e-10, aniso.pars, lambda)
 {
   if(type.krige != "ok" & type.krige != "OK" & type.krige != "o.k." & type.krige != "O.K." & type.krige != "sk" & type.krige != "SK" & type.krige != "s.k." & type.krige != "S.K.")
     stop("pois.log.krige: wrong option in the argument type.krige. It should be \"sk\" or \"ok\"(if ordinary or simple kriging is to be performed)")
@@ -197,16 +209,17 @@
     if(missing(cov.pars)) cov.pars <- obj.model$cov.pars
     if(missing(kappa)) kappa <- obj.model$kappa
     if(missing(nugget)) nugget <- obj.model$nugget
+    if(missing(micro.scale)) micro.scale <- nugget
     if(missing(lambda)) lambda <- obj.model$lambda
     if(missing(aniso.pars)) aniso.pars <- obj.model$aniso.pars
   }
   else{
     if(missing(beta)) beta <- NULL
     if(missing(cov.model)) cov.model <- "matern"
-    if(missing(cov.pars))
-      stop("covariance parameters (sigmasq and phi) should be provided")
+    if(missing(cov.pars)) stop("covariance parameters (sigmasq and phi) should be provided")
     if(missing(kappa)) kappa <- 0.5
     if(missing(nugget)) nugget <- 0
+    if(missing(micro.scale)) micro.scale <- nugget
     if(missing(lambda)) lambda <- 0
     if(missing(aniso.pars)) aniso.pars <- NULL
   }
@@ -287,7 +300,7 @@ function(geodata, coords = geodata$coords, data = geodata$data, units.m = "defau
         if(is.null(krige$cov.model)) krige$cov.model <- "matern"
         if(is.null(krige$kappa)) krige$kappa <-  0.5
         if(is.null(krige$nugget)) krige$nugget <-  0
-        if(is.null(krige$micro.scale)) krige$micro.scale <- 0  
+        if(is.null(krige$micro.scale)) krige$micro.scale <- krige$nugget
         if(is.null(krige$dist.epsilon)) krige$dist.epsilon <-  1e-10
         if(is.null(krige$lambda)) krige$lambda <- 0
           krige <- krige.glm.control(type.krige = krige$type.krige,
@@ -308,7 +321,7 @@ function(geodata, coords = geodata$coords, data = geodata$data, units.m = "defau
   beta <- krige$beta
   cov.pars <- krige$cov.pars
   nugget <- krige$nugget
-  if(krige$micro.scale>0.00000001) stop("pois.log.krige : microscale > 0 is not implemented ")
+  micro.scale <- krige$micro.scale
   aniso.pars <- krige$aniso.pars
   trend.d <- krige$trend.d
   trend.l <- krige$trend.l
@@ -422,17 +435,15 @@ function(geodata, coords = geodata$coords, data = geodata$data, units.m = "defau
 ######################## ---- prediction ----- #####################
   if(!is.null(locations)) {
     krige <- list(type.krige = krige$type.krige, beta = beta, trend.d = trend.d, trend.l = trend.l, cov.model = cov.model, 
-             cov.pars = cov.pars, kappa = kappa, nugget = nugget, micro.scale = nugget, dist.epsilon = dist.epsilon, 
+             cov.pars = cov.pars, kappa = kappa, nugget = nugget, micro.scale = micro.scale, dist.epsilon = dist.epsilon, 
              aniso.pars = aniso.pars, lambda = 0)
     kpl.result <- krige.conv.extnd(data = intensity, coords = coords, locations = locations, krige = krige,
-                                   output = list(n.predictive = ifelse(sim.predict,1,0), signal = FALSE, messages.screen = FALSE))
+                                   output = list(n.predictive = ifelse(sim.predict,1,0), signal = TRUE, messages.screen = FALSE))
     if(is.R()) remove(list = c("intensity"))
     else remove(list = c("intensity"), frame = sys.nframe())
     kpl.result$krige.var <- apply(kpl.result$krige.var, 1, mean) + apply(kpl.result$predict, 1, var)
     kpl.result$mcmc.error <- sqrt(asympvar(kpl.result$predict)/ncol(kpl.result$predict))
     kpl.result$predict <- apply(kpl.result$predict, 1, mean)
-    ##if(!krige$signal)
-      ##kpl.result$krige.var <- kpl.result$krige.var + kpl.result$predict    #### to be done properly sometime !
     if(beta.prior == "flat") {
       kpl.result$beta.est <- apply(kpl.result$beta, 1, mean)
       names(kpl.result$beta.est) <- beta.names

@@ -139,7 +139,11 @@ that algorithm easily can move between the discrete values in \code{prior$phi.di
   Default values are available in most of the cases.
   The arguments for the control functions are described in their
   respective help files.
-  
+
+  In the prediction part of the function we want to predict
+\eqn{g_{\lambda}^{-1}(S^*)}{g_lambda^{-1}(S^*)} at locations of
+interest, where \eqn{g_{\lambda}^{-1}}{g_lambda^{-1}} is the inverse
+Box-Cox transformation.  
 For the prediction part of the algorithm, we use the median of the 
 predictive distribution as the predictor and 1/4 of the length of the 95 percent predictive interval as a measure of the prediction 
 uncertainty. Below we describe the procedure for doing calculating these quantities.
@@ -176,7 +180,7 @@ the guess is too low, it is adjusted upwards, and vise verse.
       for the parameter \eqn{\sigma^2}{sigma^2}.  }
     \item{phi}{summary of the posterior distribution
       of the parameter \eqn{\phi}{phi}.  }
-    \item{simulations}{sample from the posterior distribution of \eqn{\exp(S)/(1+\exp(S))}{exp(S)/(1+exp(S))} at the data locations. 
+    \item{simulations}{sample from the posterior distribution of \eqn{g_{\lambda}^{-1}(S^*)}{g_lambda^{-1}(S^*)} at the data locations. 
       Returned only if \code{keep.mcmc.sim = TRUE}.  }
     \cr
     \cr
