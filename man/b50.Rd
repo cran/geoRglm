@@ -17,7 +17,7 @@ data(b64)
 \description{The simulated data sets \code{b50} and \code{p50} are used
   in several examples throughout the package
   documentation. The simulated data set \code{b64} was used in Diggle,
-  Ribeiro and Christensen (20030, and Christensen and Ribeiro (2002).
+  Ribeiro and Christensen (2003), and Christensen and Ribeiro (2002).
 }
 
 \format{

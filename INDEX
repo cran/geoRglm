@@ -12,6 +12,7 @@ covariog.model.env      Envelope for Empirical Covariogram for the
 geoRglm-defunct         Defunct Functions in the Package geoRglm
 hist.glm.krige.bayes    Plots Sample from Posterior Distributions
 image.glm.krige.bayes   Plots Results of the Predictive Distribution
+krige.gkm.control       Defines options and model for prediction
 lines.covariomodel      Line with a Covariogram Model
 mcmc.control            Defines options for the MCMC-algorithm
 model.glm.control       Defines model options

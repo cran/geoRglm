@@ -174,10 +174,10 @@
   function(geodata, coords = geodata$coords, data = geodata$data, units.m = "default", locations = "no", model, prior, mcmc.input, output){
 ###########
   if(missing(geodata))
-    geodata <- list(coords=coords, data=data)
+    geodata <- list(coords=coords, data=data, units.m=units.m)
   if(is.R()) require(mva)
   call.fc <- match.call()
-  seed <- .Random.seed
+  seed <- get(".Random.seed", envir=.GlobalEnv, inherits = FALSE)
   do.prediction <- ifelse(all(locations == "no"), FALSE, TRUE)
   ##
   ## Checking data configuration
@@ -275,6 +275,11 @@
     }
     else locations <- as.matrix(locations)
     ni <- nrow(locations)
+    ## Checking for 1D prediction 
+    if(length(unique(locations[,1])) == 1 | length(unique(locations[,2])) == 1)
+      krige1d <- TRUE
+    else krige1d <- FALSE
+    ##
     if(is.null(trend.l)) stop("trend.l needed for prediction")
     if(inherits(trend.d, "formula") | inherits(trend.l, "formula")){
       if((!inherits(trend.d, "formula")) | (!inherits(trend.l, "formula")))
@@ -303,7 +308,7 @@
   mcmc.input <- mcmc.check.aux(mcmc.input, fct="binom.krige.bayes")
   ##
   if(beta.prior == "fixed" | beta.prior == "normal") mean.d <- as.vector(trend.data %*% beta)
-  else mean.d <- 0
+  else mean.d <- rep(0, n)
   if(sigmasq.prior != "fixed"){
     if(beta.prior == "flat") df.model <- n - beta.size + df.sigmasq
     else df.model <- n + df.sigmasq
@@ -362,100 +367,6 @@
   ##
   n.sim <- ncol(log.odds)
   if(inference) {
-    
-    ### dette afsnit skal skilles ud som en funktion paa et tidspunkt --------------
-    ##temp.post <- list()
-    ##temp.post$beta.mean <- array(NA, dim = c(beta.size, n.sim))
-    ##temp.post$beta.var <- array(NA, dim = c(beta.size, beta.size, n.sim))
-    ##temp.post$S2 <- rep(0, n.sim)
-    ##if(do.prediction) {
-    ##  temp.pred <- list()
-    ##  temp.pred$mean <- array(NA, dim = c(ni, n.sim))
-    ##  temp.pred$var <- array(NA, dim = c(ni, n.sim))
-    ##  if(output$sim.predict) {
-    ##    num.pred <- 1
-    ##    kb.results$predictive$simulations <- array(NA, dim = c(ni, n.sim))
-    ##  }
-    ##  else {
-    ##    num.pred <- 0
-    ##    kb.results$predictive$simulations <- " no simulations from the predictive distribution "
-    ##  }
-    ##}
-    ##else num.pred <- 0
-    ##model.temp <- model
-    ##model.temp$lambda <- 1
-    ##output.temp <- list(n.posterior = 0, n.predictive = num.pred, messages.screen = FALSE)
-    ##prior.temp <- prior
-    ##prior.temp$phi.prior <- "fixed"
-    ##prior.temp$phi.discrete <- NULL
-    ##prior.temp$priors.info <- NULL
-    ##if(phi.prior == "fixed" || length(phi.discrete) == 1) {
-    ##  if(phi.prior == "fixed") prior.temp$phi <- phi
-    ##  else prior.temp$phi <- phi.discrete
-    ##  temp.result <- krige.bayes.extnd(data = log.odds, coords = coords, locations = locations,
-    ##                                   model = model.temp, prior = prior.temp, output = output.temp)
-    ##  temp.post$beta.mean <- temp.result$posterior$beta$pars$mean
-    ##  temp.post$beta.var <- temp.result$posterior$beta$pars$var
-    ##  temp.post$S2 <- temp.result$posterior$sigmasq$pars$S2
-    ##  if(do.prediction) {
-    ##    temp.pred$mean <- temp.result$predictive$mean
-    ##    temp.pred$var <- temp.result$predictive$variance
-    ##    if(output$sim.predict)
-    ##      pred.simulations <- plogis(temp.result$predictive$simulations)
-    ##  }
-    ##}
-    ##else {
-    ##  len.phi.discrete <- length(phi.discrete)      
-    ##  step.phi.discrete <- phi.discrete[2] - phi.discrete[1]
-    ##  phi.table <- rep(0,len.phi.discrete)
-    ##  for(i in 1:len.phi.discrete){
-    ##    phi.table[i] <- sum(ifelse(abs(kb.results$posterior$phi$sample-phi.discrete[i])<0.5*step.phi.discrete,1,0))
-    ##  }
-    ##  phi.sample.unique <- phi.discrete[phi.table>0]
-    ##  phi.table <- phi.table[phi.table>0]
-    ##  len.phi.un <- length(phi.sample.unique)
-    ##  indic.phi <- array(rep(0, len.phi.un * max(phi.table)), dim = c(len.phi.un, max(phi.table)))
-    ##  numbers <- 1:length(kb.results$posterior$phi$sample)
-    ##  for(i in 1:len.phi.un) {
-    ##    temp.num <- numbers[abs(kb.results$posterior$phi$sample-phi.sample.unique[i])<0.5*step.phi.discrete]
-    ##    indic.phi[i, 1:length(temp.num)] <- temp.num
-    ##  }
-    ##  for(i in 1:len.phi.un){
-    ##    if(phi.table[i] == 1){
-    ##      prior.temp$phi <- phi.sample.unique[i]
-    ##      temp.result <- krige.bayes(data = log.odds[, indic.phi[i,1]], coords = coords, locations = locations, 
-    ##                                 model = model.temp, prior = prior.temp, output = output.temp)
-    ##      temp.post$beta.mean[, indic.phi[i,1]] <- temp.result$posterior$beta$pars$mean
-    ##      temp.post$beta.var[,  , indic.phi[i,1]] <- temp.result$posterior$beta$pars$var
-    ##      temp.post$S2[indic.phi[i,1]] <- temp.result$posterior$sigmasq$pars$S2
-    ##      if(do.prediction) {            
-    ##        temp.pred$mean[, indic.phi[i, 1]] <- temp.result$predictive$mean
-    ##        temp.pred$var[, indic.phi[i, 1]] <- temp.result$predictive$variance
-    ##        if(output$sim.predict) {
-    ##          pred.simulations[, indic.phi[i, 1]] <- plogis(temp.result$predictive$simulations)
-    ##        }
-    ##      }
-    ##    }
-    ##    else { 
-    ##      prior.temp$phi <- phi.sample.unique[i]
-    ##      temp.result <- krige.bayes.extnd(data = log.odds[, indic.phi[i,1:phi.table[i]]], coords = coords, locations = locations, 
-    ##                                      model = model.temp, prior = prior.temp, output = output.temp)  
-    ##      temp.post$beta.mean[, indic.phi[i,1:phi.table[i]]] <- temp.result$posterior$beta$pars$mean         
-    ##      temp.post$beta.var[,  , indic.phi[i,1:phi.table[i]]] <- temp.result$posterior$beta$pars$var
-    ##      temp.post$S2[indic.phi[i,1:phi.table[i]]] <- temp.result$posterior$sigmasq$pars$S2       
-    ##      if(do.prediction) {
-    ##        temp.pred$mean[, indic.phi[i, 1:phi.table[i]]] <- temp.result$predictive$mean
-    ##        temp.pred$var[, indic.phi[i, 1:phi.table[i]]] <- temp.result$predictive$variance
-    ##        if(output$sim.predict) {
-    ##          pred.simulations[ , indic.phi[i, 1:phi.table[i]]] <- plogis(temp.result$predictive$simulations)
-    ##        }
-    ##      }
-    ##    }
-    ##  }
-    ##}
-    ##remove("temp.result")
-    ### ------- hertil
-
     if(phi.prior=="fixed") phi.posterior <- list(phi.prior=phi.prior, phi=phi)
     else  phi.posterior <- list(phi.prior=phi.prior, phi.discrete=phi.discrete, sample=kb.results$posterior$phi$sample)
     predict.temp <- pred.aux(S=log.odds, coords=coords, locations=locations, model=model, prior=prior, output=output, phi.posterior=phi.posterior, link="logit")
@@ -464,7 +375,6 @@
       temp.pred <- predict.temp$temp.pred
       kb.results$predictive$simulations <- predict.temp$pred.simulations
     }
-    ##
     ##
     if(do.prediction) {
       ##
@@ -572,6 +482,7 @@
   kb.results$.Random.seed <- seed
   kb.results$call <- call.fc
   attr(kb.results, "prediction.locations") <- call.fc$locations
+  if(do.prediction) attr(kb.results, 'sp.dim') <- ifelse(krige1d, "1d", "2d")
   if(!is.null(call.fc$borders)) attr(kb.results, "borders") <- call.fc$borders
   attr(kb.results, "class") <- "glm.krige.bayes"
   if(messages.screen) cat("binom.krige.bayes: done!\n")

@@ -2,7 +2,6 @@
 
 \alias{plot.covariogram}
 
-%- Also NEED an `\alias' for EACH other topic documented here.
 
 \title{Plot Empirical Covariogram}
 
@@ -13,10 +12,9 @@
 
 \usage{
 \method{plot}{covariogram}(x, max.dist = max(x$u), ylim = "default", type = "b",
-     envelope.obj = NULL, ...)
+     envelope.obj = NULL, \dots)
 }
 
-%- maybe also `usage' for other objects documented here.
 
 \arguments{ 
    \item{x}{an object of the class \code{"covariogram"}, typically an

@@ -237,7 +237,7 @@ Further information about \bold{geoRglm} can be found at:\cr
 \examples{
 data(p50)
 \testonly{library(geoR)}
-if(!exists(".Random.seed")) set.seed(1234)
+if(!exists(".Random.seed", envir=.GlobalEnv, inherits = FALSE)) set.seed(1234)
 ## MCMC with fixed phi
 prior.5 <- prior.glm.control(phi.prior = "fixed", phi = 0.1)
 mcmc.5 <- mcmc.control(S.scale = 0.01, thin = 1)

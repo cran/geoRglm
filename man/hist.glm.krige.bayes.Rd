@@ -43,8 +43,8 @@
 
 
 \author{
-  Paulo J. Ribeiro Jr. \email{Paulo.Ribeiro@est.ufpr.br}, \cr
-  Peter J. Diggle \email{p.diggle@lancaster.ac.uk}.
+  Ole F. Christensen \email{olefc@birc.dk}, \cr
+  Paulo J. Ribeiro Jr. \email{Paulo.Ribeiro@est.ufpr.br}.
 }
 
 \seealso{

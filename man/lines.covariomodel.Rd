@@ -2,7 +2,6 @@
 
 \alias{lines.covariomodel}
 
-%- Also NEED an `\alias' for EACH other topic documented here.
 
 \title{Line with a  Covariogram Model }
 \description{
@@ -12,10 +11,9 @@
 }
 
 \usage{
-\method{lines}{covariomodel}(x, max.dist = x$max.dist, ...)
+\method{lines}{covariomodel}(x, max.dist = x$max.dist, \dots)
 }
 
-%- maybe also `usage' for other objects documented here.
 
 \arguments{
   \item{x}{an object of the class \code{covariomodel} which is a list containing
@@ -23,8 +21,6 @@
   \item{max.dist}{maximum distance (x-axis) to compute and draw the line
     representing the covariogram model.
     The default is the distance given by \code{x$max.dist}.  }
-  \item{n.points}{number of points between \code{0} and \code{max.dist} to
-    compute the values of the covariogram model.  }
   \item{\dots}{arguments to be passed to the function
     \code{\link{lines}}.  }  
 }

@@ -3,7 +3,7 @@
 \alias{prior.glm.control}
 \alias{prior.glm.check.aux}
 
-\title{ Defines prior options }
+\title{Defines prior options}
 
 \description{
   This auxiliary function defines prior options for

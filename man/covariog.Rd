@@ -2,7 +2,6 @@
 
 \alias{covariog}
 
-%- Also NEED an `\alias' for EACH other topic documented here.
 
 \title{Empirical Covariogram for a Model with log-link and an Underlying Gaussian Field}
 
@@ -18,7 +17,6 @@ covariog(geodata, coords = geodata$coords, data = geodata$data,
          max.dist = NULL, pairs.min = 2)
 }
 
-%- maybe also `usage' for other objects documented here.
 
 \arguments{
   \item{geodata}{a list containing elements \code{data} and \code{coords}
@@ -28,16 +26,16 @@ covariog(geodata, coords = geodata$coords, data = geodata$data,
     \code{coords} must be provided instead.
     The list may also contain an argument \code{units.m} as described below.
   } 
-  \item{data}{a vector or matrix with data values.
-    If a matrix is provided, each column is regarded as one variable or realization.
-    Default is \code{geodata$data}, if provided.
-  }
   \item{coords}{an \eqn{n \times 2}{n x 2} matrix containing
     coordinates of the \eqn{n} data locations in each row.
     Default is \code{geodata$coords}, if provided.
   }
+  \item{data}{a vector or matrix with data values.
+    If a matrix is provided, each column is regarded as one variable or realization.
+    Default is \code{geodata$data}, if provided.
+  }
   \item{units.m}{ \eqn{n}-dimensional vector of observation times for the data. By default (\code{units.m = "default"}),
-  it takes \code{geodata$units.m} in case this exist and else a vector of 1's.  }
+    it takes \code{geodata$units.m} in case this exist and else a vector of 1's.  }
   \item{uvec}{a vector with values defining the covariogram binning. The
     values of \code{uvec} defines the midpoints of the bins.\cr 
     If \eqn{uvec[1] > 0} the first bin is: \eqn{0 < u <= uvec[2] - 0.5*(uvec[2] - uvec[1])}.\cr 
@@ -47,7 +45,7 @@ covariog(geodata, coords = geodata$coords, data = geodata$data,
     \eqn{uvec[i]=max.dist*(i-1)/14} for \eqn{i=1,\ldots,15}{i=1,...,15}. 
   }
   \item{bins.lim}{separating values for the binning. By default these values are defined via the argument of 
-  \code{uvec}.  }
+    \code{uvec}.  }
   \item{estimator.type}{\code{"poisson"} estimates the value \eqn{\hat{C}(0)} using the
     Poisson assumption. \code{"not-poisson"} doesn't compute \eqn{\hat{C}(0)}.
   }

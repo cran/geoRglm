@@ -322,7 +322,7 @@
 function(geodata, coords = geodata$coords, data = geodata$data, units.m = "default", locations = NULL,  borders = NULL, mcmc.input, krige, output)
 {
   if(missing(geodata))
-    geodata <- list(coords=coords, data=data)
+    geodata <- list(coords=coords, data=data, units.m=units.m)
   call.fc <- match.call()
   n <- length(data)
   if(any(units.m == "default")){
@@ -355,6 +355,10 @@ function(geodata, coords = geodata$coords, data = geodata$data, units.m = "defau
   }
   coords <- as.matrix(coords)
   dimnames(coords) <- list(NULL, NULL)
+  ## Checking for 1D prediction 
+  if(length(unique(locations[,1])) == 1 | length(unique(locations[,2])) == 1)
+    krige1d <- TRUE
+  else krige1d <- FALSE
   ##
   if(is.null(locations)) {
     cat(paste("locations need to be specified for prediction; prediction not performed \n"))
@@ -425,7 +429,8 @@ function(geodata, coords = geodata$coords, data = geodata$data, units.m = "defau
                                    output = list(n.predictive = ifelse(sim.predict,1,0), signal = TRUE, messages.screen = FALSE))
     remove(list = c("intensity"))
     kpl.result$krige.var <- rowMeans(kpl.result$krige.var) + apply(kpl.result$predict, 1, var) 
-    kpl.result$mcmc.error <- sqrt(asympvar(kpl.result$predict)/ncol(kpl.result$predict))
+    if(nrow(locations) > 1) kpl.result$mcmc.error <- sqrt(asympvar(kpl.result$predict)/ncol(kpl.result$predict))
+    else kpl.result$mcmc.error <- sqrt(asympvar(as.vector(kpl.result$predict))/length(as.vector(kpl.result$predict)))
     kpl.result$predict <- rowMeans(kpl.result$predict)
     if(beta.prior == "flat") {
       kpl.result$beta.est <- rowMeans(kpl.result$beta)
@@ -443,6 +448,7 @@ function(geodata, coords = geodata$coords, data = geodata$data, units.m = "defau
   kpl.result$call <- call.fc
 #######################################
   attr(kpl.result, "prediction.locations") <- call.fc$locations
+  if(!is.null(locations)) attr(kpl.result, 'sp.dim') <- ifelse(krige1d, "1d", "2d")
   if(!is.null(call.fc$borders)) attr(kpl.result, "borders") <- call.fc$borders
   class(kpl.result) <- "kriging"
   ##class(kpl.result) <- "pois.kriging"

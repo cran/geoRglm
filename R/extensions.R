@@ -13,7 +13,7 @@
     geodata <- list(coords=coords, data=data)
   if(is.R()) require(mva)
   call.fc <- match.call()
-  seed <- .Random.seed  
+  seed <- get(".Random.seed", envir=.GlobalEnv, inherits = FALSE)
   do.prediction <- ifelse(all(locations == "no"), FALSE, TRUE)
   if(is.R()) base.env <- sys.frame(sys.nframe())
   else stop("environments not implemented for Splus ! ")
@@ -391,7 +391,7 @@
                       cov.model = cov.model, kappa = kappa,
                       cov.pars = c(1, phi.fixed))
     ## care here, reusing object b
-    b <- bilinearformXAY(X = as.vector(cbind(data, trend.data)),
+    b <- bilinearformXAY(X = cbind(data, trend.data),
                          lowerA = as.vector(iR$lower.inverse),
                          diagA = as.vector(iR$diag.inverse), 
                          Y = as.vector(v0))    

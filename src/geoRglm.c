@@ -1718,7 +1718,7 @@ void mcmc1binom(Integer *n, Real *zz, Real *SS, Real *data, Real *units, Real *m
 	logqprop+=pow(z[l]-(zprop[l]+0.5*gradzprop[l]*(*scale)),2);
       }
       logq*=(-0.5/(*scale));
-      logqprop*=(-0.5/(*scale));      
+      logqprop*=(-0.5/(*scale));
       if (log(randunif[i*(*subsample)+ii])<logfprop+logp_zprop+logqprop-logq-logf-logp_z){  
 	/*accept */
 	logf=logfprop;

@@ -27,7 +27,7 @@
                as.integer(nsim),
                as.integer(thin),
                acc.rate = acc.rate, DUP=FALSE, PACKAGE = "geoRglm")[c("z", "S", "acc.rate")]
-  attr(result$S, "dim") <- c(n, nsim)
+  attr(result$S, "dim") <- c(n, nsim) 
   return(result)
 }
 
@@ -44,7 +44,7 @@
   QtivQ <- diag(n)-crossprod(sqrtfiQ)  
   if(any(mcmc.input$S.start=="default")) {
     signum <- round(2*data/units.m) -1
-    S <- as.vector(ifelse(data > 0 & data < units.m, logit.fct(data/units.m), signum*1.96) - meanS )
+    S <- as.vector(ifelse(data > 0 & data < units.m, qlogis(data/units.m), signum*1.96) - meanS )
     z <- as.vector(solve(QQ,S))
   }
   else{
@@ -81,7 +81,7 @@
   acc.rate <- matrix(NA, n.turn, 2)
   for(i in 1:n.turn) {
     mcmc.output <- mcmc.binom.aux(mcmc.output$z, data, units.m, meanS, QQ, S.scale, n.temp, thin, QtivQ)
-    Sdata[, (n.temp * (i - 1) + 1):(n.temp * i)] <- mcmc.output$S+meanS
+    Sdata[, (n.temp * (i - 1) + 1):(n.temp * i)] <- mcmc.output$S+meanS    
     if(messages.screen) cat(paste("iter. numb.", i * n.temp * thin+burn.in, " : Acc.-rate = ", round(mcmc.output$acc.rate, digits=3), "\n"))
     acc.rate[i,1] <-  i * n.temp * thin
     acc.rate[i,2] <- mcmc.output$acc.rate
@@ -98,7 +98,7 @@
 "binom.krige" <- function(geodata, coords = geodata$coords, data = geodata$data, units.m = "default", locations = NULL, borders = NULL, mcmc.input, krige, output)
 {
   if(missing(geodata))
-    geodata <- list(coords=coords, data=data)
+    geodata <- list(coords=coords, data=data, units.m=units.m)
   call.fc <- match.call()
   n <- length(data)
   if(any(units.m == "default")){
@@ -130,6 +130,10 @@
   }
   coords <- as.matrix(coords)
   dimnames(coords) <- list(NULL, NULL)
+  ## Checking for 1D prediction 
+  if(length(unique(locations[,1])) == 1 | length(unique(locations[,2])) == 1)
+    krige1d <- TRUE
+  else krige1d <- FALSE
   ##
   if(is.null(locations)) {
     cat(paste("locations need to be specified for prediction; prediction not performed \n"))
@@ -172,9 +176,8 @@
     ittivtt <- solve.geoR(crossprod(trend.data, ivtt))
     invcov <- invcov-ivtt%*%ittivtt%*%t(ivtt)
   }
-  prevalence <- mcmc.binom.logit(data = data, units.m = units.m, meanS= mean.d, invcov=invcov, mcmc.input = mcmc.input, messages.screen=messages.screen)
-  acc.rate <- prevalence$acc.rate
-  prevalence <- plogis(prevalence$Sdata)
+  res.mcmc <- mcmc.binom.logit(data = data, units.m = units.m, meanS= mean.d, invcov=invcov, mcmc.input = mcmc.input, messages.screen=messages.screen)
+  acc.rate <- res.mcmc$acc.rate
   ##
   ##------------------------------------------------------------
 ######################## ---- prediction ----- #####################
@@ -189,12 +192,13 @@
     krige <- list(type.krige = krige$type.krige, beta = beta, trend.d = trend.d, trend.l = trend.l, cov.model = cov.model, 
                   cov.pars = cov.pars, kappa = kappa, nugget = nugget, micro.scale = micro.scale, dist.epsilon = dist.epsilon, 
                   aniso.pars = aniso.pars, link = "logit")
-    kpl.result <- glm.krige.aux(data = prevalence, coords = coords, locations = locations, krige = krige,
+    kpl.result <- glm.krige.aux(data = res.mcmc$Sdata, coords = coords, locations = locations, krige = krige,
 					output = list(n.predictive = ifelse(sim.predict,1,0),
 					      signal = TRUE, messages.screen = FALSE))			   
-    remove(list = c("prevalence"))
-    kpl.result$krige.var <- rowMeans(kpl.result$krige.var) + apply(kpl.result$predict, 1, var) 
-    kpl.result$mcmc.error <- sqrt(asympvar(kpl.result$predict)/ncol(kpl.result$predict))
+    remove(list = c("res.mcmc"))
+    kpl.result$krige.var <- rowMeans(kpl.result$krige.var) + apply(kpl.result$predict, 1, var)
+    if(nrow(locations) > 1) kpl.result$mcmc.error <- sqrt(asympvar(kpl.result$predict)/ncol(kpl.result$predict))
+    else kpl.result$mcmc.error <- sqrt(asympvar(as.vector(kpl.result$predict))/length(as.vector(kpl.result$predict)))
     kpl.result$predict <- rowMeans(kpl.result$predict)
     if(beta.prior == "flat") {
       kpl.result$beta.est <- rowMeans(kpl.result$beta)
@@ -204,14 +208,15 @@
   }
   else{
     if(beta.prior == "flat") {
-      beta.est <- (ittivtt %*% t(ivtt)) %*% logit.fct(prevalence)
-      kpl.result <- list(prevalence=prevalence, beta.est = rowMeans(beta.est), acc.rate=acc.rate)
+      beta.est <- (ittivtt %*% t(ivtt)) %*% res.mcmc$Sdata
+      kpl.result <- list(prevalence=plogis(res.mcmc$Sdata), beta.est = rowMeans(beta.est), acc.rate=acc.rate)
     }
-    else kpl.result <- list(prevalence=prevalence, acc.rate=acc.rate)
+    else kpl.result <- list(prevalence=plogis(res.mcmc$Sdata), acc.rate=acc.rate)
   }
   kpl.result$call <- call.fc
 #######################################
   attr(kpl.result, "prediction.locations") <- call.fc$locations
+  if(!is.null(locations)) attr(kpl.result, 'sp.dim') <- ifelse(krige1d, "1d", "2d")
   if(!is.null(call.fc$borders)) attr(kpl.result, "borders") <- call.fc$borders
   class(kpl.result) <- "kriging"
   ##class(kpl.result) <- "binom.kriging"
@@ -219,11 +224,11 @@
 }
 
 "glm.krige.aux" <- 
-function(coords, data, locations, krige, output)
+function(data, coords, locations, krige, output)
 {
   krige$lambda <- 1
   krige$link <- NULL 
-  kc.result <- krige.conv.extnd(data = data, coords = coords, locations = locations, krige = krige, output = output)		
+  kc.result <- krige.conv.extnd(data = data, coords = coords, locations = locations, krige = krige, output = output)	
   ##
   ##################### Back-transforming predictions
   ##

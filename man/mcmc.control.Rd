@@ -3,7 +3,7 @@
 \alias{mcmc.control}
 \alias{mcmc.check.aux}
 
-\title{ Defines options for the MCMC-algorithm }
+\title{Defines options for the MCMC-algorithm }
 
 \description{
   This auxiliary function defines options for the MCMC-algorithm used by

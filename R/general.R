@@ -133,12 +133,6 @@
   return(BCtransform(z, lambda = lambda, inverse=TRUE)$data)
 }
 
-"logit.fct" <- 
-  function(z)
-{
-  logit <- log(z/(1-z))
-  return(logit)
-}
 
 "output.glm.control" <-
   function(sim.posterior, sim.predict, keep.mcmc.sim, quantile, threshold, inference, messages.screen)
