@@ -221,6 +221,7 @@ the guess is too low, it is adjusted upwards, and vise verse.
 \examples{
 if(is.R()) data(b50)
 \testonly{library(geoR)}
+if(!exists(".Random.seed")) set.seed(1234)
 mcmc.10 <- mcmc.control(S.scale = 0.09, n.iter = 1000, phi.scale = 0.2, 
               phi.start = 4.5)
 prior.10 <- prior.glm.control(phi.discrete = seq(0.2,5,0.2))

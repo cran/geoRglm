@@ -448,12 +448,12 @@
       cond.sim(env.loc = base.env, env.iter = base.env,
                loc.coincide = loc.coincide,
                tmean = tmean,
-               Rinv = iR,
+               Rinv = list(lower=iR$lower.inverse, diag=iR$diag.inverse),
                mod = list(beta.size = beta.size, nloc = nloc, Nsims = n.datasets, n = n, Dval = Dval,
                  df.model = df.post, s2 = S2.post, cov.model.number = cov.model.number, phi = phi.fixed, kappa = kappa),
                vbetai = beta.var.std.post,
                fixed.sigmasq = (sigmasq.info$df.sigmasq == Inf))
-    if(coincide.cond) kb$predictive$simulations[loc.coincide,] <- rep(data.coincide, Nsims)
+    if(coincide.cond) kb$predictive$simulations[loc.coincide,] <- rep(data.coincide, n.datasets)
   }
   if(!do.prediction) kb$predictive <- "no prediction locations provided"
   kb$.Random.seed <- seed

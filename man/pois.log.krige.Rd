@@ -198,6 +198,7 @@ Further information about \bold{geoRglm} can be found at:\cr
 \examples{
 if(is.R()) data(y50)
 \testonly{library(geoR)}
+if(!exists(".Random.seed")) set.seed(1234)
 # First we scale the algorithm, and study how well the chain is mixing.
 test <- pois.log.krige(y50, krige = list(cov.pars = c(1,1), beta = 1),
       mcmc.input = mcmc.control(S.scale = 0.09, thin = 1))

@@ -1871,5 +1871,3 @@ void mcmcrun5(Integer *n, Real *data, Real *units, Real *meanS, Real *DDvbetaDD,
   RANDOUT;  
 }
 
-
-
