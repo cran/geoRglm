@@ -51,23 +51,6 @@
     return(rmvnorm(ncol(cov), cov = cov))
 }
 
-"phi.number" <- 
-  function(phi.prior = c("uniform", "exponential", "fixed", "squared.reciprocal", "reciprocal"))
-{
-  ## WARNING: codes above must be the same as in the C function logprior_phi
-  ## 
-  phi.prior <- match.arg(phi.prior)
-  phinumber <- switch(phi.prior,
-                      uniform = as.integer(1),
-                      exponential = as.integer(2),
-                      fixed = as.integer(3),
-                      squared.reciprocal = as.integer(4),
-                      reciprocal = as.integer(5),
-                      stop("wrong or no specification of phi.prior"))
-  return(phinumber)
-}
-
-
 "mcmc.control" <- 
   function(S.scale, Htrunc="default", S.start, burn.in=0, thin=10, n.iter=1000*thin, phi.start="default",  phi.scale=NULL)
 {
@@ -87,8 +70,6 @@
            phi.discrete = NULL, tausq.rel = 0)
 {
   beta.prior <- match.arg(beta.prior)
-  sigmasq.prior <- match.arg(sigmasq.prior)
-  phi.prior <- match.arg(phi.prior)
   if(beta.prior == "fixed" & is.null(beta))
     stop("argument \"beta\" must be provided with fixed value for this parameter")
   if(beta.prior == "normal"){
@@ -102,6 +83,7 @@
           stop(" matrix in beta.var.std is not positive definit")
   }
   ##
+  sigmasq.prior <- match.arg(sigmasq.prior)
   if(sigmasq.prior == "fixed" & is.null(sigmasq))
     stop("argument \"sigmasq\" must be provided when the parameter sigmaq is fixed")
   if(sigmasq.prior == "sc.inv.chisq")
@@ -119,10 +101,24 @@
     df.sigmasq <- -2
   }
   ##
+  if(!is.null(phi) && length(phi) > 1)
+    stop("prior.glm.control: length of phi must be one. ")
+  if(is.numeric(phi.prior)){
+    phi.prior.probs <- phi.prior
+    phi.prior <- "user"
+    if(is.null(phi.discrete))
+      stop("prior.glm.control: argument phi.discrete with support points for phi must be provided\n")
+    if(length(phi.prior.probs) != length(phi.discrete))
+      stop("prior.glm.control: user provided phi.prior and phi.discrete have incompatible dimensions\n")
+    if(round(sum(phi.prior.probs), dig=6) != 1)
+      stop("prior.glm.control: prior probabilities provided for phi do not sum up to 1")
+  }
+  else phi.prior <- match.arg(phi.prior)
   if(phi.prior == "fixed"){
     if(is.null(phi)){
       stop("argument \"phi\" must be provided with fixed prior for this parameter")
     }
+    phi.discrete <- phi
   }
   else{
     if(phi.prior == "exponential" & (is.null(phi) | (length(phi) > 1)))
@@ -188,7 +184,8 @@
                              uniform = rep(1/length(phi.discrete), length(phi.discrete)),
                              exponential = (1/phi) * exp(- phi.discrete/phi),
                              squared.reciprocal = (1/(phi.discrete^2))/sum(1/(phi.discrete^2)),
-                             reciprocal = (1/phi.discrete)/sum(1/phi.discrete))
+                             reciprocal = (1/phi.discrete)/sum(1/phi.discrete),
+                             user = phi.prior.probs)
       names(ip$phi$probs) <- phi.discrete
     }
     if(phi.prior == "exponential") ip$phi$pars <- c(ip$phi$pars, exp.par=phi)
@@ -209,10 +206,10 @@
   return(BCtransform(z, lambda = lambda, inverse=TRUE)$data)
 }
 
-"logit.inv" <- 
+"logit.fct" <- 
   function(z)
 {
-  logit <- ifelse(z<700, exp(z)/(1+exp(z)), 1)
+  logit <- log(z/(1-z))
   return(logit)
 }
 
@@ -225,7 +222,7 @@
   if(missing(sim.posterior)) sim.posterior <- TRUE
   if(missing(sim.predict)) sim.predict <- FALSE
   if(missing(keep.mcmc.sim)) keep.mcmc.sim <- TRUE
-  if(missing(quantile))  quantile.estimator <- NULL
+  if(missing(quantile)) quantile.estimator <- TRUE
   else quantile.estimator <- quantile
   if(missing(threshold)) probability.estimator <- NULL 
   else probability.estimator <- threshold
@@ -233,11 +230,11 @@
   if(missing(messages.screen)) messages.screen <- TRUE
   ##
   ##
-  if(!is.null(quantile.estimator)){
+  if(is.null(quantile.estimator)) quantile.estimator <- TRUE
+  else{
     if(is.numeric(quantile.estimator))
       if(any(quantile.estimator) < 0 | any(quantile.estimator) > 1)
         stop("quantiles indicators must be numbers in the interval [0,1]\n")
-    if(quantile.estimator == TRUE) quantile.estimator <- c(0.025, 0.5, 0.975)
     if(!inference) {
       warning("prediction not performed; quantile.estimator is set to NULL \n")
       quantile.estimator <- NULL

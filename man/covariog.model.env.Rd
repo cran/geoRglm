@@ -79,7 +79,7 @@ covariog.model.env(geodata, coords = geodata$coords, units.m = "default",
 }
 
 \author{
-  Ole F. Christensen \email{o.christensen@lancaster.ac.uk}, \cr
+  Ole F. Christensen \email{olefc@birc.dk}, \cr
   Paulo J. Ribeiro Jr. \email{Paulo.Ribeiro@est.ufpr.br}.
 }
 

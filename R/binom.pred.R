@@ -1,10 +1,10 @@
 
 
-"mcmc.aux" <- 
-  function(z, data, meanS, QQ, Htrunc, S.scale, nsim, thin, QtivQ)
+"mcmc.binom.aux" <- function(z, data, units.m, meanS, QQ, S.scale, nsim, thin, QtivQ)
 {
 #
-###### ------------------------ doing the mcmc-steps ----------- ############# 
+###### ------------------------ doing the mcmc-steps -----------
+############# 
 #  
   n <- length(data)
   randnormal <- rnorm(n * nsim * thin) * sqrt(S.scale)
@@ -12,17 +12,17 @@
   z <-  as.double(z)
   S <-  as.double(rep(0, nsim * n))
   acc.rate <-  as.double(1)
-  result <- .C("mcmc1poislog",
+  result <- .C("mcmc1binom",
                as.integer(n),
                z = z,
                S = S,
                as.double(data),
+	       as.double(units.m),
                as.double(meanS),
                as.double(as.vector(t(QQ))),
                as.double(as.vector(QtivQ)),
                as.double(randnormal),
                as.double(randunif),
-               as.double(Htrunc),
                as.double(S.scale),
                as.integer(nsim),
                as.integer(thin),
@@ -32,20 +32,13 @@
 }
 
 
-"mcmc.pois.log" <- 
-  function(data, units.m, meanS, invcov, mcmc.input, messages.screen)
+"mcmc.binom.logit" <- function(data, units.m, meanS, invcov, mcmc.input, messages.screen)
 {
 ####
   ## This is the MCMC engine for the spatial Poisson log Normal model ----
   ##
   n <- length(data)
   S.scale <- mcmc.input$S.scale
-  if(any(mcmc.input$Htrunc=="default")) Htrunc <- 2*data + 5
-  else {
-    if(is.vector(mcmc.input$Htrunc) & length(mcmc.input$Htrunc) == n)
-      Htrunc <- mcmc.input$Htrunc
-    else Htrunc <- rep(mcmc.input$Htrunc, n)
-  }
   QQ <- t(chol(solve(invcov + diag(data))))
   sqrtdataQ <- sqrt(data)*QQ 
   QtivQ <- diag(n)-crossprod(sqrtdataQ)
@@ -59,7 +52,7 @@
         if(length(mcmc.input$S.start) != n) stop("dimension of mcmc-starting-value must equal dimension of data")
         else z <- as.vector(solve(QQ,mcmc.input$S.start))
       }
-      else  stop(" S.start must be a vector of same dimension as data ")
+      else stop(" S.start must be a vector of same dimension as data ")
     }
   }
   burn.in <- mcmc.input$burn.in
@@ -67,7 +60,7 @@
   n.iter <- mcmc.input$n.iter
 ## ---------------- burn-in ----------------- ######### 
   if(burn.in > 0) {
-    mcmc.output <- mcmc.aux(z, data, meanS + log(units.m), QQ, Htrunc, S.scale, 1, burn.in, QtivQ)
+    mcmc.output <- mcmc.binom.aux(z, data, units.m, meanS, QQ, S.scale, 1, burn.in, QtivQ)
     if(messages.screen) cat(paste("burn-in = ", burn.in, " is finished. Acc.-rate = ", mcmc.output$acc.rate, "\n"))
     acc.rate.burn.in <- c(burn.in, mcmc.output$acc.rate)
   }
@@ -85,7 +78,7 @@
   Sdata <- matrix(NA, n, n.sim)
   acc.rate <- matrix(NA, n.turn, 2)
   for(i in 1:n.turn) {
-    mcmc.output <- mcmc.aux(mcmc.output$z, data, meanS + log(units.m), QQ, Htrunc, S.scale, n.temp, thin, QtivQ)
+    mcmc.output <- mcmc.binom.aux(mcmc.output$z, data, units.m, meanS, QQ, S.scale, n.temp, thin, QtivQ)
     Sdata[, (n.temp * (i - 1) + 1):(n.temp * i)] <- mcmc.output$S+meanS
     if(messages.screen) cat(paste("iter. numb.", i * n.temp * thin, " : Acc.-rate = ", mcmc.output$acc.rate, "\n"))
     acc.rate[i,1] <-  i * n.temp * thin
@@ -94,193 +87,13 @@
   if(messages.screen) cat(paste("MCMC performed: n.iter. = ", n.iter, "; thinning = ", thin, "; burn.in = ", burn.in, "\n"))
   if(burn.in > 0) acc.rate <- as.data.frame(rbind(acc.rate.burn.in,acc.rate))
   else acc.rate <- as.data.frame(acc.rate)
-  names(acc.rate) <- c("iter.numb", "Acc.rate")
-#########
-  return(list(Sdata=Sdata, acc.rate=acc.rate))
-
-}
-
-
-"mcmc.boxcox.aux" <- 
-  function(z, data, units.m, meanS, QQ, Htrunc, S.scale, nsim, thin, QtivQ, lambda)
-{
-  ##
-###### ------------------------ doing the mcmc-steps ----------- ############# 
-  ##
-  n <- length(data)
-  randnormal <- rnorm(n * nsim * thin) * sqrt(S.scale)
-  randunif <- runif(nsim * thin)
-  z <-  as.double(z)
-  S <-  as.double(rep(0, nsim * n))
-  acc.rate <-  as.double(1)  
-  result <- .C("mcmc1poisboxcox",
-               as.integer(n),
-               z = z,
-               S = S,
-               as.double(data),
-               as.double(units.m),
-               as.double(meanS),
-               as.double(as.vector(t(QQ))),
-               as.double(as.vector(QtivQ)),
-               as.double(randnormal),
-               as.double(randunif),
-               as.double(Htrunc),
-               as.double(S.scale),
-               as.integer(nsim),
-               as.integer(thin),
-               as.double(lambda),
-               acc.rate = acc.rate, DUP=FALSE, PACKAGE = "geoRglm")[c("z", "S", "acc.rate")]
-  attr(result$S, "dim") <- c(n, nsim)
-  return(result)
-}
-
-"mcmc.pois.boxcox" <- 
-  function(data, units.m, meanS, invcov, mcmc.input, messages.screen, lambda)
-{
-####
-  ## This is the MCMC engine for the spatial Poisson - Normal model with link from the box-cox-family ----
-  ##
-  n <- length(data)
-  S.scale <- mcmc.input$S.scale
-  fisher.l <- ifelse(data>0,data^(1-2*lambda)*units.m^(2*lambda),0)
-  QQ <- t(chol(solve(invcov + diag(fisher.l)))) 
-  sqrtfiQ <- sqrt(fisher.l)*QQ 
-  QtivQ <- diag(n)-crossprod(sqrtfiQ)
-  if(any(mcmc.input$S.start=="default")) {
-    S <- as.vector(ifelse(data > 0, (data/units.m)^lambda-1, 0)/lambda - meanS )         
-    z <- as.vector(solve(QQ,S))
-  }
-  else{
-    if(any(mcmc.input$S.start=="random")) z <- rnorm(n)
-    else{
-      if(is.numeric(mcmc.input$S.start)){
-        if(length(mcmc.input$S.start) != n) stop("dimension of mcmc-starting-value must equal dimension of data")
-        else z <- as.vector(solve(QQ,mcmc.input$S.start))
-      }
-      else  stop(" S.start must be a vector of same dimension as data ")
-    }
-  }
-  if(any(mcmc.input$Htrunc=="default")) Htrunc <- 2*data + 5
-  else {
-    if(is.vector(mcmc.input$Htrunc) & length(mcmc.input$Htrunc) == n)
-      Htrunc <- mcmc.input$Htrunc
-    else Htrunc <- rep(mcmc.input$Htrunc, n)
-  }
-  burn.in <- mcmc.input$burn.in
-  thin <- mcmc.input$thin
-  n.iter <- mcmc.input$n.iter
-  ## ---------------- burn-in ----------------- ######### 
-  if(burn.in > 0) {
-    mcmc.output <- mcmc.boxcox.aux(z, data, units.m, meanS, QQ, Htrunc, S.scale, 1, burn.in, QtivQ, lambda)
-    if(messages.screen) cat(paste("burn-in = ", burn.in, " is finished. Acc.-rate = ", mcmc.output$acc.rate, "\n"))
-    acc.rate.burn.in <- c(burn.in, mcmc.output$acc.rate)
-  }
-  else mcmc.output <- list(z = z)
-##### ---------- sampling periode ----------- ###### 
-  if(n.iter <= 1000) {
-    n.temp <- round(n.iter/thin)
-    n.turn <- 1
-  }
-  else {
-    n.temp <- round(1000/thin)
-    n.turn <- round(n.iter/1000)
-  }
-  n.sim <- n.turn * n.temp
-  Sdata <- matrix(NA, n, n.sim)
-  acc.rate <- matrix(NA, n.turn, 2)
-  for(i in 1:n.turn) {
-    mcmc.output <- mcmc.boxcox.aux(mcmc.output$z, data, units.m, meanS, QQ, Htrunc, S.scale, n.temp, thin, QtivQ, lambda)
-    Sdata[, (n.temp * (i - 1) + 1):(n.temp * i)] <- mcmc.output$S+meanS
-    if(messages.screen) cat(paste("iter. numb.", i * n.temp * thin, " : Acc.-rate = ", mcmc.output$acc.rate, "\n"))
-    acc.rate[i,1] <-  i * n.temp * thin
-    acc.rate[i,2] <- mcmc.output$acc.rate
-  }
-  if(messages.screen) cat(paste("MCMC performed: n.iter. = ", n.iter, "; thinning = ", thin, "; burn.in = ", burn.in, "\n"))
-  if(burn.in > 0) acc.rate <- as.data.frame(rbind(acc.rate.burn.in,acc.rate))
-  else acc.rate <- as.data.frame(acc.rate)
-  names(acc.rate) <- c("iter.numb", "Acc.rate")
-  if(is.R()) remove("z")
-  else remove(list = c("z"), frame = sys.nframe())
+  names(acc.rate) <- c("iter.numb", " Acc.rate")
 #########
   return(list(Sdata=Sdata, acc.rate=acc.rate))
 }
 
-"krige.glm.control" <-
-  function (type.krige = "ok", trend.d = "cte", trend.l = "cte", obj.model = NULL, beta, cov.model, cov.pars, kappa,
-            nugget, micro.scale, dist.epsilon = 1e-10, aniso.pars, lambda)
-{
-  if(type.krige != "ok" & type.krige != "OK" & type.krige != "o.k." & type.krige != "O.K." & type.krige != "sk" & type.krige != "SK" & type.krige != "s.k." & type.krige != "S.K.")
-    stop("pois.krige: wrong option in the argument type.krige. It should be \"sk\" or \"ok\"(if ordinary or simple kriging is to be performed)")
-  if(type.krige=="OK" | type.krige=="O.K." |type.krige=="o.k.")
-    type.krige <- "ok"
-  if(type.krige=="SK" | type.krige=="S.K." |type.krige=="s.k.")
-    type.krige <- "sk"
-  ##
-  if(!is.null(obj.model)){
-    if(missing(beta)) beta <- obj.model$beta
-    if(missing(cov.model)) cov.model <- obj.model$cov.model
-    if(missing(cov.pars)) cov.pars <- obj.model$cov.pars
-    if(missing(kappa)) kappa <- obj.model$kappa
-    if(missing(nugget)) nugget <- obj.model$nugget
-    if(missing(micro.scale)) micro.scale <- nugget
-    if(missing(lambda)) lambda <- obj.model$lambda
-    if(missing(aniso.pars)) aniso.pars <- obj.model$aniso.pars
-  }
-  else{
-    if(missing(beta)) beta <- NULL
-    if(missing(cov.model)) cov.model <- "matern"
-    if(missing(cov.pars)) stop("covariance parameters (sigmasq and phi) should be provided")
-    if(missing(kappa)) kappa <- 0.5
-    if(missing(nugget)) nugget <- 0
-    if(missing(micro.scale)) micro.scale <- nugget
-    if(missing(lambda)) lambda <- 0
-    if(missing(aniso.pars)) aniso.pars <- NULL
-  }
-  ##
-  if(type.krige == "sk")
-    if(is.null(beta) | !is.numeric(beta))
-      stop("\n pois.krige: argument beta must be provided in order to perform simple kriging")
-  if(micro.scale > nugget)
-    stop("pois.krige: micro.scale must be in the interval [0, nugget]")
-  if(!is.null(aniso.pars))
-    if(length(aniso.pars) != 2 | !is.numeric(aniso.pars))
-      stop("pois.krige: anisotropy parameters must be provided as a numeric vector with two elements: the rotation angle (in radians) and the anisotropy ratio (a number greater than 1)")
-  ##
-  if(inherits(trend.d, "formula") | inherits(trend.l, "formula")){
-    if(!inherits(trend.d, "formula") | !inherits(trend.l, "formula"))
-      stop("pois.krige: trend.d and trend.l must have similar specification")
-  }
-  else{
-    if((!is.null(class(trend.d)) && class(trend.d)=="trend.spatial") & (!is.null(class(trend.l)) && class(trend.l)=="trend.spatial")){
-      if(ncol(trend.d) != ncol(trend.l))
-        stop("pois.krige: trend.d and trend.l do not have the same number of columns")
-    }
-    else{
-      if(trend.d != trend.l)
-        stop("pois.krige: trend.l is different from trend.d")
-    }
-  }
-  cov.model <- match.arg(cov.model,
-                         choices = c("matern", "exponential","gaussian",
-                           "spherical", "circular", "cubic",
-                           "wave", "power",
-                           "powered.exponential", "cauchy", "gneiting",
-                           "gneiting.matern", "pure.nugget"))
-  if(cov.model == "power") stop("krige.glm.control: correlation function does not exist for the power variogram")
-  res <- list(type.krige = type.krige,
-              trend.d = trend.d, trend.l = trend.l, 
-              beta = beta,
-              cov.model = cov.model, 
-              cov.pars = cov.pars, kappa = kappa,
-              nugget = nugget,
-              micro.scale = micro.scale, dist.epsilon = dist.epsilon, 
-              aniso.pars = aniso.pars, lambda = lambda)
-  class(res) <- "krige.geoRglm"
-  return(res)
-}
 
-"pois.krige" <- 
-function(geodata, coords = geodata$coords, data = geodata$data, units.m = "default", locations = NULL, mcmc.input, krige, output)
+"binom.krige" <- function(geodata, coords = geodata$coords, data = geodata$data, units.m = "default", locations = NULL, mcmc.input, krige, output)
 {
   if(missing(geodata))
     geodata <- list(coords=coords, data=data)
@@ -314,16 +127,14 @@ function(geodata, coords = geodata$coords, data = geodata$data, units.m = "defau
         if(is.null(krige$nugget)) krige$nugget <-  0
         if(is.null(krige$micro.scale)) krige$micro.scale <- krige$nugget
         if(is.null(krige$dist.epsilon)) krige$dist.epsilon <-  1e-10
-        if(is.null(krige$lambda)) krige$lambda <- 0
-          krige <- krige.glm.control(type.krige = krige$type.krige,
+	krige <- krige.glm.control(type.krige = krige$type.krige,	
                                  trend.d = krige$trend.d, trend.l = krige$trend.l,
                                  obj.model = krige$obj.model,
                                  beta = krige$beta, cov.model = krige$cov.model,
                                  cov.pars = krige$cov.pars, kappa = krige$kappa,
                                  nugget = krige$nugget, micro.scale = krige$micro.scale,
                                  dist.epsilon = krige$dist.epsilon, 
-                                 aniso.pars = krige$aniso.pars,
-                                 lambda = krige$lambda)
+                                 aniso.pars = krige$aniso.pars)
       }
     }
   }
@@ -337,7 +148,6 @@ function(geodata, coords = geodata$coords, data = geodata$data, units.m = "defau
   trend.d <- krige$trend.d
   trend.l <- krige$trend.l
   dist.epsilon <- krige$dist.epsilon
-  lambda <- krige$lambda
   if(krige$type.krige == "ok") beta.prior <- "flat"
   if(krige$type.krige == "sk") beta.prior <- "deg"
   if(missing(output))
@@ -366,7 +176,7 @@ function(geodata, coords = geodata$coords, data = geodata$data, units.m = "defau
   sim.predict <- output$sim.predict
   messages.screen <- output$messages.screen
   ##
-  if(is.vector(coords)) {
+  if(is.vector(coords)){
     coords <- cbind(coords, 0)
     warning("vector of coordinates: one spatial dimension assumed")
   }
@@ -438,26 +248,20 @@ function(geodata, coords = geodata$coords, data = geodata$data, units.m = "defau
     ittivtt <- solve.geoR(crossprod(trend.data, ivtt))
     invcov <- invcov-ivtt%*%ittivtt%*%t(ivtt)
   }
-  if(lambda == 0){ 
-    intensity <- mcmc.pois.log(data = data, units.m = units.m, meanS = mean.d, invcov=invcov, mcmc.input = mcmc.input, messages.screen)
-    acc.rate <- intensity$acc.rate
-    intensity <- exp(intensity$Sdata)
-  }
-  else{
-    intensity <- mcmc.pois.boxcox(data=data, units.m=units.m, meanS=mean.d, invcov=invcov, mcmc.input=mcmc.input, messages.screen, lambda=lambda)  
-    acc.rate <- intensity$acc.rate
-    intensity <- BC.inv(intensity$Sdata, lambda)    
-  }
+  prevalence <- mcmc.binom.logit(data = data, units.m = units.m, meanS= mean.d, invcov=invcov, mcmc.input = mcmc.input, messages.screen=messages.screen)
+  acc.rate <- prevalence$acc.rate
+  prevalence <- plogis(prevalence$Sdata)
   ##
   ##------------------------------------------------------------
 ######################## ---- prediction ----- #####################
   if(!is.null(locations)) {
     krige <- list(type.krige = krige$type.krige, beta = beta, trend.d = trend.d, trend.l = trend.l, cov.model = cov.model, 
                   cov.pars = cov.pars, kappa = kappa, nugget = nugget, micro.scale = micro.scale, dist.epsilon = dist.epsilon, 
-                  aniso.pars = aniso.pars, lambda = lambda)
-    kpl.result <- krige.conv.extnd(data = intensity, coords = coords, locations = locations, krige = krige,
-                                   output = list(n.predictive = ifelse(sim.predict,1,0), signal = TRUE, messages.screen = FALSE))
-    remove(list = c("intensity"))
+                  aniso.pars = aniso.pars, link = "logit")
+    kpl.result <- glm.krige.aux(data = prevalence, coords = coords, locations = locations, krige = krige,
+					output = list(n.predictive = ifelse(sim.predict,1,0),
+					      signal = TRUE, messages.screen = FALSE))			   
+    remove(list = c("prevalence"))
     kpl.result$krige.var <- apply(kpl.result$krige.var, 1, mean) + apply(kpl.result$predict, 1, var) 
     kpl.result$mcmc.error <- sqrt(asympvar(kpl.result$predict)/ncol(kpl.result$predict))
     kpl.result$predict <- apply(kpl.result$predict, 1, mean)
@@ -469,15 +273,41 @@ function(geodata, coords = geodata$coords, data = geodata$data, units.m = "defau
   }
   else{
     if(beta.prior == "flat") {
-      beta.est <- (ittivtt %*% t(ivtt))%*%log(intensity)
-      kpl.result <- list(intensity=intensity, beta.est = apply(beta.est, 1, mean), acc.rate=acc.rate)
+      beta.est <- (ittivtt %*% t(ivtt)) %*% logit.fct(prevalence)
+      kpl.result <- list(prevalence=prevalence, beta.est = apply(beta.est, 1, mean), acc.rate=acc.rate)
     }
-    else kpl.result <- list(intensity=intensity, acc.rate=acc.rate)
+    else kpl.result <- list(prevalence=prevalence, acc.rate=acc.rate)
   }
   kpl.result$call <- call.fc
 #######################################
   attr(kpl.result, "prediction.locations") <- call.fc$locations
   ##class(kpl.result) <- "kriging"
-  class(kpl.result) <- "pois.kriging"
+  class(kpl.result) <- "binom.kriging"
   return(kpl.result)
+}
+
+"glm.krige.aux" <- 
+function(coords, data, locations, krige, output)
+{
+  krige$lambda <- 1
+  krige$link <- NULL 
+  kc.result <- krige.conv.extnd(data = data, coords = coords, locations = locations, krige = krige, output = output)		
+  ##
+  ##################### Back-transforming predictions
+  ##
+  predict.transf <- kc.result$predict
+  ## using second order taylor-expansion + facts for N(0,1) [third moment = 0 ; fourth moment = 12].
+  if(output$messages.screen) cat("binom.krige: back-transforming predictions using 2. order Taylor expansion for g^{-1}() \n")
+  ivlogit <- plogis(predict.transf)
+  ivlogit1 <- exp(predict.transf)/(1+exp(predict.transf))^2
+  ivlogit2 <- exp(predict.transf)*(1-exp(predict.transf))/(1+exp(predict.transf))^3
+  ivlogit1[predict.transf>700] <- 0
+  ivlogit2[predict.transf>700] <- 0
+  kc.result$predict <- ivlogit + 0.5*ivlogit2*kc.result$krige.var
+  kc.result$krige.var <- ivlogit1^2*kc.result$krige.var + (11/4)*ivlogit2^2*kc.result$krige.var^2
+  remove("predict.transf")
+  if(output$n.predictive > 0) {
+    kc.result$simulations <- plogis(kc.result$simulations)
+  }
+  return(kc.result)
 }

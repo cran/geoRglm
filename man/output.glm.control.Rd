@@ -29,7 +29,7 @@ output.glm.control(sim.posterior, sim.predict, keep.mcmc.sim, quantile,
      \eqn{g^{-1}(S)}{g^{-1}(S)}, which equals
     \eqn{\exp(S)}{exp(S)} for the Poison model with \eqn{\log}{log}-link,
     \eqn{(\lambda S +1)^{\lambda}}{(lambda S + 1)^{lambda}} for the Poison model with Box-Cox-link
-    or \eqn{\exp(S)/(1+\exp(S))}{exp(S)/(1+exp(S))} for the binomial model with logit-link. Default is
+    and \eqn{\exp(S)/(1+\exp(S))}{exp(S)/(1+exp(S))} for the binomial model with logit-link. Default is
     \code{keep.mcmc.sim = TRUE}.  }
   \item{quantile}{indicates whether quantiles of the
     simulations from the
@@ -41,8 +41,9 @@ output.glm.control(sim.posterior, sim.predict, keep.mcmc.sim, quantile,
     example, if \code{quantile = c(0.25,0.50,0.75)} the function
     returns the quartiles of the distributions at each of the
     prediction locations.
-    If \code{quantile = TRUE} the default values \code{c(0.025, 0.5,
-      0.975)}, are assumed. 
+    The default is \code{quantile = TRUE} where the values \code{c(0.025, 0.5, 0.975)} are used.
+    If \code{quantile = FALSE} no quantiles are computed (and hence
+    neither median nor uncertainty is included in the output).
     Only used if prediction locations are provided in the argument
     \code{locations}.  }
   \item{threshold}{one or more values with threshold values can be given to this argument.
@@ -68,7 +69,7 @@ output.glm.control(sim.posterior, sim.predict, keep.mcmc.sim, quantile,
 
 
 \author{
-  Ole F. Christensen \email{o.christensen@lancaster.ac.uk}, \cr
+  Ole F. Christensen \email{olefc@birc.dk}, \cr
   Paulo J. Ribeiro Jr. \email{Paulo.Ribeiro@est.ufpr.br}.
 }
 

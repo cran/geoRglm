@@ -37,7 +37,7 @@ asympvar(timeseries, type="mon", lag.max = 100)
 }
 
 \author{
-  Ole F. Christensen \email{o.christensen@lancaster.ac.uk}, \cr
+  Ole F. Christensen \email{olefc@birc.dk}, \cr
   Paulo J. Ribeiro Jr. \email{Paulo.Ribeiro@est.ufpr.br}.
 }
 
@@ -45,7 +45,7 @@ asympvar(timeseries, type="mon", lag.max = 100)
 \examples{
 \testonly{library(geoR)}
 data(y50)
-test <- pois.log.krige(y50, krige = krige.glm.control(cov.pars = c(1,1), beta = 1),
+test <- pois.krige(y50, krige = krige.glm.control(cov.pars = c(1,1), beta = 1),
       mcmc.input = mcmc.control(S.scale = 0.5, n.iter = 1000, thin = 1))
 asympvar(test$intensity[45,])
 ass <- asympvar(test$intensity[1:10,], type = "pos")

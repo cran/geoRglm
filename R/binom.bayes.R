@@ -1,101 +1,7 @@
 
-"mcmc.binom.aux" <- 
-  function(z, data, units.m, meanS, QQ, S.scale, nsim, thin, Dmat)
-{
-  ##
-  ##### ------------------------ doing the mcmc-steps ----------- ############ 
-  ##  
-  n <- length(data)
-  randnormal <- rnorm(n * nsim * thin) * sqrt(S.scale)
-  randunif <- runif(nsim * thin)
-  z <-  as.double(z)
-  S <-  as.double(rep(0, nsim * n))
-  acc.rate <-  as.double(1)
-  if(is.null(Dmat)) {
-    result <- .C("mcmcrunbinom",
-                 as.integer(n),
-                 z = z,
-                 S = S,
-                 as.double(data),
-                 as.double(units.m),
-                 as.double(meanS),
-                 as.double(as.vector(t(QQ))),
-                 as.double(randnormal),
-                 as.double(randunif),
-                 as.double(S.scale),
-                 as.integer(nsim),
-                 as.integer(thin),
-                 acc.rate = acc.rate, DUP=FALSE, PACKAGE = "geoRglm")[c("z", "S", "acc.rate")]
-  }
-  else{
-    result <- .C("mcmcrun2binom",
-                 as.integer(n),
-                 z = z,
-                 S = S,
-                 as.double(data),
-                 as.double(units.m),
-                 as.double(as.vector(t(QQ))),
-                 as.double(as.vector(Dmat)),
-                 as.double(randnormal),
-                 as.double(randunif),
-                 as.double(S.scale),
-                 as.integer(nsim),
-                 as.integer(thin),
-                 acc.rate = acc.rate, DUP=FALSE, PACKAGE = "geoRglm")[c("z", "S", "acc.rate")]
-  }
-  attr(result$S, "dim") <- c(n, nsim)
-  return(result)
-}
-
-"mcmc.binom.logit" <- 
-  function(data, units.m, meanS, QQ, mcmc.input, Dmat)
-{
-  ##
-  n <- length(data)
-  S.scale <- mcmc.input$S.scale
-  if(is.null(meanS)) meanS <- rep(0,n)
-  if(any(mcmc.input$S.start=="default")){
-    S <- as.vector(ifelse(data > 0, log(data), -1) - ifelse(units.m-data > 0, log(units.m-data), -1) ) - meanS      
-    z <- as.vector(solve(QQ,S))
-  }
-  else{
-    if(is.numeric(mcmc.input$S.start)){
-      if(length(mcmc.input$S.start) != n) stop("dimension of mcmc-starting-value must equal dimension of data")
-      z <- as.vector(solve(QQ,mcmc.input$S.start))
-    }
-    else  stop(" S.start must be a vector of same dimension as data ")
-  }
-  burn.in <- mcmc.input$burn.in
-  thin <- mcmc.input$thin
-  n.iter <- mcmc.input$n.iter
-  ## ---------------- burn-in ----------------- ######### 
-  if(burn.in > 0) {
-    mcmc.output <- mcmc.binom.aux(z, data, units.m, meanS, QQ, S.scale, 1, burn.in, Dmat)
-    cat(paste("burn-in = ", burn.in, " is finished. Acc.-rate = ", mcmc.output$acc.rate, "\n"))
-  }
-  else mcmc.output <- list(z = z)
-  ## ---------- sampling periode ----------- ###### 
-  if(n.iter <= 1000) {
-    n.temp <- round(n.iter/thin)
-    n.turn <- 1
-  }
-  else {
-    n.temp <- round(1000/thin)
-    n.turn <- round(n.iter/1000)
-  }
-  n.sim <- n.turn * n.temp
-  Sdata <- matrix(NA, n, n.sim)
-  for(i in 1:n.turn) {
-    mcmc.output <- mcmc.binom.aux(mcmc.output$z, data, units.m, meanS, QQ, S.scale, n.temp, thin, Dmat)
-    Sdata[, (n.temp * (i - 1) + 1):(n.temp * i)] <- mcmc.output$S+meanS                     
-    cat(paste("iter. numb.", i * n.temp*thin, " : Acc.-rate = ", mcmc.output$acc.rate, "\n"))
-  }
-  cat(paste("MCMC performed: n.iter. = ", n.iter, "; thinning = ", thin, "; burn.in = ", burn.in, "\n"))
-  return(Sdata)
-}
 
 "mcmc.bayes.binom.logit" <- 
-  function(data, units.m, trend, mcmc.input, cov.model, kappa, tausq.rel, distcoords, ss.sigma, df, phi.prior, phi.discrete, phi)
+  function(data, units.m, trend, mcmc.input, messages.screen, cov.model, kappa, tausq.rel, coords, ss.sigma, df, phi.prior, phi.discrete)
 {
   ##
   ## This is the MCMC engine for the Bayesian analysis of a spatial binomial logit Normal model
@@ -106,19 +12,17 @@
     S <- as.vector(ifelse(data > 0, log(data), -1) - ifelse(units.m-data > 0, log(units.m-data), -1) )
   }
   else{
-    if(is.numeric(mcmc.input$S.start)){
-      if(length(mcmc.input$S.start) != n) stop("dimension of mcmc-starting-value must equal dimension of data")
-      S <- as.vector(mcmc.input$S.start)
+    if(!any(mcmc.input$S.start=="random")){
+      if(is.numeric(mcmc.input$S.start)){
+        if(length(mcmc.input$S.start) != n) stop("dimension of mcmc-starting-value must equal dimension of data")
+        S <- as.vector(mcmc.input$S.start)
+      }
+      else  stop(" S.start must be a vector of same dimension as data ")
     }
-    else  stop(" S.start must be a vector of same dimension as data ")
   }
   burn.in <- mcmc.input$burn.in
   thin <- mcmc.input$thin
   n.iter <- mcmc.input$n.iter
-  if(phi.prior == "fixed"){
-    phi.discrete <- phi
-    phi.prior <- "uniform"
-  }
   if(any(mcmc.input$phi.start=="default")) phi <- median(phi.discrete)
   else  phi <- mcmc.input$phi.start
   nmphi <-  length(phi.discrete)
@@ -131,81 +35,58 @@
     if(nmphi > 1 && pnorm((phi.discrete[nmphi] - phi.discrete[1])/(nmphi - 1), sd = sqrt(phi.scale)) > 0.975)
       print("Consider making the grid in phi.discrete more dense. The algorithm may have problems moving.")
   }
+  messages.screen <- ifelse(messages.screen,1,0)
   ##                                                                      
   ## ---------- sampling ----------- ###### 
   cov.model.number <- cor.number(cov.model)
-  phi.prior.number <- phi.number(phi.prior)
-  if(is.null(phi)){
-    if(phi.prior == "exponential")
-      stop("Must give the parameter in exponential prior-distribution for phi")
-    else e.mean <- 0
-  }
-  else e.mean <- phi
   if(is.vector(trend)) beta.size <- 1
   else beta.size <- ncol(trend)
   n.sim <- floor(n.iter/thin)
-  Sdata <- as.double(as.vector(c(S, rep(0, (n.sim - 1) * n))))
+  ## remeber this rather odd coding for telling that S.start is from the prior !!!
+  if(!any(mcmc.input$S.start=="random")) Sdata <- as.double(as.vector(c(rep(0, n.sim*n - 1),1)))
+  else Sdata <- as.double(as.vector(c(S, rep(0, (n.sim - 1) * n))))
   phi.sample <- as.double(rep(phi, n.sim))
-  if(is.R()){
-    result <-  .C("mcmcrun4binom",
-                  as.integer(n),
-                  as.double(data),
-                  as.double(units.m),
-                  as.double(as.vector(t(trend))),
-                  as.integer(beta.size),
-                  as.integer(cov.model.number),
-                  as.double(kappa),
-                  as.double(tausq.rel),
-                  as.double(distcoords),
-                  as.double(S.scale),
-                  as.double(phi.scale),
-                  as.integer(n.iter),
-                  as.integer(thin),
-                  as.integer(burn.in),
-                  as.double(ss.sigma),
-                  as.integer(df),
-                  as.integer(phi.prior.number),
-                  as.double(phi.discrete),
-                  as.integer(nmphi),
-                  as.double(e.mean),
-                  Sdata = Sdata,
-                  phi.sample = phi.sample, DUP=FALSE, PACKAGE = "geoRglm")[c("Sdata", "phi.sample")]
-  }
-  else{
-    result <- .C("mcmcrun4binom",
-                 COPY = c(FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE,
-                   FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, TRUE, TRUE),
-                 as.integer(n),
-                 as.double(data),
-                 as.double(units.m),
-                 as.double(as.vector(t(trend))),
-                 as.integer(beta.size),
-                 as.integer(cov.model.number),
-                 as.double(kappa),
-                 as.double(tausq.rel),
-                 as.double(distcoords),
-                 as.double(S.scale),
-                 as.double(phi.scale),
-                 as.integer(n.iter),
-                 as.integer(thin),
-                 as.integer(burn.in),
-                 as.double(ss.sigma),
-                 as.integer(df),
-                 as.integer(phi.prior.number),
-                 as.double(phi.discrete),
-                 as.integer(nmphi),
-                 as.double(e.mean),
-                 Sdata = Sdata,
-                 phi.sample = phi.sample)[c("Sdata", "phi.sample")]
-  }
+  acc.rate <- rep(0,floor(n.iter/1000)+1)
+  acc.rate.phi <- rep(0,floor(n.iter/1000)+1)
+  result <-  .C("mcmcrun4binom",
+                as.integer(n),
+                as.double(data),
+                as.double(units.m),
+                as.double(as.vector(t(trend))),
+                as.integer(beta.size),
+                as.integer(cov.model.number),
+                as.double(kappa),
+                as.double(tausq.rel),
+                as.double(coords[,1]),
+		as.double(coords[,2]),
+                as.double(S.scale),
+                as.double(phi.scale),
+                as.integer(n.iter),
+                as.integer(thin),
+                as.integer(burn.in),
+                as.integer(messages.screen),
+                as.double(ss.sigma),
+                as.integer(df),
+                as.double(phi.prior),
+                as.double(phi.discrete),
+                as.integer(nmphi),
+                Sdata = Sdata,
+                phi.sample = phi.sample,
+		acc.rate = acc.rate, 
+		acc.rate.phi = acc.rate.phi, DUP=FALSE, PACKAGE = "geoRglm")[c("Sdata", "phi.sample","acc.rate","acc.rate.phi" )]
   attr(result$Sdata, "dim") <- c(n, n.sim)
-  cat(paste("MCMC performed: n.iter. = ", n.iter, "; thinning = ", thin, "; burn.in = ", burn.in, "\n"))
+  if(nmphi>1) result$acc.rate <- as.data.frame(cbind(burn.in + seq(0,floor(n.iter/1000))*1000, result$acc.rate,result$acc.rate.phi))
+  else result$acc.rate <- as.data.frame(cbind(burn.in + seq(0,floor(n.iter/1000))*1000, result$acc.rate))
+  result$acc.rate.phi <- NULL
+  if(burn.in==0) result$acc.rate <- result$acc.rate[-1,]
+  if(nmphi>1) names(result$acc.rate) <- c("iter.numb", "Acc.rate", "Acc.rate.phi")
+  else names(result$acc.rate) <- c("iter.numb", "Acc.rate")
+  cat(paste("MCMC performed: n.iter. = ", n.iter, "; thinning = ", thin, "; burn.in = ", burn.in, "\n")) 
   return(result)
 }
 
 "mcmc.bayes.conj.binom.logit" <- 
-  function(data, units.m, meanS, ttvbetatt, mcmc.input, cov.model, kappa, tausq.rel, distcoords, ss.sigma, df, phi.prior, phi.discrete,
-           phi)
+  function(data, units.m, meanS, ttvbetatt, mcmc.input, messages.screen, cov.model, kappa, tausq.rel, coords, ss.sigma, df, phi.prior, phi.discrete)
 {
   ##
   ## This is the MCMC engine for the Bayesian analysis (with normal prior for beta) of a spatial binomial logit Normal model
@@ -216,19 +97,17 @@
     S <- as.vector(ifelse(data > 0, log(data), -1) - ifelse(units.m-data > 0, log(units.m-data), -1) ) - meanS
   }
   else{
-    if(is.numeric(mcmc.input$S.start)){
-      if(length(mcmc.input$S.start) != n) stop("dimension of mcmc-starting-value must equal dimension of data")
-      S <- as.vector(mcmc.input$S.start)
+    if(!any(mcmc.input$S.start=="random")){
+      if(is.numeric(mcmc.input$S.start)){
+        if(length(mcmc.input$S.start) != n) stop("dimension of mcmc-starting-value must equal dimension of data")
+        S <- as.vector(mcmc.input$S.start)
+      }
+      else  stop(" S.start must be a vector of same dimension as data ")
     }
-    else  stop(" S.start must be a vector of same dimension as data ")
   }
   burn.in <- mcmc.input$burn.in
   thin <- mcmc.input$thin
   n.iter <- mcmc.input$n.iter
-  if(phi.prior == "fixed"){
-    phi.discrete <- phi
-    phi.prior <- "uniform"
-  }
   if(any(mcmc.input$phi.start=="default")) phi <- median(phi.discrete)
   else  phi <- mcmc.input$phi.start
   nmphi <-  length(phi.discrete)
@@ -241,73 +120,51 @@
     if(nmphi > 1 && pnorm((phi.discrete[nmphi] - phi.discrete[1])/(nmphi - 1), sd = sqrt(phi.scale)) > 0.975)
       print("Consider making the grid in phi.discrete more dense. The algorithm may have problems moving.")
   }
+  messages.screen <- ifelse(messages.screen,1,0)
   ##                                                                
   ## ---------- sampling ----------- ###### 
   cov.model.number <- cor.number(cov.model)
-  phi.prior.number <- phi.number(phi.prior)
-  if(is.null(phi)) {
-    if(phi.prior == "exponential")
-      stop("Must give the parameter in exponential prior-distribution for phi")
-    else e.mean <- 0
-  }
-  else e.mean <- phi
   if(is.null(ttvbetatt)) ttvbetatt <- matrix(0,beta.size,beta.size)
   n.sim <- floor(n.iter/thin)
-  Sdata <- as.double(as.vector(c(S, rep(0, (n.sim - 1) * n))))
-  phi.sample <- as.double(rep(phi, n.sim))  
-  if(is.R()){
-    result <-  .C("mcmcrun5binom",
-                  as.integer(n),
-                  as.double(data),
-                  as.double(units.m),
-                  as.double(as.vector(meanS)),
-                  as.double(as.vector(ttvbetatt)),
-                  as.integer(cov.model.number),
-                  as.double(kappa),
-                  as.double(tausq.rel),
-                  as.double(distcoords),
-                  as.double(S.scale),
-                  as.double(phi.scale),
-                  as.integer(n.iter),
-                  as.integer(thin),
-                  as.integer(burn.in),
-                  as.double(ss.sigma),
-                  as.integer(df),
-                  as.integer(phi.prior.number),
-                  as.double(phi.discrete),
-                  as.integer(nmphi),
-                  as.double(e.mean),
-                  Sdata = Sdata,
-                  phi.sample = phi.sample, DUP=FALSE, PACKAGE = "geoRglm")[c("Sdata", "phi.sample")]
-  }
-  else{
-    result <- .C("mcmcrun5binom",
-                 COPY = c(FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE,
-                   FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, TRUE, TRUE),
-                 as.integer(n),
-                 as.double(data),
-                 as.double(units.m),
-                 as.double(as.vector(meanS)),
-                 as.double(as.vector(ttvbetatt)),
-                 as.integer(cov.model.number),
-                 as.double(kappa),
-                 as.double(tausq.rel),
-                 as.double(distcoords),
-                 as.double(S.scale),
-                 as.double(phi.scale),
-                 as.integer(n.iter),
-                 as.integer(thin),
-                 as.integer(burn.in),
-                 as.double(ss.sigma),
-                 as.integer(df),
-                 as.integer(phi.prior.number),
-                 as.double(phi.discrete),
-                 as.integer(nmphi),
-                 as.double(e.mean),
-                 Sdata = Sdata,
-                 phi.sample = phi.sample)[c("Sdata", "phi.sample")]
-  }
+  ## remeber this rather odd coding for telling that S.start is from the prior !!!
+  if(!any(mcmc.input$S.start=="random")) Sdata <- as.double(as.vector(c(rep(0, n.sim*n - 1),1)))
+  else Sdata <- as.double(as.vector(c(S, rep(0, (n.sim - 1) * n))))
+  phi.sample <- as.double(rep(phi, n.sim))
+  acc.rate <- rep(0,floor(n.iter/1000)+1)
+  acc.rate.phi <- rep(0,floor(n.iter/1000)+1)
+  result <-  .C("mcmcrun5binom",
+                as.integer(n),
+                as.double(data),
+                as.double(units.m),
+                as.double(as.vector(meanS)),
+                as.double(as.vector(ttvbetatt)),
+                as.integer(cov.model.number),
+                as.double(kappa),
+                as.double(tausq.rel),
+                as.double(coords[,1]),
+		as.double(coords[,2]),
+                as.double(S.scale),
+                as.double(phi.scale),
+                as.integer(n.iter),
+                as.integer(thin),
+                as.integer(burn.in),
+                as.integer(messages.screen),
+                as.double(ss.sigma),
+                as.integer(df),
+                as.double(phi.prior),
+                as.double(phi.discrete),
+                as.integer(nmphi),
+                Sdata = Sdata,
+                phi.sample= phi.sample,
+		acc.rate = acc.rate, 
+		acc.rate.phi = acc.rate.phi, DUP=FALSE, PACKAGE = "geoRglm")[c("Sdata", "phi.sample","acc.rate","acc.rate.phi" )]
   attr(result$Sdata, "dim") <- c(n, n.sim)
+  if(nmphi>1) result$acc.rate <- as.data.frame(cbind(burn.in + seq(0,floor(n.iter/1000))*1000, result$acc.rate,result$acc.rate.phi))
+  else result$acc.rate <- as.data.frame(cbind(burn.in + seq(0,floor(n.iter/1000))*1000, result$acc.rate))
+  result$acc.rate.phi <- NULL
+  if(burn.in==0) result$acc.rate <- result$acc.rate[-1,]
+  if(nmphi>1) names(result$acc.rate) <- c("iter.numb", "Acc.rate", "Acc.rate.phi")
+  else names(result$acc.rate) <- c("iter.numb", "Acc.rate")
   cat(paste("MCMC performed: n.iter. = ", n.iter, "; thinning = ", thin, "; burn.in = ", burn.in, "\n"))
   return(result)
 }
@@ -439,7 +296,8 @@
         }
         if(is.null(output$sim.posterior)) output$sim.posterior <- TRUE
         if(is.null(output$sim.predict)) output$sim.predict <- FALSE
-        if(is.null(output$keep.mcmc.sim)) output$keep.mcmc.sim <- TRUE 
+        if(is.null(output$keep.mcmc.sim)) output$keep.mcmc.sim <- TRUE  
+        if(is.null(output$quantile)) output$quantile <- TRUE 
         if(is.null(output$inference)) output$inference <- TRUE
         if(is.null(output$messages.screen)) output$messages.screen <- TRUE        
         output <- output.glm.control(sim.posterior = output$sim.posterior,
@@ -462,8 +320,8 @@
   if(messages.screen) {
     cat(switch(as.character(trend.d)[1],
                  "cte" = "binom.krige.bayes: model with mean being constant",
-                 "1st" = "binom.krige.bayes: model with mean given by a 1st degree polinomial on the coordinates",
-                 "2nd" = "binom.krige.bayes: model with mean given by a 2nd degree polinomial on the coordinates",
+                 "1st" = "binom.krige.bayes: model with mean given by a 1st order polynomial on the coordinates",
+                 "2nd" = "binom.krige.bayes: model with mean given by a 2nd order polynomial on the coordinates",
                  "binom.krige.bayes: model with mean defined by covariates provided by the user"))
     cat("\n")
   }
@@ -566,56 +424,49 @@
     else ttvbetatt <- trend.data%*%t(trend.data)*beta.var
   }  
   else ttvbetatt <- NULL
-  if(sigmasq.prior == "fixed") {     ### implies that phi is fixed !
-    if(beta.prior == "normal"){
-      QQt <- chol(varcov.spatial(coords = coords.transf, cov.model = cov.model, kappa = kappa, cov.pars = c(1,phi),
-                                 nugget = tausq.rel)$varcov + ttvbetatt )
+  if(sigmasq.prior == "fixed"){     ### implies that phi is fixed !
+    invcov <- varcov.spatial(coords = coords, cov.model = cov.model, kappa = kappa, nugget = tausq.rel*sigmasq,
+                               cov.pars = c(sigmasq,phi), inv = TRUE, func.inv = "cholesky",
+                               try.another.decomposition = FALSE)$inverse
+    if(beta.prior != "fixed"){
+      ivtt <- invcov%*%trend.data
+      if(beta.prior == "normal") ittivtt <- solve.geoR(crossprod(trend.data, ivtt) + solve(beta.var))
+      else ittivtt <- solve.geoR(crossprod(trend.data, ivtt))
+      invcov <- invcov-ivtt%*%ittivtt%*%t(ivtt)
     }
-    else {
-      QQt <- varcov.spatial(coords = coords.transf, cov.model = cov.model, kappa = kappa, cov.pars = c(1,phi),
-                            nugget = tausq.rel, only.decomposition = TRUE, try.another.decomposition = FALSE)$sqrt.varcov
-    }
-    if(beta.prior == "flat"){
-      if(is.R()) QQtinvtt <- crossprod(solve(QQt),trend.data)
-      else QQtinvtt <- crossprod(solve.upper(QQt),trend.data)
-      Dmat <- diag(n) - QQtinvtt %*% solve.geoR(crossprod(QQtinvtt)) %*% t(QQtinvtt)
-    }
-    else Dmat <- NULL
   }
+  if((phi.prior == "fixed") && (sigmasq.prior != "fixed")){
+    phi.prior.prob <- 1
+    phi.discrete <- phi
+  }
+  else phi.prior.prob <-  prior$priors.info$phi$probs
   ##
 ############----------PART 2 ------------##############################
 ############-----------MCMC -------------##############################
   ##
   if(sigmasq.prior == "fixed"){ 
-    log.odds <- mcmc.binom.logit(data = data, units.m = units.m, meanS = mean.d, QQ = sqrt(sigmasq)*t(QQt), mcmc.input = mcmc.input,
-                                 Dmat = Dmat)
-  } 
+    log.odds <- mcmc.binom.logit(data = data, units.m = units.m, meanS = mean.d, invcov=invcov, mcmc.input = mcmc.input, messages.screen=messages.screen)
+  }
   else {
     kb.results$posterior$phi <- list()
     ## take care re-using log.odds !
     if(beta.prior == "flat"){
-      log.odds <- mcmc.bayes.binom.logit(data=data, units.m=units.m, trend=trend.data, mcmc.input=mcmc.input, cov.model=cov.model, 
-                                         kappa=kappa, tausq.rel = tausq.rel, distcoords=distdiag(coords.transf), 
-                                         ss.sigma = df.sigmasq*S2.prior, df = df.model, phi.prior = phi.prior,
-                                         phi.discrete = phi.discrete, phi = phi)
+      log.odds <- mcmc.bayes.binom.logit(data=data, units.m=units.m, trend=trend.data, mcmc.input=mcmc.input, messages.screen=messages.screen, cov.model=cov.model, 
+                                         kappa=kappa, tausq.rel = tausq.rel, coords=coords.transf, 
+                                         ss.sigma = df.sigmasq*S2.prior, df = df.model, phi.prior = phi.prior.prob,
+                                         phi.discrete = phi.discrete)
     }
     else{     
-      log.odds <- mcmc.bayes.conj.binom.logit(data=data, units.m=units.m, meanS = mean.d, ttvbetatt = ttvbetatt, mcmc.input=mcmc.input,
-                                              cov.model=cov.model,  kappa=kappa, tausq.rel = tausq.rel,
-                                              distcoords=distdiag(coords.transf),  ss.sigma = df.sigmasq*S2.prior, df = df.model,
-                                              phi.prior = phi.prior, phi.discrete = phi.discrete, phi = phi)
+      log.odds <- mcmc.bayes.conj.binom.logit(data=data, units.m=units.m, meanS = mean.d, ttvbetatt = ttvbetatt, mcmc.input=mcmc.input, messages.screen=messages.screen,
+                                              cov.model=cov.model, kappa=kappa, tausq.rel = tausq.rel,
+                                              coords=coords.transf, ss.sigma = df.sigmasq*S2.prior, df = df.model,
+                                              phi.prior = phi.prior.prob, phi.discrete = phi.discrete)
     }
     kb.results$posterior$phi$sample <- log.odds$phi.sample
-    log.odds <- log.odds$Sdata
   }
-  ## ######### removing junk #########################################
-  if(is.R()){
-    remove("ttvbetatt") 
-  }
-  else {
-    remove("ttvbetatt", frame = sys.nframe())
-  }
-  ##           
+  kb.results$posterior$acc.rate  <- log.odds$acc.rate
+  log.odds <- log.odds$Sdata
+  ##
 ##############-------------PART 3----------######################
 ##############------------prediction-------######################
   ##
@@ -658,7 +509,7 @@
         temp.pred$mean <- temp.result$predictive$mean
         temp.pred$var <- temp.result$predictive$variance
         if(output$sim.predict)
-          kb.results$predictive$simulations <- logit.inv(temp.result$predictive$simulations)
+          kb.results$predictive$simulations <- plogis(temp.result$predictive$simulations)
       }
     }
     else {
@@ -689,7 +540,7 @@
             temp.pred$mean[, indic.phi[i, 1]] <- temp.result$predictive$mean
             temp.pred$var[, indic.phi[i, 1]] <- temp.result$predictive$variance
             if(output$sim.predict) {
-              kb.results$predictive$simulations[, indic.phi[i, 1]] <- logit.inv(temp.result$predictive$simulations)
+              kb.results$predictive$simulations[, indic.phi[i, 1]] <- plogis(temp.result$predictive$simulations)
             }
           }
         }
@@ -704,19 +555,18 @@
             temp.pred$mean[, indic.phi[i, 1:phi.table[i]]] <- temp.result$predictive$mean
             temp.pred$var[, indic.phi[i, 1:phi.table[i]]] <- temp.result$predictive$variance
             if(output$sim.predict) {
-              kb.results$predictive$simulations[ , indic.phi[i, 1:phi.table[i]]] <- logit.inv(temp.result$predictive$simulations)
+              kb.results$predictive$simulations[ , indic.phi[i, 1:phi.table[i]]] <- plogis(temp.result$predictive$simulations)
             }
           }
         }
       }
     }
-    if(is.R())
-      remove("temp.result")
-    else remove("temp.result", frame = sys.nframe())
+    remove("temp.result")
     if(do.prediction) {
       ##
       d0mat <- loccoords(coords, locations)
       loc.coincide <- (apply(d0mat < 1e-10, 2, sum) == 1)
+      if((is.logical(quantile.estimator) && (quantile.estimator)) || (is.numeric(quantile.estimator))){
         ##
         ##------- calculating medians and uncertainty
         ##
@@ -751,7 +601,7 @@
           diffe[not.accurate] <- ifelse(abs(diffe[not.accurate]) > abs(diffe.new), diffe.new, diffe[not.accurate])
           not.accurate[not.accurate] <- ifelse(abs(diffe[not.accurate])>0.0005, TRUE, FALSE)
           temp.upper.new <- temp.upper[not.accurate] - diffe[not.accurate]*inv.sl[not.accurate]
-        }      
+        }     
         temp.lower <- qnorm(rep(0.025, ni), mean = temp.med, sd = temp.unc)
         not.accurate <- (!loc.coincide)
         diffe <- pmixed(temp.lower, temp.pred,df.model)-0.025
@@ -772,11 +622,11 @@
           temp.upper[loc.coincide] <- apply(temp.pred$mean[loc.coincide,,drop=FALSE], 1, quantile, probs = 0.975)
           temp.lower[loc.coincide] <- apply(temp.pred$mean[loc.coincide,,drop=FALSE], 1, quantile, probs = 0.025) 
         }
-        kb.results$predictive$median <- logit.inv(temp.med)
-        kb.results$predictive$uncertainty <- (logit.inv(temp.upper) - logit.inv(temp.lower))/4
+        kb.results$predictive$median <- plogis(temp.med)
+        kb.results$predictive$uncertainty <- (plogis(temp.upper) - plogis(temp.lower))/4
         ## calculating quantiles
-        if(is.null(quantile.estimator)) {
-          kb.results$predictive$quantiles <- as.data.frame(cbind(logit.inv(temp.lower), logit.inv(temp.med), logit.inv(temp.upper)))
+        if(is.logical(quantile.estimator) && (quantile.estimator)){
+          kb.results$predictive$quantiles <- as.data.frame(cbind(plogis(temp.lower), plogis(temp.med), plogis(temp.upper)))
         }
         if(is.numeric(quantile.estimator)) {
           nmq <- length(quantile.estimator)
@@ -806,7 +656,7 @@
                 temp.quan[loc.coincide,i] <- apply(temp.pred$mean[loc.coincide,,drop=FALSE], 1, quantile, probs = quantile.estimator[i])
               }
             }
-            kb.results$predictive$quantiles <- as.data.frame(logit.inv(temp.quan))
+            kb.results$predictive$quantiles <- as.data.frame(plogis(temp.quan))
           }
           else {
             dig <- 3
@@ -830,10 +680,10 @@
             if(any(loc.coincide)){
               temp.quan[loc.coincide] <- apply(temp.pred$mean[loc.coincide,,drop=FALSE], 1, quantile, probs = quantile.estimator)
             }
-            kb.results$predictive$quantiles <- as.vector(logit.inv(temp.quan))
+            kb.results$predictive$quantiles <- as.vector(plogis(temp.quan))
           }
         }
-        if(is.null(quantile.estimator)) {
+        if(is.logical(quantile.estimator) && (quantile.estimator)){
           qname <- rep(0, 3)
           qname[1] <- paste("q0.025", sep = "")
           qname[2] <- paste("q0.5", sep = "")
@@ -846,6 +696,7 @@
             qname[i] <- paste("q", 100 * quantile.estimator[i], sep = "")
           names(kb.results$predictive$quantiles) <- qname
         }
+      }
       ##
       ## ------ probability estimators
       ##
@@ -875,7 +726,7 @@
     ##
     ##----- calculating posterior summaries ----------------##
     ##
-    if(beta.prior == "fixed") kb.results$posterior$beta <- paste("provided by user: ", beta) 
+    if(beta.prior == "fixed") kb.results$posterior$beta <- paste("provided by user: ", beta)
     else {
       kb.results$posterior$beta <- list()
       kb.results$posterior$beta$mean <- apply(temp.post$beta.mean, 1, mean)
@@ -929,15 +780,15 @@
     if(is.R()) remove("temp.post")
     else remove("temp.post", frame = sys.nframe())
   }
-  if(output$keep.mcmc.sim) kb.results$posterior$simulations <- logit.inv(log.odds)  
+  if(output$keep.mcmc.sim) kb.results$posterior$simulations <- plogis(log.odds)  
   model$lambda <- NULL
   kb.results$model <- model
   kb.results$prior <- prior$priors.info
   kb.results$mcmc.input <- mcmc.input
   kb.results$.Random.seed <- seed
   kb.results$call <- call.fc
-  if(is.R()) attr(kb.results, "class") <- c("krige.bayes", "kriging")
-  else attr(kb.results, "class") <- setOldClass(c("krige.bayes", "kriging"))
+  ##attr(kb.results, "class") <- c("krige.bayes", "kriging")
+  attr(kb.results, "class") <- c("binom.krige.bayes")
   if(messages.screen) cat("binom.krige.bayes: done!\n")
   return(kb.results)
 }

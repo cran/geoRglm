@@ -1,19 +1,16 @@
-\name{pois.log.krige}
+\name{binom.krige}
 
-\alias{pois.log.krige}
-\alias{krige.glm.control}
-\alias{krige.conv.extnd}
-\alias{mcmc.aux}
-\alias{mcmc.boxcox.aux}
-\alias{mcmc.pois.log}
-\alias{mcmc.pois.boxcox}
+\alias{binom.krige}
+\alias{mcmc.binom.aux}
+\alias{mcmc.binom.logit}
+\alias{glm.krige.aux}
+\alias{logit.fct}
 
-
-
-\title{Conditional Simulation and Prediction for the Poisson-log
+\title{Conditional Simulation and Prediction for the Binomial-logit 
   Spatial model}
 \description{
-  This function performs conditional simulation (by MCMC) and spatial prediction in the Poisson log-normal
+  This function performs conditional simulation (by MCMC) and spatial
+  prediction in the Binomial logit-normal
   model for fixed covariance parameters.
   Available types of prediction are:
   \emph{SK} (simple kriging; fixed beta),
@@ -21,7 +18,7 @@
 }
 
 \usage{
-pois.log.krige(geodata, coords = geodata$coords, data = geodata$data,
+binom.krige(geodata, coords = geodata$coords, data = geodata$data,
                units.m = "default", locations = NULL,
                mcmc.input, krige, output)
 krige.glm.control(type.krige = "ok", trend.d = "cte", trend.l = "cte",
@@ -45,15 +42,16 @@ krige.glm.control(type.krige = "ok", trend.d = "cte", trend.l = "cte",
   \item{units.m}{ \eqn{n}-dimensional vector of observation times for the data. By default (\code{units.m = "default"}), 
     it takes \code{geodata$units.m} in case this exist and else a vector of 1's.  }
   \item{locations}{an \eqn{N \times 2}{N x 2} matrix or data frame with the 2-D
-    coordinates of the \eqn{N} prediction locations.  }  
-  \item{krige}{defines the model components and the type of
-    kriging. It can take an output from \code{krige.glm.control} or
-    a list with elements as for the arguments in \code{krige.glm.control}. See section DETAILS below.  } 
+    coordinates of the \eqn{N} prediction locations.  }
   \item{mcmc.input}{input parameter for the MCMC algorithm. It can take an output from \code{mcmc.control} or
     a list with elements as for the arguments in
     \code{mcmc.control}. See documentation for
     \code{mcmc.control}.\cr ATTENTION: the argument \code{S.scale} is necessary while
     all the others have default values.   }
+  \item{krige}{defines the model components and the type of
+    kriging. It can take an output from \code{krige.glm.control} or
+    a list with elements as for the arguments in
+    \code{krige.glm.control}.  } 
   \item{output}{parameters for controlling the output. It can take an output from \code{output.glm.control} or
     a list with elements as for the arguments in \code{output.glm.control}.
     See documentation for \code{output.glm.control}.  } 
@@ -62,15 +60,14 @@ krige.glm.control(type.krige = "ok", trend.d = "cte", trend.l = "cte",
     \code{"SK"} and \code{"OK"} corresponding to prediction with fixed
     parameters (\code{type.krige = "SK"}) or prediction with a uniform
     prior on \eqn{\beta}{beta} (\code{type.krige = "OK"}). 
-    Prediction using a model with covariates can be done setting \code{type.krige = "OK"} 
-    and specifying the
+    Prediction using a model with covariates can be done by specifying the
     covariate model using the arguments \code{trend.d} and
     \code{trend.l}.  }
   \item{trend.d}{specifies the trend (covariate) values at the data
     locations.
     See documentation of \code{\link[geoR]{trend.spatial}} for
     further details.
-    Default is \code{tred.d = "cte"}.   }
+    Default is \code{trend.d = "cte"}.   }
   \item{trend.l}{specifies the trend (covariate) values at prediction
     locations. It must be of the same type as for \code{trend.d}.
     Only used if prediction locations are provided in the argument
@@ -104,32 +101,30 @@ krige.glm.control(type.krige = "ok", trend.d = "cte", trend.l = "cte",
     must be provided. Anisotropy correction consists of a
     transformation of the data and prediction coordinates performed
     by the function \code{\link[geoR]{coords.aniso}}.  }
-  \item{lambda}{numeric value of the Box-Cox transformation parameter.
-    The value \eqn{\lambda = 1}{lambda = 1} corresponds to
-    no transformation and \eqn{\lambda = 0}{lambda = 0} corresponds to
-    the log-transformation. 
-    Prediction results are back-transformed and
-    returned is the same scale as for the original data. Only
-    \code{lambda = 0} is implemented.  }
+  \item{lambda}{redundant parameter here}
 }
 
 
 \details{
   For simulating the conditional distribution of \eqn{S} given \eqn{y}, the Langevin-Hastings algorithm 
-with the parametrisation in Papaspilliopoulus, Roberts and Skold (2002)
-is used. This algorithm is a Metropolis-Hastings algorithm, where the proposal distribution uses gradient information from the log-posterior distribution. 
+with the parametrisation in Papaspilliopoulus, Roberts and Skold (2003)
+is used. This algorithm is a Metropolis-Hastings algorithm, where the
+proposal distribution uses gradient information from the
+log-posterior distribution. 
 
 The proposal variance (called \code{S.scale}; see \code{mcmc.control})
 for the algorithm needs to be scaled
 such that approximately 60 percent of the proposals are accepted. We
-also recommend the user to study the autocorrelation.
+also recommend that the user to studies plots of the autocorrelations.
  
-The prediction part of the program consist of performing log-Gaussian kriging on each of the simulated 
-\eqn{\exp(S)}{exp(S)}-``datasets'' from the conditional distribution. Afterwards the predictor is obtained by taking the mean of 
+The prediction part of the program consist of performing trans-Gaussian kriging on each of the simulated 
+\eqn{g^{-1}(S)}{g^{-1}(S)}-``datasets'' from the conditional
+distribution. Afterwards the predictor is obtained by taking the mean of 
 prediction means, and the prediction variance
 is obtained by taking the mean of the prediction variances plus the variance of the prediction means.
-The log-Gaussian kriging is done by calling the function \code{krige.conv.extnd}, which is an extension of 
-\code{\link[geoR]{krige.conv}} allowing for more than one ``data set''. 
+The trans-Gaussian kriging is done by calling the function \code{krige.conv.extnd}, which is an extension of 
+\code{\link[geoR]{krige.conv}} allowing for more than one ``data
+set'', and using a second order Taylor approximation of \eqn{g^{-1}}{g^{-1}}.
 }
 
 \value{
@@ -139,21 +134,24 @@ The log-Gaussian kriging is done by calling the function \code{krige.conv.extnd}
   \item{krige.var}{a vector with predicted variances.  }
   \item{mcmc.error}{estimated Monte Carlo errors on the predicted values.  }
   \item{beta.est}{estimate of the \eqn{\beta}{beta} parameter. Not included in the output if
-    \code{type.krige = "SK"}.  }
-  \item{intensity}{an \eqn{n \times n.sim}{n x n.sim} matrix where \eqn{n.sim} is the number of MCMC simulations. Each column 
-    corresponds to a conditional simulation of the conditional distribution of the random effects at the data locations. 
+    \code{type.krige = "sk"}.  }
+  \item{prevalence}{an \eqn{n \times n.sim}{n x n.sim} matrix with
+    \eqn{n.sim} being the number of MCMC simulations. containing \eqn{g^{-1}(S_i)}. Each column 
+    corresponds to a conditional simulation of the conditional distribution of \eqn{g^{-1}(S_i)} at the data locations. 
     Only returned when no prediction locations are given.  }
-  \item{message}{messages about the type of prediction performed.  }
+  \item{acc.rate}{a data frame with acceptance rates from MCMC.
+    Only returned when no prediction locations are given.  }
   \item{simulations}{an \eqn{ni \times n.sim}{ni x n.sim} matrix where \eqn{ni} is the number of prediction locations and \eqn{n.sim}
   is the number of MCMC simulations. Each column 
-    corresponds to a conditional simulation of the predictive distribution. Only returned if \code{sim.predict = TRUE}.  }
+    corresponds to a conditional simulation of the predictive
+    distribution \eqn{g^{-1}(S^{*})}. Only returned if \code{sim.predict = TRUE}.  }
   \item{message}{messages about the type of prediction performed.  }
   \item{call}{the function call.  }
 }
 
 \references{
   O. Papaspiliopoulus and G. O. Roberts and M. Skold
-  (2002). Non-centered parameterizations for hierarchical models and
+  (2003). Non-centered parameterizations for hierarchical models and
   data augmentation. \emph{Bayesian statistics 7} (eds. J. M. Bernardo,
   S. Bayarri, J. O. Berger, A. P. Dawid, D. Heckerman, A. F. M. Smith
   and M. West), Oxford University Press (to appear).
@@ -164,40 +162,41 @@ Further information about \bold{geoRglm} can be found at:\cr
 }
 
 \author{
-  Ole F. Christensen \email{o.christensen@lancaster.ac.uk}, \cr
+  Ole F. Christensen \email{olefc@birc.dk}, \cr
   Paulo J. Ribeiro Jr. \email{Paulo.Ribeiro@est.ufpr.br}.
 }
 
-\seealso{\code{\link{pois.krige.bayes}} for Bayesian prediction in the
-  Poisson-normal model and \code{\link[geoR]{krige.conv}} for
+\seealso{\code{\link{binom.krige.bayes}} for Bayesian prediction in the
+  Binomial-normal model, \code{\link{pois.krige}} for prediction with fixed parameters in the
+  Poisson normal model, and \code{\link[geoR]{krige.conv}} for
   prediction in the linear Gaussian model.
 }
 
 \examples{
 \testonly{library(geoR)}
 if(!exists(".Random.seed")) set.seed(1234)
-data(y50)
+data(b50)
 # First we scale the algorithm, and study how well the chain is mixing.
-test <- pois.log.krige(y50, krige = list(cov.pars = c(1,1), beta = 1),
+test <- binom.krige(b50, krige = list(cov.pars = c(1,1), beta = 1),
       mcmc.input = mcmc.control(S.scale = 0.2, thin = 1))
-plot(log(test$intensity[45,]), type = "l")
+plot(logit.fct(test$prevalence[45,]), type = "l")
 require(ts)
-acf(log(test$intensity[45,]), type = "correlation", plot = TRUE)
+acf(logit.fct(test$prevalence[45,]), type = "correlation", plot = TRUE)
 # Now we make prediction (we decide to thin to every 10, which is the default),
-# where we now use S.scale = 0.55.
-\dontrun{test2 <- pois.log.krige(y50, locations = cbind(c(0.5,0.5), c(1,0.4)), 
+# where we now use S.scale = 0.7.
+\dontrun{test2 <- binom.krige(b50, locations = cbind(c(0.5,0.5), c(1,0.4)), 
       krige = krige.glm.control(cov.pars = c(1,1), beta = 1), 
-      mcmc.input = mcmc.control(S.scale = 0.55)) }
+      mcmc.input = mcmc.control(S.scale = 0.7)) }
 \testonly{
 y9 <- grf(grid = expand.grid(x = seq(1, 3, l = 3), y = seq(1, 3, l = 3)), cov.pars = c(0.1, 0.2))  
-y9$data <- rpois(9, lambda = exp(y9$data))
+y9$data <- rbinom(9, prob = plogis(y9$data),size=1:9)
 model2 <- krige.glm.control(cov.pars = c(1,1), beta = 1)
-test2 <- pois.log.krige(y9, locations = cbind(c(0.5,0.5),c(1,0.4)),
+test2 <- binom.krige(y9, locations = cbind(c(0.5,0.5),c(1,0.4)),
 krige = model2, mcmc.input = mcmc.control(S.scale = 0.5, thin = 1, n.iter=10), output = list(sim.predict = TRUE))
 model2.u <- krige.glm.control(cov.pars = c(1,1), beta = 1, type.krige = "ok")
-test2.unif.beta <- pois.log.krige(y9, krige = model2.u, mcmc.input =list(S.scale = 0.5, thin = 1, n.iter=10))
+test2.unif.beta <- binom.krige(y9, krige = model2.u, mcmc.input =list(S.scale = 0.5, thin = 1, n.iter=10))
 model2 <- krige.glm.control(cov.pars = c(1,1), beta = 1, aniso.pars=c(1,2))
-test2 <- pois.log.krige(y9, locations = cbind(c(0.5,0.5),c(1,0.4)),
+test2 <- binom.krige(y9, locations = cbind(c(0.5,0.5),c(1,0.4)),
 krige = model2, mcmc.input = list(S.scale = 0.5, thin = 1, n.iter=10)) }
 }
 

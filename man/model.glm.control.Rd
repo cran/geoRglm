@@ -47,7 +47,7 @@ model.glm.control(trend.d = "cte", trend.l = "cte", cov.model = "matern",
 
 
 \author{
-  Ole F. Christensen \email{o.christensen@lancaster.ac.uk}, \cr
+  Ole F. Christensen \email{olefc@birc.dk}, \cr
   Paulo J. Ribeiro Jr. \email{Paulo.Ribeiro@est.ufpr.br}.
 }
 

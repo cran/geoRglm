@@ -6,8 +6,8 @@
 
 \description{
   This auxiliary function defines options for the MCMC-algorithm used by
-  \code{\link{pois.krige.bayes}}, \code{\link{binom.krige.bayes}} and \code{\link{pois.log.krige}}.
-}
+  \code{\link{pois.krige.bayes}}, \code{\link{binom.krige.bayes}}, \code{\link{binom.krige}} and \code{\link{pois.krige}}.
+  }
 
 \usage{
 mcmc.control(S.scale, Htrunc, S.start, burn.in, thin, n.iter, phi.start,
@@ -19,7 +19,9 @@ mcmc.control(S.scale, Htrunc, S.start, burn.in, thin, n.iter, phi.start,
 \item{S.scale}{proposal variance for the update of \eqn{S} in the algorithm.  }
     \item{Htrunc}{truncation parameter for the MCMC-algorithm. Either a number or a vector of the same dimension as the data. 
      Default is Htrunc = 2*data + 5.  }
-    \item{S.start}{starting value for \code{S} (without the mean !!) in the MCMC-algorithm. Default value exist.  }
+    \item{S.start}{starting value for \code{S} (without the mean !!) in
+      the MCMC-algorithm. Default value exist. Should either
+    be a vector of the same length as the data, \code{S.start="random"}, or \code{S.start="default"} }
     \item{burn.in}{length of the burn-in period.  Default is 0.  }
     \item{thin}{thinning: only every \code{thin} scan is stored. Default is \code{thin=10}.  }
     \item{n.iter}{number of iterations performed. Default is
@@ -34,12 +36,12 @@ in the algorithm.  }
 }
 
 \author{
-  Ole F. Christensen \email{o.christensen@lancaster.ac.uk}, \cr
+  Ole F. Christensen \email{olefc@birc.dk}, \cr
   Paulo J. Ribeiro Jr. \email{Paulo.Ribeiro@est.ufpr.br}.
 }
 
-\seealso{\code{\link{pois.krige.bayes}}, \code{\link{binom.krige.bayes}}
-and \code{\link{pois.log.krige}}.  }
+\seealso{\code{\link{pois.krige.bayes}}, \code{\link{binom.krige.bayes}},
+\code{\link{binom.krige}} and \code{\link{pois.krige}}.  }
 
 \keyword{spatial}
 

@@ -42,6 +42,12 @@ prior.glm.control(beta.prior = c("flat", "normal", "fixed"),
     \code{"fixed"} (known value of  \eqn{\phi}{phi}),
     \code{"squared.reciprocal"} (\eqn{1/\phi^2}{1/phi^2}),
     \code{"reciprocal"} (\eqn{1/\phi}{1/phi}).
+    Alternativelly, a user defined discrete distribution can be
+    specified by providing a vector of probabilities. These
+    probabilities corrresponds to a prior distribution with support \code{phi.discrete}. \cr     
+    If the \code{"fixed"} the argument \eqn{\phi}{phi}
+    should be provided and it is regarded as fixed when performing predictions.
+
   }
   \item{phi}{fixed value of the parameter \eqn{\phi}{phi} when
     \code{phi.prior = "fixed"}. Mean of the prior distribution when \code{phi.prior = "exponential"}.   }
@@ -58,7 +64,7 @@ prior.glm.control(beta.prior = c("flat", "normal", "fixed"),
 
 
 \author{
-  Ole F. Christensen \email{o.christensen@lancaster.ac.uk}, \cr
+  Ole F. Christensen \email{olefc@birc.dk}, \cr
   Paulo J. Ribeiro Jr. \email{Paulo.Ribeiro@est.ufpr.br}.
 }
 

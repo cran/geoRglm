@@ -11,7 +11,6 @@
 \alias{multgauss}
 \alias{BC.inv}
 
-%- Also NEED an `\alias' for EACH other topic documented here.
 
 \title{Bayesian Posterior Simulation and Prediction for the Poisson
   Spatial model}
@@ -63,10 +62,10 @@ pois.krige.bayes(geodata, coords = geodata$coords, data = geodata$data,
 \details{
 
  \code{pois.krige.bayes} is a function for Bayesian geostatistical 
-  analysis in the Poisson spatial model.
+  inference in the Poisson spatial model.
   
   It can be used for an analysis with fixed values of the parameters. However, the
-  function \code{pois.log.krige} may be preferable in this case.
+  function \code{pois.krige} may be preferable in this case.
   
   The Bayesian algorithm is using a discretized version of the prior
   distribution for the parameter \eqn{\phi}{phi}. This means that the prior for \eqn{\phi}{phi} is always a proper prior.
@@ -124,8 +123,8 @@ where \eqn{h>0} is a user-specified ``proposal variance'' (called
 \code{S.scale}; see \code{mcmc.control}).
 
 When \code{phi.prior} is not \code{"fixed"}, we update the parameter \eqn{\phi}{phi} by a random walk Metropolis step.
-Here \code{mcmc.input$phi.scale} (see \code{mcmc.control}) is the proposal variance, which needs to be sufficiently large so that 
-that algorithm easily can move between the discrete values in \code{prior$phi.discrete} (see \code{prior.glm.control}).
+Here \code{mcmc.input$phi.scale} (see \code{mcmc.control}) is the
+proposal variance, which needs to be sufficiently large so that the algorithm easily can move between the discrete values in \code{prior$phi.discrete} (see \code{prior.glm.control}).
 
 \bold{CONTROL FUNCTIONS}
 
@@ -146,7 +145,7 @@ interest, where \eqn{g_{\lambda}^{-1}}{g_lambda^{-1}} is the inverse
 Box-Cox transformation.  
 For the prediction part of the algorithm, we use the median of the 
 predictive distribution as the predictor and 1/4 of the length of the 95 percent predictive interval as a measure of the prediction 
-uncertainty. Below we describe the procedure for doing calculating these quantities.
+uncertainty. Below we describe the procedure for calculating these quantities.
  
 First we perform a Bayesian Gaussian prediction with the given priors on \eqn{\beta}{beta}
 and \eqn{\sigma^2}{sigma^2} on each of the simulated \eqn{S}{S}-``datasets'' from the 
@@ -180,8 +179,9 @@ the guess is too low, it is adjusted upwards, and vise verse.
       for the parameter \eqn{\sigma^2}{sigma^2}.  }
     \item{phi}{summary of the posterior distribution
       of the parameter \eqn{\phi}{phi}.  }
-    \item{simulations}{sample from the posterior distribution of \eqn{g_{\lambda}^{-1}(S^*)}{g_lambda^{-1}(S^*)} at the data locations. 
+    \item{simulations}{sample from the posterior distribution of \eqn{g_{\lambda}^{-1}(S)}{g_lambda^{-1}(S)} at the data locations. 
       Returned only if \code{keep.mcmc.sim = TRUE}.  }
+    \item{acc.rate}{The acceptance rates.  }
     \cr
     \cr
   }
@@ -222,12 +222,13 @@ Further information about \bold{geoRglm} can be found at:\cr
 }
 
 \author{
-  Ole F. Christensen \email{o.christensen@lancaster.ac.uk}, \cr
+  Ole F. Christensen \email{olefc@birc.dk}, \cr
   Paulo J. Ribeiro Jr. \email{Paulo.Ribeiro@est.ufpr.br}.
 }
 
-\seealso{\code{\link{pois.log.krige}} for prediction with fixed parameters in the
-  Poisson-log normal model.  \code{\link[geoR]{krige.bayes}} for
+\seealso{\code{\link{pois.krige}} for prediction with fixed parameters in the
+  Poisson normal model, \code{\link{binom.krige.bayes}} for Bayesian prediction in the
+  Binomial-normal model, and \code{\link[geoR]{krige.bayes}} for
   Bayesian prediction in the Gaussian spatial model. 
 }
 

@@ -3,9 +3,6 @@
 \alias{binom.krige.bayes}
 \alias{mcmc.bayes.binom.logit}
 \alias{mcmc.bayes.conj.binom.logit}
-\alias{mcmc.binom.aux}
-\alias{mcmc.binom.logit}
-\alias{logit.inv}
 
 %- Also NEED an `\alias' for EACH other topic documented here.
 
@@ -61,7 +58,7 @@ binom.krige.bayes(geodata, coords = geodata$coords, data = geodata$data,
 \details{
 
  \code{binom.krige.bayes} is a function for Bayesian geostatistical 
-  analysis in the binomial-logit spatial model.
+  inference in the binomial-logit spatial model.
   
   The Bayesian algorithm is using a discretized version of the prior
   distribution for the parameter \eqn{\phi}{phi}. This means that the prior for \eqn{\phi}{phi} is always a proper prior.
@@ -117,7 +114,7 @@ where \eqn{h>0} is a user-specified ``proposal variance'' (called
 
 When \code{phi.prior} is not \code{"fixed"}, we update the parameter \eqn{\phi}{phi} by a random walk Metropolis step.
 Here \code{mcmc.input$phi.scale} (see \code{mcmc.control}) is the proposal variance, which needs to be sufficiently large so that 
-that algorithm easily can move between the discrete values in \code{prior$phi.discrete} (see \code{prior.glm.control}).
+the algorithm easily can move between the discrete values in \code{prior$phi.discrete} (see \code{prior.glm.control}).
 
 \bold{CONTROL FUNCTIONS}
   
@@ -136,7 +133,7 @@ In the prediction part of the function we want to predict
 \eqn{\exp(S^*)/(1+\exp(S^*))}{exp(S^*)/(1+exp(S^*))} at locations of interest.
 For the prediction part of the algorithm, we use the median of the 
 predictive distribution as the predictor and 1/4 of the length of the 95 percent predictive interval as a measure of the prediction 
-uncertainty. Below we describe the procedure for doing calculating these quantities.
+uncertainty. Below we describe the procedure for calculating these quantities.
  
 First we perform a Bayesian Gaussian prediction with the given priors on \eqn{\beta}{beta}
 and \eqn{\sigma^2}{sigma^2} on each of the simulated \eqn{S}{S}-``datasets'' from the 
@@ -169,8 +166,9 @@ the guess is too low, it is adjusted upwards, and vise verse.
       for the parameter \eqn{\sigma^2}{sigma^2}.  }
     \item{phi}{summary of the posterior distribution
       of the parameter \eqn{\phi}{phi}.  }
-    \item{simulations}{sample from the posterior distribution of \eqn{\exp(S^*)/(1+\exp(S^*))}{exp(S^*)/(1+exp(S^*))} at the data locations. 
+    \item{simulations}{sample from the posterior distribution of \eqn{\exp(S)/(1+\exp(S))}{exp(S)/(1+exp(S))} at the data locations. 
       Returned only if \code{keep.mcmc.sim = TRUE}.  }
+    \item{acc.rate}{The acceptance rates.  }
     \cr
     \cr
   }
@@ -211,12 +209,13 @@ the guess is too low, it is adjusted upwards, and vise verse.
 }
 
 \author{
-  Ole F. Christensen \email{o.christensen@lancaster.ac.uk}, \cr
+  Ole F. Christensen \email{olefc@birc.dk}, \cr
   Paulo J. Ribeiro Jr. \email{Paulo.Ribeiro@est.ufpr.br}.
 }
 
-\seealso{\code{\link{pois.krige.bayes}} for Bayesian prediction in the
-  Poisson-log normal model.  \code{\link[geoR]{krige.bayes}} for
+\seealso{\code{\link{binom.krige}} for prediction with fixed parameters in the
+  binomial-logit normal model, \code{\link{pois.krige.bayes}} for Bayesian prediction in the
+  Poisson normal model, \code{\link[geoR]{krige.bayes}} for
   Bayesian prediction in the Gaussian spatial model. 
 }
 

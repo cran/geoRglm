@@ -21,34 +21,6 @@
 # define RANDOUT seed_out((long *)NULL)
 
 
-
-/* to be moved latter when new parametrisation-stuff  is finished !! */
-
-Real calc1_ss(Real *z, Real *Dmat, Integer dim){
-  Integer l,k;
-
-  Real sumsz,temp;
-  for (sumsz=0,l=0; l<dim; l++){
-    for (temp=0,k=0; k<l; k++)
-      temp+=Dmat[l*dim+k]*z[k];
-    sumsz+=(z[l]*temp*2+pow(z[l],2)*Dmat[l*dim+l]);
-  }
-   return sumsz;
-}
-
-
-void conddensity1binom(Real *S, Real *logfcond, Real *BB, Real *z, Real *obsdata, Real *units, Real *meanS, Integer dim){
-  Integer l, k;
-  
-  for (l=0; l<dim; l++){
-    for (S[l]=0,k=0; k<=l; k++) S[l]+=BB[l*dim+k]*z[k];
-  }  
-  for (*logfcond=0,l=0; l<dim; l++){
-    *logfcond+= (obsdata[l]*(S[l]+meanS[l])-units[l]*log(1+exp(S[l]+meanS[l])));
-  }
-}
-
-
 void binitprod(Integer *n, Real *xc, Real *yc, Real *sim, Integer *nbins, Real *lims, Real *maxdist, Integer *cbin, Real *vbin)
 {
   Integer i, j, ind;
@@ -120,32 +92,6 @@ Real calc_ss(Real *z, Integer dim){
 
 
 /* The Bayesian code. This has not been changed w.r.t better parametrisation */
-
-
-Real logprior_phi(Real phi, Real e_mean, Integer phinum){
-  switch(phinum){
-  case 1:         /* uniform */  
-    return 0;
-    break;
-  case 2:         /* exponential */  
-    return exp(-phi/e_mean);
-    break;
-  case 3:         /* fixed */  
-    error("updating phi is not possible when phi is fixed \n");
-    return 0;
-    break;
-  case 4:         /* squared.reciprocal */  
-    return 1/(phi*phi);
-    break;
-  case 5:         /* reciprocal */  
-    return 1/phi;
-    break;
-  default: 
-    return -1;
-    break;
-  }
-  
-}
 
 
 void calc_Dmat(Real *B, Real *D, Real *outmat, Real *det_DivD_half, Integer dim, Integer no_linpar, Real *sqivD, Real *DivD,Real *sqDivD, Real *temp){   
@@ -263,14 +209,15 @@ void gradient4(Real *S, Real *gradz, Real *B, Real *DDmat, Real *z, Real *obsdat
 
 
 void mcmcrun4(Integer *n, Real *data, Real *units, Real *DD, Integer *no_linpar, Integer *cornr, Real *kappa, Real *tausq,
-	      Real *distcoords, Real *scale, Real *phiscale, Real *Htrunc, Integer *niter, Integer *subsample, 
-	      Integer *burn_in, Real *ss_sigma, Integer *df, Integer *phinr,  Real *phi_discrete, Integer *nmphi, Real *e_mean, Real *SS,
-	      Real *phisamples){
+	      Real *coords1, Real *coords2, Real *scale, Real *phiscale, Real *Htrunc, Integer *niter, Integer *subsample, 
+	      Integer *burn_in, Integer *messages, Real *ss_sigma, Integer *df, Real *phiprior,  Real *phi_discrete, Integer *nmphi, Real *SS,
+	      Real *phisamples, Real *acc_rate, Real *acc_rate_phi){
   
   typedef Real *Doublearray;  
 #define PRN 1000           
-  Integer i, j, jj, l, acc, acc_phi, dim2, itr, jstep, jphi ; 
-  Real logfprop, logp_zprop,logf, logp_z, logq, logqprop, ss4, ss4prop, phi, phiprop, phistep, logp_phi, logp_phiprop, temp_phi ; 
+  Integer i, j, jj, l, k, acc, acc_phi, dim2, itr, jstep, jphi ; 
+  Real logfprop, logp_zprop,logf, logp_z, logq, logqprop, ss4, ss4prop, phi, phiprop, phistep, logp_phi, logp_phiprop, temp_phi ;  
+  Real distcoords; 
   Real det_DDivDD[2001];
   Doublearray z, zprop, S, Sprop, gradz, gradzprop, temp;
   Doublearray Q, Qprop, AA, Dmat;
@@ -303,7 +250,7 @@ void mcmcrun4(Integer *n, Real *data, Real *units, Real *DD, Integer *no_linpar,
   }
   for (jj=0; jj<dim2; jj++){
     AA[jj]=Q[jj]=Qprop[jj]=Dmat[jj]=0;   
-  }    
+  }
   phi = phisamples[0];
   if(*nmphi > 1){
     phistep=phi_discrete[1]-phi_discrete[0];
@@ -312,9 +259,14 @@ void mcmcrun4(Integer *n, Real *data, Real *units, Real *DD, Integer *no_linpar,
     if(jphi>(*nmphi)-1) jphi=(*nmphi)-1;          
     for (j=0;j<*nmphi;j++){  
       phi=phi_discrete[0]+j*phistep;
-      BB[j] = Salloc(dim2,Real) ;
-      for (jj=0; jj<dim2; jj++) AA[jj]=corrfct(phi,(*kappa),distcoords[jj],(*cornr));  
-      for (l=0; l<(*n); l++) AA[(*n)*l - l*(l+1)/2+l] += (*tausq); 
+      BB[j] = Salloc(dim2,Real);
+      for (l=0; l<(*n); l++){
+	for (k=0; k<l; k++){
+	  distcoords = sqrt( pow(coords1[k]-coords1[l],2) + pow(coords2[k]-coords2[l],2));
+	  AA[(*n)*k - k*(k+1)/2+l]=corrfct(phi,(*kappa),distcoords,(*cornr));
+	}
+	AA[(*n)*l - l*(l+1)/2+l] = 1+ (*tausq); 
+      }
       cholesky(AA,BB[j],(*n)); 
       DDDMAT[j] = Salloc(dim2,Real) ;
       calc_Dmat(BB[j], DD, DDDMAT[j], &det_DDivDD[j], (*n), (*no_linpar), sqivD, DivD, sqDivD, temp2);
@@ -325,21 +277,31 @@ void mcmcrun4(Integer *n, Real *data, Real *units, Real *DD, Integer *no_linpar,
   }
   else{
     phistep=0;   /* redundant variable in this case */
-    jphi=0;
-    for (jj=0; jj<dim2; jj++) AA[jj]=corrfct(phi,*kappa,distcoords[jj],(*cornr));
-    for (l=0; l<(*n); l++) AA[(*n)*l - l*(l+1)/2+l] += (*tausq); 
+    jphi=0;      
+    for (l=0; l<(*n); l++){
+      for (k=0; k<l; k++){
+	distcoords = sqrt( pow(coords1[k]-coords1[l],2) + pow(coords2[k]-coords2[l],2));
+	AA[(*n)*k - k*(k+1)/2+l]=corrfct(phi,(*kappa),distcoords,(*cornr));
+      }
+      AA[(*n)*l - l*(l+1)/2+l] = 1+ (*tausq); 
+    }
     cholesky(AA,Q,(*n)); 
     calc_Dmat(Q, DD, Dmat, &det_DDivDD[0], (*n), (*no_linpar), sqivD, DivD, sqDivD, temp2);  
   }
-  initz(S,Q,z,(*n));
+
+  RANDIN;
+
+  if(SS[((*niter)/(*subsample)-1)*(*n)+(*n)-1]>0.1){ 
+    for (l=0; l<(*n); l++) z[l]= RNORM; /* start at random from the prior */
+  }
+  else initz(S,Q,z,(*n));
   conddensity4(S,Q,&logf,data,z,units,(*n));
   ss4 = calc4_ss(z,Dmat,(*n))+(*ss_sigma);  
   gradient4(S,gradz,Q,Dmat,z,data,units,Htrunc,(*n),ss4,(*df));  
   logp_z = -0.5*(*df)*log(ss4)+log(det_DDivDD[jphi]); 
-  logp_phi = logprior_phi(phi, (*e_mean), (*phinr));
+  logp_phi = log(phiprior[jphi]);
   itr = (*niter) + (*burn_in) ;
   acc= 0; acc_phi = 0 ; 
-  RANDIN;
   
   for (i=0; i<itr; i++){  
     for (l=0; l<(*n); l++) zprop[l]=z[l]+0.5*gradz[l]*(*scale) + RNORM*sqrt(*scale);
@@ -378,7 +340,7 @@ void mcmcrun4(Integer *n, Real *data, Real *units, Real *DD, Integer *no_linpar,
     else jstep=0;
     if ( jphi+jstep > -1 && jphi+jstep < (*nmphi) && !(jstep == 0)){  /* if within limits */  
       phiprop=phi+phistep*jstep;
-      logp_phiprop = logprior_phi(phiprop, (*e_mean), (*phinr)); 
+      logp_phiprop = log(phiprior[jphi+jstep]); 
       conddensity4(Sprop,BB[jphi+jstep],&logfprop,data,z,units,(*n));                              
       ss4prop = calc4_ss(z,DDDMAT[jphi+jstep],(*n))+(*ss_sigma);                 
       logp_zprop = -0.5*(*df)*log(ss4prop)+log(det_DDivDD[jphi+jstep]);        
@@ -403,18 +365,26 @@ void mcmcrun4(Integer *n, Real *data, Real *units, Real *DD, Integer *no_linpar,
       phisamples[((i+1-(*burn_in))/(*subsample)-1)]=phi; 
     }
     if((i+1)==(*burn_in) && (*burn_in)>0){
-      if(*nmphi > 1)
-	Rprintf("burn-in =  %d is finished; Acc.-rate = %1.2f ; Acc-rate-phi = %1.2f \n",(*burn_in), (Real) acc/(*burn_in), 
-	       (Real) acc_phi/(*burn_in));
-      else
-	Rprintf("burn-in =  %d is finished; Acc.-rate = %1.2f \n",(*burn_in), (Real) acc/(*burn_in));
+      acc_rate[0] = (Real) acc/(*burn_in); 
+      acc_rate_phi[0] = (Real) acc_phi/(*burn_in); 
+      if((*messages)==1){
+	if(*nmphi > 1)
+	  Rprintf("burn-in =  %d is finished; Acc.-rate = %1.2f ; Acc-rate-phi = %1.2f \n",(*burn_in), (Real) acc/(*burn_in), 
+		  (Real) acc_phi/(*burn_in));
+	else
+	  Rprintf("burn-in =  %d is finished; Acc.-rate = %1.2f \n",(*burn_in), (Real) acc/(*burn_in));
+      }
       acc =0 ; acc_phi =0 ;
     }
-    if((i+(*burn_in)+1)%PRN==0 && (i+1)>(*burn_in)){  
-      if(*nmphi > 1)
-	Rprintf("iter. numb. %d ; Acc.-rate = %1.2f ; Acc-rate-phi = %1.2f \n",i+1,(Real) acc/PRN, (Real) acc_phi/PRN);
-      else
-	Rprintf("iter. numb. %d ; Acc.-rate = %1.2f \n",i+1,(Real) acc/PRN);
+    if((i-(*burn_in)+1)%PRN==0 && (i+1)>(*burn_in)){
+      acc_rate[(i-(*burn_in)+1)/PRN] = (Real) acc/PRN;
+      acc_rate_phi[(i-(*burn_in)+1)/PRN] = (Real) acc_phi/PRN ;
+      if((*messages)==1){
+	if(*nmphi > 1)
+	  Rprintf("iter. numb. %d ; Acc.-rate = %1.2f ; Acc-rate-phi = %1.2f \n",i+1,(Real) acc/PRN, (Real) acc_phi/PRN);
+	else
+	  Rprintf("iter. numb. %d ; Acc.-rate = %1.2f \n",i+1,(Real) acc/PRN);
+      }
       acc =0 ; acc_phi =0 ;
     }   
   }
@@ -459,14 +429,14 @@ void gradient4boxcox(Real *S, Real *gradz, Real *B, Real *DDmat, Real *z, Real *
 
  
 void mcmcrun4boxcox(Integer *n, Real *data, Real *units, Real *DD, Integer *no_linpar, Integer *cornr, Real *kappa, Real *tausq,
-		    Real *distcoords, Real *scale, Real *phiscale, Real *Htrunc, Integer *niter, Integer *subsample, 
-		    Integer *burn_in, Real *ss_sigma, Integer *df, Integer *phinr,  Real *phi_discrete, Integer *nmphi, Real *e_mean, 
-		    Real *lambda, Real *SS, Real *phisamples){
-  
+		    Real *coords1, Real *coords2, Real *scale, Real *phiscale, Real *Htrunc, Integer *niter, Integer *subsample, 
+		    Integer *burn_in, Integer *messages, Real *ss_sigma, Integer *df, Real *phiprior,  Real *phi_discrete, Integer *nmphi, 
+		    Real *lambda, Real *SS, Real *phisamples, Real *acc_rate, Real *acc_rate_phi){
   typedef Real *Doublearray;  
 #define PRN 1000           
-  Integer i, j, jj, l, acc, acc_phi, dim2, itr, jstep, jphi , ctrl1, ctrl2, ctrl3; 
-  Real logfprop, logp_zprop,logf, logp_z, logq, logqprop, ss4, ss4prop, phi, phiprop, phistep, logp_phi, logp_phiprop, temp_phi ; 
+  Integer i, j, jj, l, k, acc, acc_phi, dim2, itr, jstep, jphi , ctrl1, ctrl2, ctrl3; 
+  Real logfprop, logp_zprop,logf, logp_z, logq, logqprop, ss4, ss4prop, phi, phiprop, phistep, logp_phi, logp_phiprop, temp_phi ;   
+  Real distcoords;
   Real det_DDivDD[2001];
   Doublearray z, zprop, S, Sprop, gradz, gradzprop, temp;
   Doublearray Q, Qprop, AA, Dmat;
@@ -509,8 +479,13 @@ void mcmcrun4boxcox(Integer *n, Real *data, Real *units, Real *DD, Integer *no_l
     for (j=0;j<*nmphi;j++){  
       phi=phi_discrete[0]+j*phistep;
       BB[j] = Salloc(dim2,Real) ;
-      for (jj=0; jj<dim2; jj++) AA[jj]=corrfct(phi,(*kappa),distcoords[jj],(*cornr));
-      for (l=0; l<(*n); l++) AA[(*n)*l - l*(l+1)/2+l] += (*tausq);    
+      for (l=0; l<(*n); l++){
+	for (k=0; k<l; k++){
+	  distcoords = sqrt( pow(coords1[k]-coords1[l],2) + pow(coords2[k]-coords2[l],2));
+	  AA[(*n)*k - k*(k+1)/2+l]=corrfct(phi,(*kappa),distcoords,(*cornr));
+	}
+	AA[(*n)*l - l*(l+1)/2+l] = 1+ (*tausq); 
+      }
       cholesky(AA,BB[j],(*n)); 
       DDDMAT[j] = Salloc(dim2,Real) ;
       calc_Dmat(BB[j], DD, DDDMAT[j], &det_DDivDD[j], (*n), (*no_linpar), sqivD, DivD, sqDivD, temp2);
@@ -522,25 +497,35 @@ void mcmcrun4boxcox(Integer *n, Real *data, Real *units, Real *DD, Integer *no_l
   else{
     phistep=0;   /* redundant variable in this case */
     jphi=0;
-    for (jj=0; jj<dim2; jj++) AA[jj]=corrfct(phi,*kappa,distcoords[jj],(*cornr));
-    for (l=0; l<(*n); l++) AA[(*n)*l - l*(l+1)/2+l] += (*tausq); 
+    for (l=0; l<(*n); l++){
+      for (k=0; k<l; k++){
+	distcoords = sqrt( pow(coords1[k]-coords1[l],2) + pow(coords2[k]-coords2[l],2));
+	AA[(*n)*k - k*(k+1)/2+l]=corrfct(phi,(*kappa),distcoords,(*cornr));
+      }
+      AA[(*n)*l - l*(l+1)/2+l] = 1+ (*tausq); 
+    }
     cholesky(AA,Q,(*n)); 
     calc_Dmat(Q, DD, Dmat, &det_DDivDD[0], (*n), (*no_linpar), sqivD, DivD, sqDivD, temp2);  
-  }  
-  initz(S,Q,z,(*n));
+  } 
+
+  RANDIN;
+  
+  if(SS[((*niter)/(*subsample)-1)*(*n)+(*n)-1]>0.1){ 
+    for (l=0; l<(*n); l++) z[l]= RNORM; /* start at random from the prior */
+  }
+  else initz(S,Q,z,(*n));
   conddensity4boxcox(S,Q,&logf,data,z,units,(*n),(*lambda));
   for(l=0;l<(*n);l++){
-    if(S[l] < -1/(*lambda)){
+    if(S[l] < -1/(*lambda)-0.0000000001){
       error(" Bad starting value for MCMC \n");
     }
   }
   ss4 = calc4_ss(z,Dmat,(*n))+(*ss_sigma);  
   gradient4boxcox(S,gradz,Q,Dmat,z,data,units,Htrunc,(*n),ss4,(*df),(*lambda));  
   logp_z = -0.5*(*df)*log(ss4)+log(det_DDivDD[jphi]); 
-  logp_phi = logprior_phi(phi, (*e_mean), (*phinr));
+  logp_phi = log(phiprior[jphi]);
   itr = (*niter) + (*burn_in) ;
   acc= 0; acc_phi = 0 ; ctrl2 = 0; ctrl3 = 0;
-  RANDIN;
   
   for (i=0; i<itr; i++){  
     for (l=0; l<(*n); l++) zprop[l]=z[l]+0.5*gradz[l]*(*scale) + RNORM*sqrt(*scale);
@@ -588,7 +573,7 @@ void mcmcrun4boxcox(Integer *n, Real *data, Real *units, Real *DD, Integer *no_l
     else jstep=0;
     if( jphi+jstep > -1 && jphi+jstep < (*nmphi) && !(jstep == 0)){  /* if within limits */  
       phiprop=phi+phistep*jstep;
-      logp_phiprop = logprior_phi(phiprop, (*e_mean), (*phinr)); 
+      logp_phiprop = log(phiprior[jphi+jstep]); 
       conddensity4boxcox(Sprop,BB[jphi+jstep],&logfprop,data,z,units,(*n),(*lambda));
       ctrl1 = 0;
       for(l=0;l<(*n);l++){
@@ -622,18 +607,26 @@ void mcmcrun4boxcox(Integer *n, Real *data, Real *units, Real *DD, Integer *no_l
       phisamples[((i+1-(*burn_in))/(*subsample)-1)]=phi; 
     }
     if((i+1)==(*burn_in) && (*burn_in)>0){
-      if(*nmphi > 1)
-	Rprintf("burn-in =  %d is finished; Acc.-rate = %1.2f ; Acc-rate-phi = %1.2f \n",(*burn_in), (Real) acc/(*burn_in), 
-		(Real) acc_phi/(*burn_in));
-      else
-	Rprintf("burn-in =  %d is finished; Acc.-rate = %1.2f \n",(*burn_in), (Real) acc/(*burn_in));
+      acc_rate[0] = (Real) acc/(*burn_in); 
+      acc_rate_phi[0] = (Real) acc_phi/(*burn_in); 
+      if((*messages)==1){
+	if(*nmphi > 1)
+	  Rprintf("burn-in =  %d is finished; Acc.-rate = %1.2f ; Acc-rate-phi = %1.2f \n",(*burn_in), (Real) acc/(*burn_in), 
+		  (Real) acc_phi/(*burn_in));
+	else
+	  Rprintf("burn-in =  %d is finished; Acc.-rate = %1.2f \n",(*burn_in), (Real) acc/(*burn_in));
+      }
       acc =0 ; acc_phi =0 ;
     }
-    if((i+(*burn_in)+1)%PRN==0 && (i+1)>(*burn_in)){  
-      if(*nmphi > 1)
-	Rprintf("iter. numb. %d ; Acc.-rate = %1.2f ; Acc-rate-phi = %1.2f \n",i+1,(Real) acc/PRN, (Real) acc_phi/PRN);
-      else
-	Rprintf("iter. numb. %d ; Acc.-rate = %1.2f \n",i+1,(Real) acc/PRN);
+    if((i-(*burn_in)+1)%PRN==0 && (i+1)>(*burn_in)){
+      acc_rate[(i-(*burn_in)+1)/PRN] = (Real) acc/PRN;
+      acc_rate_phi[(i-(*burn_in)+1)/PRN] = (Real) acc_phi/PRN ;
+      if((*messages)==1){
+	if(*nmphi > 1)
+	  Rprintf("iter. numb. %d ; Acc.-rate = %1.2f ; Acc-rate-phi = %1.2f \n",i+1,(Real) acc/PRN, (Real) acc_phi/PRN);
+	else
+	  Rprintf("iter. numb. %d ; Acc.-rate = %1.2f \n",i+1,(Real) acc/PRN);
+      }
       acc =0 ; acc_phi =0 ;
     }   
   }
@@ -642,154 +635,6 @@ void mcmcrun4boxcox(Integer *n, Real *data, Real *units, Real *DD, Integer *no_l
   }
   RANDOUT;  
 }
-
-
-void gradientbinom(Real *S, Real *gradz, Real *BB, Real *z, Real *obsdata, Real *linpred, Real *units, Integer dim){
-  Integer l, k;
-  Real likeli;
-  
-  for (l=0; l<dim; l++) gradz[l]=-z[l];
-  for (k=0; k<dim; k++){
-    likeli = obsdata[k] - units[k]*exp(S[k]+linpred[k])/(1+exp(S[k]+linpred[k]));    
-    for (l=0; l<k+1; l++) gradz[l]+=BB[k*dim+l]*likeli;  
-  }
-}
-
-void mcmcrunbinom(Integer *n, Real *zz, Real *SS, Real *data, 
-                  Real *units, Real *meanS, Real *QQ, 
-                  Real *randnormal, Real *randunif,  Real *scale, 
-                  Integer *nsim, Integer *subsample, Real *acc_rate){
-  
-  Integer i, ii, l, acc ;  
-  Real *z = Salloc((*n),Real) ;
-  Real *zprop = Salloc((*n),Real) ;
-  Real *S = Salloc((*n),Real) ; 
-  Real *Sprop = Salloc((*n),Real) ;
-  Real *gradz = Salloc((*n),Real) ;
-  Real *gradzprop = Salloc((*n),Real) ;
-  Real *temp = Salloc((*n),Real) ;
-  Real logfprop, logp_zprop,logf, logp_z, logq, logqprop  ; 
-  
-  for (l=0; l<(*n); l++){
-    z[l] = zz[l]; 
-    S[l] = 0;     
-  }
-  conddensity1binom(S,&logf,QQ,z,data,units,meanS,(*n));           
-  gradientbinom(S,gradz,QQ,z,data,meanS,units,(*n));
-  logp_z = -calc_ss(z,(*n))/2;
-  acc= 0;
-  for(i=0; i<(*nsim); i++){ 
-    for(ii=0; ii<(*subsample); ii++){  
-      for (l=0; l<(*n); l++) zprop[l]=z[l]+0.5*gradz[l]*(*scale) + randnormal[(i*(*subsample)+ii)*(*n)+l];
-      conddensity1binom(Sprop,&logfprop,QQ,zprop,data,units,meanS,(*n));     
-      gradientbinom(Sprop,gradzprop,QQ,zprop,data,meanS,units,(*n));
-      logp_zprop=-calc_ss(zprop,(*n))/2;  
-      for (logq=0,logqprop=0,l=0; l<(*n); l++){
-	logq+=pow(zprop[l]-(z[l]+0.5*gradz[l]*(*scale)),2);
-	logqprop+=pow(z[l]-(zprop[l]+0.5*gradzprop[l]*(*scale)),2);
-      }
-      logq*=(-0.5/(*scale));
-      logqprop*=(-0.5/(*scale));
-      if (log(randunif[i*(*subsample)+ii])<logfprop+logp_zprop+logqprop-logq-logf-logp_z){  
-	/*accept */
-	logf=logfprop;
-	logp_z=logp_zprop;
-	temp=gradz;
-	gradz=gradzprop;
-	gradzprop=temp;
-	temp=S;
-	S=Sprop;
-	Sprop=temp;
-	temp=z;
-	z=zprop;
-	zprop=temp;
-	acc++; 
-      }      
-    } 
-    for (l=0; l<(*n); l++) SS[i*(*n)+l] = S[l];  
-  }
-  *acc_rate = (Real) acc/((*nsim)*(*subsample));
-  for (l=0; l<(*n); l++) zz[l] = z[l]; 
-}
-
-void conddensity2binom(Real *S, Real *BB, Real *logfcond, Real *obsdata, Real *z, Real *units, Integer dim){
-Integer l, k ;
-
- for (l=0; l<dim; l++){
-   for (S[l]=0,k=0; k<=l; k++) S[l]+=BB[l*dim+k]*z[k];
- }
- for (*logfcond=0,l=0; l<dim; l++){
-   *logfcond+= (obsdata[l]*S[l]-units[l]*log(1+exp(S[l])));
- }
-}
-
-void gradient2binom(Real *S, Real *gradz, Real *BB, Real *Dmat, Real *z, Real *obsdata, Real *units, Integer dim){
-  Integer l, k;
-  Real likeli ;
-   
-  for (l=0; l<dim; l++) gradz[l]=0;
-  for (k=0; k<dim; k++){
-    likeli = obsdata[k] - units[k]*exp(S[k])/(1+exp(S[k]));
-    for (l=0; l<dim; l++)
-      if(l<k+1) gradz[l]+=BB[k*dim+l]*likeli - Dmat[l*dim+k]*z[k] ;
-      else gradz[l]-=Dmat[k*dim+l]*z[k] ;
-  }
-}
-
-void mcmcrun2binom(Integer *n, Real *zz, Real *SS, Real *data, Real *units, Real *QQ, Real *Dmat,
-         Real *randnormal, Real *randunif, Real *scale, Integer *nsim, Integer *subsample, Real *acc_rate){
-         
-  Integer i, ii, l, acc ;  
-  Real *z = Salloc((*n),Real) ; 
-  Real *zprop = Salloc((*n),Real) ; 
-  Real *S = Salloc((*n),Real) ;
-  Real *Sprop = Salloc((*n),Real) ;
-  Real *gradz = Salloc((*n),Real) ;
-  Real *gradzprop = Salloc((*n),Real) ;
-  Real *temp = Salloc((*n),Real) ;
-  Real logfprop, logp_zprop,logf, logp_z, logq, logqprop  ;   
-  for (l=0; l<(*n); l++){
-    z[l] = zz[l];     
-    S[l] = 0; 
-  } 
-  conddensity2binom(S,QQ,&logf,data,z,units,(*n));           
-  gradient2binom(S,gradz,QQ,Dmat,z,data,units,(*n));
-  logp_z = -calc1_ss(z,Dmat,(*n))/2;
-  acc= 0;
-  for(i=0; i<(*nsim); i++){ 
-    for(ii=0; ii<(*subsample); ii++){ 
-      for (l=0; l<(*n); l++) zprop[l]=z[l]+0.5*gradz[l]*(*scale) + randnormal[(i*(*subsample)+ii)*(*n)+l];
-      conddensity2binom(Sprop,QQ,&logfprop,data,zprop,units,(*n));  
-      gradient2binom(Sprop,gradzprop,QQ,Dmat,zprop,data,units,(*n));
-      logp_zprop=-calc1_ss(zprop,Dmat,(*n))/2;  
-      for (logq=0,logqprop=0,l=0; l<(*n); l++){
-	logq+=pow(zprop[l]-(z[l]+0.5*gradz[l]*(*scale)),2);
-	logqprop+=pow(z[l]-(zprop[l]+0.5*gradzprop[l]*(*scale)),2);
-      }
-      logq*=(-0.5/(*scale));
-      logqprop*=(-0.5/(*scale));      
-      if(log(randunif[i*(*subsample)+ii])<logfprop+logp_zprop+logqprop-logq-logf-logp_z){  
-	/*accept */
-	logf=logfprop;
-	logp_z=logp_zprop;
-	temp=gradz;
-	gradz=gradzprop;
-	gradzprop=temp;
-	temp=S;
-	S=Sprop;
-	Sprop=temp;
-	temp=z;
-	z=zprop;
-	zprop=temp;
-	acc++;
-      }   
-    }     
-    for (l=0; l<(*n); l++) SS[i*(*n)+l] = S[l];     
-  }
-  *acc_rate = (Real) acc/((*nsim)*(*subsample));  
-  for (l=0; l<(*n); l++) zz[l] = z[l]; 
-}
-
 
 void conddensity4binom(Real *S, Real *B, Real *logfcond, Real *obsdata, Real *z, Real *units, Integer dim){
   Integer l, k;
@@ -817,14 +662,15 @@ void gradient4binom(Real *S, Real *gradz, Real *B, Real *DDmat, Real *z, Real *o
 }
        
 void mcmcrun4binom(Integer *n, Real *data, Real *units, Real *DD, Integer *no_linpar, Integer *cornr, Real *kappa, Real *tausq,
-		   Real *distcoords, Real *scale, Real *phiscale, Integer *niter, Integer *subsample, 
-		   Integer *burn_in, Real *ss_sigma, Integer *df, Integer *phinr,  Real *phi_discrete, Integer *nmphi, Real *e_mean, 
-		   Real *SS, Real *phisamples){
+		   Real *coords1, Real *coords2, Real *scale, Real *phiscale, Integer *niter, Integer *subsample, 
+		   Integer *burn_in, Integer *messages, Real *ss_sigma, Integer *df, Real *phiprior,  Real *phi_discrete, Integer *nmphi, 
+		   Real *SS, Real *phisamples, Real *acc_rate, Real *acc_rate_phi){
   
   typedef Real *Doublearray;  
 #define PRN 1000           
-  Integer i, j, jj, l, acc, acc_phi, dim2, itr, jstep, jphi ; 
-  Real logfprop, logp_zprop,logf, logp_z, logq, logqprop, ss4, ss4prop, phi, phiprop, phistep, logp_phi, logp_phiprop, temp_phi ; 
+  Integer i, j, jj, l, k, acc, acc_phi, dim2, itr, jstep, jphi ; 
+  Real logfprop, logp_zprop,logf, logp_z, logq, logqprop, ss4, ss4prop, phi, phiprop, phistep, logp_phi, logp_phiprop, temp_phi ;   
+  Real distcoords;
   Real det_DDivDD[2001];
   Doublearray z, zprop, S, Sprop, gradz, gradzprop, temp;
   Doublearray Q, Qprop, AA, Dmat;
@@ -866,9 +712,14 @@ void mcmcrun4binom(Integer *n, Real *data, Real *units, Real *DD, Integer *no_li
     if(jphi>(*nmphi)-1) jphi=(*nmphi)-1;          
     for (j=0;j<(*nmphi);j++){  
       phi=phi_discrete[0]+j*phistep;
-      BB[j] = Salloc(dim2,Real) ;
-      for (jj=0; jj<dim2; jj++) AA[jj]=corrfct(phi,(*kappa),distcoords[jj],(*cornr));  
-      for (l=0; l<(*n); l++) AA[(*n)*l - l*(l+1)/2+l] += (*tausq); 
+      BB[j] = Salloc(dim2,Real);
+      for (l=0; l<(*n); l++){
+	for (k=0; k<l; k++){
+	  distcoords = sqrt( pow(coords1[k]-coords1[l],2) + pow(coords2[k]-coords2[l],2));
+	  AA[(*n)*k - k*(k+1)/2+l]=corrfct(phi,(*kappa),distcoords,(*cornr));
+	}
+	AA[(*n)*l - l*(l+1)/2+l] = 1+ (*tausq); 
+      }
       cholesky(AA,BB[j],(*n)); 
       DDDMAT[j] = Salloc(dim2,Real) ;
       calc_Dmat(BB[j], DD, DDDMAT[j], &det_DDivDD[j], (*n), (*no_linpar), sqivD, DivD, sqDivD, temp2);
@@ -880,20 +731,30 @@ void mcmcrun4binom(Integer *n, Real *data, Real *units, Real *DD, Integer *no_li
   else{
     phistep=0;   /* redundant variable in this case */
     jphi=0;
-    for (jj=0; jj<dim2; jj++) AA[jj]=corrfct(phi,*kappa,distcoords[jj],(*cornr));
-    for (l=0; l<(*n); l++) AA[(*n)*l - l*(l+1)/2+l] += (*tausq); 
+    for (l=0; l<(*n); l++){
+      for (k=0; k<l; k++){
+	distcoords = sqrt( pow(coords1[k]-coords1[l],2) + pow(coords2[k]-coords2[l],2));
+	AA[(*n)*k - k*(k+1)/2+l]=corrfct(phi,(*kappa),distcoords,(*cornr));
+      }
+      AA[(*n)*l - l*(l+1)/2+l] = 1+ (*tausq); 
+    }
     cholesky(AA,Q,(*n)); 
     calc_Dmat(Q, DD, Dmat, &det_DDivDD[0], (*n), (*no_linpar), sqivD, DivD, sqDivD, temp2);  
-  }  
-  initz(S,Q,z,(*n));
+  } 
+
+  RANDIN;
+  
+  if(SS[((*niter)/(*subsample)-1)*(*n)+(*n)-1]>0.1){ 
+    for (l=0; l<(*n); l++) z[l]= RNORM; /* start at random from the prior */
+  }
+  else initz(S,Q,z,(*n));
   conddensity4binom(S,Q,&logf,data,z,units,(*n));
   ss4 = calc4_ss(z,Dmat,(*n))+(*ss_sigma);  
   gradient4binom(S,gradz,Q,Dmat,z,data,units,(*n),ss4,(*df));  
   logp_z = -0.5*(*df)*log(ss4)+log(det_DDivDD[jphi]); 
-  logp_phi = logprior_phi(phi, (*e_mean), (*phinr));
+  logp_phi = log(phiprior[jphi]);
   itr = (*niter) + (*burn_in) ;
-  acc= 0; acc_phi = 0 ; 
-  RANDIN;
+  acc= 0; acc_phi = 0 ;
  
   for (i=0; i<itr; i++){  
     for (l=0; l<(*n); l++) zprop[l]=z[l]+0.5*gradz[l]*(*scale) + RNORM*sqrt(*scale);
@@ -932,7 +793,7 @@ void mcmcrun4binom(Integer *n, Real *data, Real *units, Real *DD, Integer *no_li
     else jstep=0;
     if( jphi+jstep > -1 && jphi+jstep < (*nmphi) && !(jstep == 0)){  /* if within limits */  
       phiprop=phi+phistep*jstep;
-      logp_phiprop = logprior_phi(phiprop, (*e_mean), (*phinr)); 
+      logp_phiprop = log(phiprior[jphi+jstep]); 
       conddensity4binom(Sprop,BB[jphi+jstep],&logfprop,data,z,units,(*n));                              
       ss4prop = calc4_ss(z,DDDMAT[jphi+jstep],(*n))+(*ss_sigma);                 
       logp_zprop = -0.5*(*df)*log(ss4prop)+log(det_DDivDD[jphi+jstep]);        
@@ -957,18 +818,26 @@ void mcmcrun4binom(Integer *n, Real *data, Real *units, Real *DD, Integer *no_li
       phisamples[((i+1-(*burn_in))/(*subsample)-1)]=phi; 
     }
     if((i+1)==(*burn_in) && (*burn_in)>0){
-      if(*nmphi > 1)
-	Rprintf("burn-in =  %d is finished; Acc.-rate = %1.2f ; Acc-rate-phi = %1.2f \n",(*burn_in), (Real) acc/(*burn_in), 
-		(Real) acc_phi/(*burn_in));
-      else
-	Rprintf("burn-in =  %d is finished; Acc.-rate = %1.2f \n",(*burn_in), (Real) acc/(*burn_in));
+      acc_rate[0] = (Real) acc/(*burn_in); 
+      acc_rate_phi[0] = (Real) acc_phi/(*burn_in); 
+      if((*messages)==1){
+	if(*nmphi > 1)
+	  Rprintf("burn-in =  %d is finished; Acc.-rate = %1.2f ; Acc-rate-phi = %1.2f \n",(*burn_in), (Real) acc/(*burn_in), 
+		  (Real) acc_phi/(*burn_in));
+	else
+	  Rprintf("burn-in =  %d is finished; Acc.-rate = %1.2f \n",(*burn_in), (Real) acc/(*burn_in));
+      }
       acc =0 ; acc_phi =0 ;
     }
-    if((i+(*burn_in)+1)%PRN==0 && (i+1)>(*burn_in)){  
-      if(*nmphi > 1)
-	Rprintf("iter. numb. %d ; Acc.-rate = %1.2f ; Acc-rate-phi = %1.2f \n",i+1,(Real) acc/PRN, (Real) acc_phi/PRN);
-      else
-	Rprintf("iter. numb. %d ; Acc.-rate = %1.2f \n",i+1,(Real) acc/PRN);
+    if((i-(*burn_in)+1)%PRN==0 && (i+1)>(*burn_in)){
+      acc_rate[(i-(*burn_in)+1)/PRN] = (Real) acc/PRN;
+      acc_rate_phi[(i-(*burn_in)+1)/PRN] = (Real) acc_phi/PRN ;
+      if((*messages)==1){
+	if(*nmphi > 1)
+	  Rprintf("iter. numb. %d ; Acc.-rate = %1.2f ; Acc-rate-phi = %1.2f \n",i+1,(Real) acc/PRN, (Real) acc_phi/PRN);
+	else
+	  Rprintf("iter. numb. %d ; Acc.-rate = %1.2f \n",i+1,(Real) acc/PRN);
+      }
       acc =0 ; acc_phi =0 ;
     }   
   }
@@ -1010,14 +879,15 @@ void initz_m(Real *Y, Real *meanY, Real *B, Real *X, Integer dim){
 }
 
 void mcmcrun5binom(Integer *n, Real *data, Real *units, Real *meanS, Real *DDvbetaDD, Integer *cornr, Real *kappa, Real *tausq,
-		   Real *distcoords, Real *scale, Real *phiscale, Integer *niter, Integer *subsample, 
-		   Integer *burn_in, Real *ss_sigma, Integer *df, Integer *phinr,  Real *phi_discrete, Integer *nmphi, Real *e_mean, 
-		   Real *SS, Real *phisamples){
+		   Real *coords1, Real *coords2, Real *scale, Real *phiscale, Integer *niter, Integer *subsample, 
+		   Integer *burn_in, Integer *messages, Real *ss_sigma, Integer *df, Real *phiprior,  Real *phi_discrete, Integer *nmphi, 
+		   Real *SS, Real *phisamples, Real *acc_rate, Real *acc_rate_phi){
   
   typedef Real *Doublearray;  
 #define PRN 1000           
   Integer i, j, jj, l, k, acc, acc_phi, dim2, itr, jstep, jphi; 
-  Real logfprop, logp_zprop,logf, logp_z, logq, logqprop, ss5, ss5prop, phi, phiprop, phistep, logp_phi, logp_phiprop, temp_phi ; 
+  Real logfprop, logp_zprop,logf, logp_z, logq, logqprop, ss5, ss5prop, phi, phiprop, phistep, logp_phi, logp_phiprop, temp_phi ;   
+  Real distcoords;
   Doublearray z, zprop, S, Sprop, gradz, gradzprop, temp;
   Doublearray Q, Qprop, AA;
   Doublearray BB[2001];
@@ -1055,11 +925,11 @@ void mcmcrun5binom(Integer *n, Real *data, Real *units, Real *meanS, Real *DDvbe
       BB[j] = Salloc(dim2,Real) ;
       for (l=0; l<(*n); l++){
 	for (k=0; k<l; k++){
-	  AA[(*n)*k - k*(k+1)/2+l]=corrfct(phi,(*kappa),distcoords[(*n)*k - k*(k+1)/2+l],(*cornr)) + DDvbetaDD[l*(*n)+k];
+	  distcoords = sqrt( pow(coords1[k]-coords1[l],2) + pow(coords2[k]-coords2[l],2));
+	  AA[(*n)*k - k*(k+1)/2+l]=corrfct(phi,(*kappa),distcoords,(*cornr)) + DDvbetaDD[l*(*n)+k];
 	}
-	AA[(*n)*l - l*(l+1)/2+l]=corrfct(phi,(*kappa),distcoords[(*n)*l - l*(l+1)/2+l],(*cornr)) + DDvbetaDD[l*(*n)+l] + (*tausq);  
+	AA[(*n)*l - l*(l+1)/2+l]= 1 + DDvbetaDD[l*(*n)+l] + (*tausq);  
       }
-      
       cholesky(AA,BB[j],(*n));
     }
     phi=phi_discrete[0]+jphi*phistep; 
@@ -1070,21 +940,27 @@ void mcmcrun5binom(Integer *n, Real *data, Real *units, Real *meanS, Real *DDvbe
     jphi=0;
     for (l=0; l<(*n); l++){
       for (k=0; k<l; k++){
-	AA[(*n)*k - k*(k+1)/2+l]=corrfct(phi,(*kappa),distcoords[(*n)*k - k*(k+1)/2+l],(*cornr)) + DDvbetaDD[l*(*n)+k];
+	distcoords = sqrt( pow(coords1[k]-coords1[l],2) + pow(coords2[k]-coords2[l],2));
+	AA[(*n)*k - k*(k+1)/2+l]=corrfct(phi,(*kappa),distcoords,(*cornr)) + DDvbetaDD[l*(*n)+k];
       }
-      AA[(*n)*l - l*(l+1)/2+l]=corrfct(phi,(*kappa),distcoords[(*n)*l - l*(l+1)/2+l],(*cornr)) + DDvbetaDD[l*(*n)+l] + (*tausq); 
+      AA[(*n)*l - l*(l+1)/2+l]= 1 + DDvbetaDD[l*(*n)+l] + (*tausq);  
     }
     cholesky(AA,Q,(*n)); 
   }
-  initz(S,Q,z,(*n));
+
+  RANDIN;
+  
+  if(SS[((*niter)/(*subsample)-1)*(*n)+(*n)-1]>0.1){ 
+    for (l=0; l<(*n); l++) z[l]= RNORM; /* start at random from the prior */
+  }
+  else initz(S,Q,z,(*n));
   conddensity5binom(S,Q,&logf,data,z,meanS,units,(*n));    
   ss5 = calc_ss(z,(*n))+(*ss_sigma);
   gradient5binom(S,gradz,Q,z,data,meanS,units,(*n),ss5,(*df));  
   logp_z = -0.5*(*df)*log(ss5); 
-  logp_phi = logprior_phi(phi, (*e_mean), (*phinr));
+  logp_phi = log(phiprior[jphi]);
   itr = (*niter) + (*burn_in) ;
   acc= 0; acc_phi = 0 ; 
-  RANDIN;
  
   for (i=0; i<itr; i++){  
     for (l=0; l<(*n); l++) zprop[l]=z[l]+0.5*gradz[l]*(*scale) + RNORM*sqrt(*scale); 
@@ -1123,7 +999,7 @@ void mcmcrun5binom(Integer *n, Real *data, Real *units, Real *meanS, Real *DDvbe
     else jstep=0;
     if ( jphi+jstep > -1 && jphi+jstep < (*nmphi) && !(jstep == 0)){  /* if within limits */  
       phiprop=phi+phistep*jstep;
-      logp_phiprop = logprior_phi(phiprop, (*e_mean), (*phinr));
+      logp_phiprop = log(phiprior[jphi+jstep]);
       conddensity5binom(Sprop,BB[jphi+jstep],&logfprop,data,z,meanS,units,(*n));
       if (log(UNIF)<logfprop-logf+logp_phiprop-logp_phi){    
 	phi=phiprop;
@@ -1143,18 +1019,26 @@ void mcmcrun5binom(Integer *n, Real *data, Real *units, Real *meanS, Real *DDvbe
       phisamples[((i+1-(*burn_in))/(*subsample)-1)]=phi; 
     }
     if((i+1)==(*burn_in) && (*burn_in)>0){
-      if(*nmphi > 1)
-	Rprintf("burn-in =  %d is finished; Acc.-rate = %1.2f ; Acc-rate-phi = %1.2f \n",(*burn_in), (Real) acc/(*burn_in), 
-		(Real) acc_phi/(*burn_in));
-      else
-	Rprintf("burn-in =  %d is finished; Acc.-rate = %1.2f \n",(*burn_in), (Real) acc/(*burn_in));
+      acc_rate[0] = (Real) acc/(*burn_in); 
+      acc_rate_phi[0] = (Real) acc_phi/(*burn_in); 
+      if((*messages)==1){
+	if(*nmphi > 1)
+	  Rprintf("burn-in =  %d is finished; Acc.-rate = %1.2f ; Acc-rate-phi = %1.2f \n",(*burn_in), (Real) acc/(*burn_in), 
+		  (Real) acc_phi/(*burn_in));
+	else
+	  Rprintf("burn-in =  %d is finished; Acc.-rate = %1.2f \n",(*burn_in), (Real) acc/(*burn_in));
+      }
       acc =0 ; acc_phi =0 ;
     }
-    if((i+(*burn_in)+1)%PRN==0 && (i+1)>(*burn_in)){  
-      if(*nmphi > 1)
-	Rprintf("iter. numb. %d ; Acc.-rate = %1.2f ; Acc-rate-phi = %1.2f \n",i+1,(Real) acc/PRN, (Real) acc_phi/PRN);
-      else
-	Rprintf("iter. numb. %d ; Acc.-rate = %1.2f \n",i+1,(Real) acc/PRN);
+    if((i-(*burn_in)+1)%PRN==0 && (i+1)>(*burn_in)){
+      acc_rate[(i-(*burn_in)+1)/PRN] = (Real) acc/PRN;
+      acc_rate_phi[(i-(*burn_in)+1)/PRN] = (Real) acc_phi/PRN ;
+      if((*messages)==1){
+	if(*nmphi > 1)
+	  Rprintf("iter. numb. %d ; Acc.-rate = %1.2f ; Acc-rate-phi = %1.2f \n",i+1,(Real) acc/PRN, (Real) acc_phi/PRN);
+	else
+	  Rprintf("iter. numb. %d ; Acc.-rate = %1.2f \n",i+1,(Real) acc/PRN);
+      }
       acc =0 ; acc_phi =0 ;
     }
   }
@@ -1198,14 +1082,15 @@ void gradient5boxcox(Real *S, Real *gradz, Real *BB, Real *z, Real *obsdata, Rea
 
 
 void mcmcrun5boxcox(Integer *n, Real *data, Real *units, Real *meanS, Real *DDvbetaDD, Integer *cornr, Real *kappa, Real *tausq,
-       Real *distcoords, Real *scale, Real *phiscale, Real *Htrunc, Integer *niter, Integer *subsample, 
-       Integer *burn_in, Real *ss_sigma, Integer *df, Integer *phinr,  Real *phi_discrete, Integer *nmphi, Real *e_mean, Real *lambda,
-       Real *SS, Real *phisamples){
+       Real *coords1, Real *coords2, Real *scale, Real *phiscale, Real *Htrunc, Integer *niter, Integer *subsample, 
+       Integer *burn_in, Integer *messages, Real *ss_sigma, Integer *df, Real *phiprior,  Real *phi_discrete, Integer *nmphi, Real *lambda,
+       Real *SS, Real *phisamples, Real *acc_rate, Real *acc_rate_phi){
   
   typedef Real *Doublearray;
   #define PRN 1000           
   Integer i, j, jj, l, k, acc, acc_phi, dim2, itr, jstep, jphi, ctrl1, ctrl2, ctrl3; 
-  Real logfprop, logp_zprop,logf, logp_z, logq, logqprop, ss5, ss5prop, phi, phiprop, phistep, logp_phi, logp_phiprop, temp_phi ; 
+  Real logfprop, logp_zprop,logf, logp_z, logq, logqprop, ss5, ss5prop, phi, phiprop, phistep, logp_phi, logp_phiprop, temp_phi ;   
+  Real distcoords;
   Doublearray z, zprop, S, Sprop, gradz, gradzprop, temp;
   Doublearray Q, Qprop, AA;
   Doublearray BB[2001];
@@ -1243,9 +1128,10 @@ void mcmcrun5boxcox(Integer *n, Real *data, Real *units, Real *meanS, Real *DDvb
       BB[j] = Salloc(dim2,Real) ;
       for (l=0; l<(*n); l++){
 	for (k=0; k<l; k++){
-	  AA[(*n)*k - k*(k+1)/2+l]=corrfct(phi,(*kappa),distcoords[(*n)*k - k*(k+1)/2+l],(*cornr)) + DDvbetaDD[l*(*n)+k];
+	  distcoords = sqrt( pow(coords1[k]-coords1[l],2) + pow(coords2[k]-coords2[l],2));
+	  AA[(*n)*k - k*(k+1)/2+l]=corrfct(phi,(*kappa),distcoords,(*cornr)) + DDvbetaDD[l*(*n)+k];
 	}
-	AA[(*n)*l - l*(l+1)/2+l]=corrfct(phi,(*kappa),distcoords[(*n)*l - l*(l+1)/2+l],(*cornr)) + DDvbetaDD[l*(*n)+l] + (*tausq);
+	AA[(*n)*l - l*(l+1)/2+l]= 1 + DDvbetaDD[l*(*n)+l] + (*tausq);  
       }
       cholesky(AA,BB[j],(*n));
     }  
@@ -1257,26 +1143,32 @@ void mcmcrun5boxcox(Integer *n, Real *data, Real *units, Real *meanS, Real *DDvb
     jphi=0;
     for (l=0; l<(*n); l++){
       for (k=0; k<l; k++){
-	AA[(*n)*k - k*(k+1)/2+l]=corrfct(phi,(*kappa),distcoords[(*n)*k - k*(k+1)/2+l],(*cornr)) + DDvbetaDD[l*(*n)+k];
+	distcoords = sqrt( pow(coords1[k]-coords1[l],2) + pow(coords2[k]-coords2[l],2));
+	AA[(*n)*k - k*(k+1)/2+l]=corrfct(phi,(*kappa),distcoords,(*cornr)) + DDvbetaDD[l*(*n)+k];
       }
-      AA[(*n)*l - l*(l+1)/2+l]=corrfct(phi,(*kappa),distcoords[(*n)*l - l*(l+1)/2+l],(*cornr)) + DDvbetaDD[l*(*n)+l] + (*tausq); 
+      AA[(*n)*l - l*(l+1)/2+l]= 1 + DDvbetaDD[l*(*n)+l] + (*tausq);  
     }
     cholesky(AA,Q,(*n)); 
-  }  
-  initz(S,Q,z,(*n));
+  } 
+
+  RANDIN;
+  
+  if(SS[((*niter)/(*subsample)-1)*(*n)+(*n)-1]>0.1){ 
+    for (l=0; l<(*n); l++) z[l]= RNORM; /* start at random from the prior */
+  }
+  else initz(S,Q,z,(*n));
   conddensity5boxcox(S,Q,&logf,data,z,meanS,units,(*n),(*lambda));  
   for(l=0;l<(*n);l++){
-    if(S[l] < -1/(*lambda)){
+    if(S[l] < -1/(*lambda)-0.0000000001){
       error(" Bad starting value for MCMC \n");
     }
-  }    
+  }
   ss5 = calc_ss(z,(*n))+(*ss_sigma);  
   gradient5boxcox(S,gradz,Q,z,data,meanS,units,Htrunc,(*n),ss5,(*df),(*lambda));  
   logp_z = -0.5*(*df)*log(ss5); 
-  logp_phi = logprior_phi(phi, (*e_mean), (*phinr));
+  logp_phi = log(phiprior[jphi]);
   itr = (*niter) + (*burn_in) ;
-  acc= 0; acc_phi = 0; ctrl2 = 0; ctrl3 = 0; 
-  RANDIN;
+  acc= 0; acc_phi = 0; ctrl2 = 0; ctrl3 = 0;
 
   for (i=0; i<itr; i++){  
     for (l=0; l<(*n); l++) zprop[l]=z[l]+0.5*gradz[l]*(*scale) + RNORM*sqrt(*scale); 
@@ -1324,7 +1216,7 @@ void mcmcrun5boxcox(Integer *n, Real *data, Real *units, Real *meanS, Real *DDvb
     else jstep=0;
     if (jphi+jstep > -1 && jphi+jstep < (*nmphi) && !(jstep == 0)){  /* if within limits */ 
       phiprop=phi+phistep*jstep;
-      logp_phiprop = logprior_phi(phiprop, (*e_mean), (*phinr));
+      logp_phiprop = log(phiprior[jphi+jstep]);
       conddensity5boxcox(Sprop,BB[jphi+jstep],&logfprop,data,z,meanS,units,(*n),(*lambda));
       ctrl1 = 0;
       for(l=0;l<(*n);l++){
@@ -1353,18 +1245,26 @@ void mcmcrun5boxcox(Integer *n, Real *data, Real *units, Real *meanS, Real *DDvb
       phisamples[((i+1-(*burn_in))/(*subsample)-1)]=phi; 
     }
     if((i+1)==(*burn_in) && (*burn_in)>0){
-      if(*nmphi > 1)
-	Rprintf("burn-in =  %d is finished; Acc.-rate = %1.2f ; Acc-rate-phi = %1.2f \n",(*burn_in), (Real) acc/(*burn_in), 
-		(Real) acc_phi/(*burn_in));
-      else
-	Rprintf("burn-in =  %d is finished; Acc.-rate = %1.2f \n",(*burn_in), (Real) acc/(*burn_in));
+      acc_rate[0] = (Real) acc/(*burn_in); 
+      acc_rate_phi[0] = (Real) acc_phi/(*burn_in); 
+      if((*messages)==1){
+	if(*nmphi > 1)
+	  Rprintf("burn-in =  %d is finished; Acc.-rate = %1.2f ; Acc-rate-phi = %1.2f \n",(*burn_in), (Real) acc/(*burn_in), 
+		  (Real) acc_phi/(*burn_in));
+	else
+	  Rprintf("burn-in =  %d is finished; Acc.-rate = %1.2f \n",(*burn_in), (Real) acc/(*burn_in));
+      }
       acc =0 ; acc_phi =0 ;
     }
-    if((i+(*burn_in)+1)%PRN==0 && (i+1)>(*burn_in)){
-      if(*nmphi > 1)
-	Rprintf("iter. numb. %d ; Acc.-rate = %1.2f ; Acc-rate-phi = %1.2f \n",i+1,(Real) acc/PRN, (Real) acc_phi/PRN);
-      else
-	Rprintf("iter. numb. %d ; Acc.-rate = %1.2f \n",i+1,(Real) acc/PRN);
+    if((i-(*burn_in)+1)%PRN==0 && (i+1)>(*burn_in)){
+      acc_rate[(i-(*burn_in)+1)/PRN] = (Real) acc/PRN;
+      acc_rate_phi[(i-(*burn_in)+1)/PRN] = (Real) acc_phi/PRN;
+      if((*messages)==1){
+	if(*nmphi > 1)
+	  Rprintf("iter. numb. %d ; Acc.-rate = %1.2f ; Acc-rate-phi = %1.2f \n",i+1,(Real) acc/PRN, (Real) acc_phi/PRN);
+	else
+	  Rprintf("iter. numb. %d ; Acc.-rate = %1.2f \n",i+1,(Real) acc/PRN);
+      }
       acc =0 ; acc_phi =0 ;
     }   
   }
@@ -1400,14 +1300,15 @@ void gradient5(Real *S, Real *gradz, Real *BB, Real *z, Real *obsdata, Real *lin
 
 
 void mcmcrun5(Integer *n, Real *data, Real *units, Real *meanS, Real *DDvbetaDD, Integer *cornr, Real *kappa, Real *tausq,
-       Real *distcoords, Real *scale, Real *phiscale,Real *Htrunc, Integer *niter, Integer *subsample, 
-       Integer *burn_in, Real *ss_sigma, Integer *df, Integer *phinr,  Real *phi_discrete, Integer *nmphi, Real *e_mean, Real *SS, 
-       Real *phisamples){
+	      Real *coords1, Real *coords2, Real *scale, Real *phiscale,Real *Htrunc, Integer *niter, Integer *subsample, 
+	      Integer *burn_in, Integer *messages, Real *ss_sigma, Integer *df, Real *phiprior,  Real *phi_discrete, Integer *nmphi, Real *SS, 
+	      Real *phisamples, Real *acc_rate, Real *acc_rate_phi){
   
   typedef Real *Doublearray;  
 #define PRN 1000           
   Integer i, j, jj, l, k, acc, acc_phi, dim2, itr, jstep, jphi ; 
-  Real logfprop, logp_zprop,logf, logp_z, logq, logqprop, ss5, ss5prop, phi, phiprop, phistep, logp_phi, logp_phiprop, temp_phi ; 
+  Real logfprop, logp_zprop,logf, logp_z, logq, logqprop, ss5, ss5prop, phi, phiprop, phistep, logp_phi, logp_phiprop, temp_phi ;   
+  Real distcoords;
   Doublearray z, zprop, S, Sprop, gradz, gradzprop, temp;
   Doublearray Q, Qprop, AA;
   Doublearray BB[2001];
@@ -1445,9 +1346,10 @@ void mcmcrun5(Integer *n, Real *data, Real *units, Real *meanS, Real *DDvbetaDD,
       BB[j] = Salloc(dim2,Real) ;
       for (l=0; l<(*n); l++){
 	for (k=0; k<l; k++){
-	  AA[(*n)*k - k*(k+1)/2+l]=corrfct(phi,(*kappa),distcoords[(*n)*k - k*(k+1)/2+l],(*cornr)) + DDvbetaDD[l*(*n)+k];
+	  distcoords = sqrt( pow(coords1[k]-coords1[l],2) + pow(coords2[k]-coords2[l],2));
+	  AA[(*n)*k - k*(k+1)/2+l]=corrfct(phi,(*kappa),distcoords,(*cornr)) + DDvbetaDD[l*(*n)+k];
 	}
-	AA[(*n)*l - l*(l+1)/2+l]=corrfct(phi,(*kappa),distcoords[(*n)*l - l*(l+1)/2+l],(*cornr)) + DDvbetaDD[l*(*n)+l] + (*tausq); 
+	AA[(*n)*l - l*(l+1)/2+l]= 1 + DDvbetaDD[l*(*n)+l] + (*tausq);  
       }
       cholesky(AA,BB[j],(*n));
       }  
@@ -1459,21 +1361,27 @@ void mcmcrun5(Integer *n, Real *data, Real *units, Real *meanS, Real *DDvbetaDD,
     jphi=0;
     for (l=0; l<(*n); l++){
       for (k=0; k<l; k++){
-	AA[(*n)*k - k*(k+1)/2+l]=corrfct(phi,(*kappa),distcoords[(*n)*k - k*(k+1)/2+l],(*cornr)) + DDvbetaDD[l*(*n)+k];
+	distcoords = sqrt( pow(coords1[k]-coords1[l],2) + pow(coords2[k]-coords2[l],2));
+	AA[(*n)*k - k*(k+1)/2+l]=corrfct(phi,(*kappa),distcoords,(*cornr)) + DDvbetaDD[l*(*n)+k];
       }
-      AA[(*n)*l - l*(l+1)/2+l]=corrfct(phi,(*kappa),distcoords[(*n)*l - l*(l+1)/2+l],(*cornr)) + DDvbetaDD[l*(*n)+l] + (*tausq); 
+      AA[(*n)*l - l*(l+1)/2+l]= 1 + DDvbetaDD[l*(*n)+l] + (*tausq);  
     }
     cholesky(AA,Q,(*n)); 
   } 
-  initz(S,Q,z,(*n));
+
+  RANDIN;
+  
+  if(SS[((*niter)/(*subsample)-1)*(*n)+(*n)-1]>0.1){ 
+    for (l=0; l<(*n); l++) z[l]= RNORM; /* start at random from the prior */
+  }
+  else initz(S,Q,z,(*n));
   conddensity5(S,Q,&logf,data,z,meanS,units,(*n));    
   ss5 = calc_ss(z,(*n))+(*ss_sigma);  
   gradient5(S,gradz,Q,z,data,meanS,units,Htrunc,(*n),ss5,(*df));  
   logp_z = -0.5*(*df)*log(ss5); 
-  logp_phi = logprior_phi(phi, (*e_mean), (*phinr));
+  logp_phi = log(phiprior[jphi]);
   itr = (*niter) + (*burn_in) ;
   acc= 0; acc_phi = 0 ; 
-  RANDIN;
  
   for (i=0; i<itr; i++){  
     for (l=0; l<(*n); l++) zprop[l]=z[l]+0.5*gradz[l]*(*scale) + RNORM*sqrt(*scale); 
@@ -1512,7 +1420,7 @@ void mcmcrun5(Integer *n, Real *data, Real *units, Real *meanS, Real *DDvbetaDD,
     else jstep=0;
     if( jphi+jstep > -1 && jphi+jstep < (*nmphi) && !(jstep == 0)){  /* if within limits */  
       phiprop=phi+phistep*jstep;
-      logp_phiprop = logprior_phi(phiprop, (*e_mean), (*phinr));
+      logp_phiprop = log(phiprior[jphi+jstep]);
       conddensity5(Sprop,BB[jphi+jstep],&logfprop,data,z,meanS,units,(*n));
       if (log(UNIF)<logfprop-logf+logp_phiprop-logp_phi){    
 	phi=phiprop;
@@ -1532,28 +1440,48 @@ void mcmcrun5(Integer *n, Real *data, Real *units, Real *meanS, Real *DDvbetaDD,
       phisamples[((i+1-(*burn_in))/(*subsample)-1)]=phi; 
     }
     if((i+1)==(*burn_in) && (*burn_in)>0){
-      if(*nmphi > 1)
-	Rprintf("burn-in =  %d is finished; Acc.-rate = %1.2f ; Acc-rate-phi = %1.2f \n",(*burn_in), (Real) acc/(*burn_in), 
-		(Real) acc_phi/(*burn_in));
-      else
-	Rprintf("burn-in =  %d is finished; Acc.-rate = %1.2f \n",(*burn_in), (Real) acc/(*burn_in));
+      acc_rate[0] = (Real) acc/(*burn_in); 
+      acc_rate_phi[0] = (Real) acc_phi/(*burn_in); 
+      if((*messages)==1){
+	if(*nmphi > 1)
+	  Rprintf("burn-in =  %d is finished; Acc.-rate = %1.2f ; Acc-rate-phi = %1.2f \n",(*burn_in), (Real) acc/(*burn_in), 
+		  (Real) acc_phi/(*burn_in));
+	else
+	  Rprintf("burn-in =  %d is finished; Acc.-rate = %1.2f \n",(*burn_in), (Real) acc/(*burn_in));
+      }
       acc =0 ; acc_phi =0 ;
     }
-    if((i+(*burn_in)+1)%PRN==0 && (i+1)>(*burn_in)){  
-      if(*nmphi > 1)
-	Rprintf("iter. numb. %d ; Acc.-rate = %1.2f ; Acc-rate-phi = %1.2f \n",i+1,(Real) acc/PRN, (Real) acc_phi/PRN);
-      else
-	Rprintf("iter. numb. %d ; Acc.-rate = %1.2f \n",i+1,(Real) acc/PRN);
+    if((i-(*burn_in)+1)%PRN==0 && (i+1)>(*burn_in)){       
+      acc_rate[(i-(*burn_in)+1)/PRN] = (Real) acc/PRN;
+      acc_rate_phi[(i-(*burn_in)+1)/PRN] = (Real) acc_phi/PRN;  
+      if((*messages)==1){
+	if(*nmphi > 1)
+	  Rprintf("iter. numb. %d ; Acc.-rate = %1.2f ; Acc-rate-phi = %1.2f \n",i+1,(Real) acc/PRN, (Real) acc_phi/PRN);
+	else
+	  Rprintf("iter. numb. %d ; Acc.-rate = %1.2f \n",i+1,(Real) acc/PRN);
+      }
       acc =0 ; acc_phi =0 ;
-    }   
+    }
   }
   RANDOUT;  
 }
 
 
 
-/* 11. Aug : The new stuff - better algorithm  */
+/* 28. December : The new stuff - better algorithm  */
 
+
+Real calc1_ss(Real *z, Real *Dmat, Integer dim){
+  Integer l,k;
+
+  Real sumsz,temp;
+  for (sumsz=0,l=0; l<dim; l++){
+    for (temp=0,k=0; k<l; k++)
+      temp+=Dmat[l*dim+k]*z[k];
+    sumsz+=(z[l]*temp*2+pow(z[l],2)*Dmat[l*dim+l]);
+  }
+   return sumsz;
+}
 
 void conddensity1(Real *S, Real *logfcond, Real *BB, Real *z, Real *obsdata, Real *linpred, Integer dim){
   Integer l, k;
@@ -1735,6 +1663,29 @@ void mcmc1poisboxcox(Integer *n, Real *zz, Real *SS, Real *data, Real *units, Re
   for (l=0; l<(*n); l++) zz[l] = z[l]; 
 }
 
+void conddensity1binom(Real *S, Real *logfcond, Real *BB, Real *z, Real *obsdata, Real *units, Real *meanS, Integer dim){
+  Integer l, k;
+  
+  for (l=0; l<dim; l++){
+    for (S[l]=0,k=0; k<=l; k++) S[l]+=BB[l*dim+k]*z[k];
+  }  
+  for (*logfcond=0,l=0; l<dim; l++){
+    *logfcond+= (obsdata[l]*(S[l]+meanS[l])-units[l]*log(1+exp(S[l]+meanS[l])));
+  }
+}
+
+void gradient1binom(Real *S, Real *gradz, Real *BB, Real *Dmat, Real *z, Real *obsdata, Real *units, Integer dim){
+  Integer l, k;
+  Real likeli ;
+   
+  for (l=0; l<dim; l++) gradz[l]=0;
+  for (k=0; k<dim; k++){
+    likeli = obsdata[k] - units[k]*exp(S[k])/(1+exp(S[k]));
+    for (l=0; l<dim; l++)
+      if(l<k+1) gradz[l]+=BB[k*dim+l]*likeli - Dmat[l*dim+k]*z[k] ;
+      else gradz[l]-=Dmat[k*dim+l]*z[k] ;
+  }
+}
 
 void mcmc1binom(Integer *n, Real *zz, Real *SS, Real *data, Real *units, Real *meanS, Real *QQ, Real *QtivQ,
          Real *randnormal, Real *randunif, Real *scale, Integer *nsim, Integer *subsample, Real *acc_rate){
@@ -1753,14 +1704,14 @@ void mcmc1binom(Integer *n, Real *zz, Real *SS, Real *data, Real *units, Real *m
     S[l] = 0; 
   } 
   conddensity1binom(S,&logf,QQ,z,data,units,meanS,(*n));           
-  gradient2binom(S,gradz,QQ,QtivQ,z,data,units,(*n));
+  gradient1binom(S,gradz,QQ,QtivQ,z,data,units,(*n));
   logp_z = -calc1_ss(z,QtivQ,(*n))/2;
   acc= 0; 
   for(i=0; i<(*nsim); i++){ 
     for(ii=0; ii<(*subsample); ii++){ 
       for (l=0; l<(*n); l++) zprop[l]=z[l]+0.5*gradz[l]*(*scale) + randnormal[(i*(*subsample)+ii)*(*n)+l];
       conddensity1binom(Sprop,&logfprop,QQ,zprop,data,units,meanS,(*n));  
-      gradient2binom(Sprop,gradzprop,QQ,QtivQ,zprop,data,units,(*n));
+      gradient1binom(Sprop,gradzprop,QQ,QtivQ,zprop,data,units,(*n));
       logp_zprop=-calc1_ss(zprop,QtivQ,(*n))/2;  
       for (logq=0,logqprop=0,l=0; l<(*n); l++){
 	logq+=pow(zprop[l]-(z[l]+0.5*gradz[l]*(*scale)),2);

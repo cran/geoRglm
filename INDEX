@@ -1,20 +1,24 @@
 asympvar                Asymptotic Variance
-b50 and y50             Simulated Data-Sets which Illustrate the Usage
+b50 and y50             Simulated Data sets which Illustrate the Usage
                         of the Package geoRglm
+binom.krige             Conditional Simulation and Prediction for the
+                        Binomial-logit Spatial model
 binom.krige.bayes       Bayesian Posterior Simulation and Prediction
                         for the Binomial Spatial model
 covariog                Empirical Covariogram for a Model with log-link
                         and an Underlying Gaussian Field
 covariog.model.env      Envelope for Empirical Covariogram for the
                         Poisson-log normal model
+geoRglm-defunct         Defunct Functions in the Package geoRglm
 lines.covariomodel      Line with a Covariogram Model 
 mcmc.control            Defines options for the MCMC-algorithm 
 model.glm.control       Defines model options 
 output.glm.control      Defines output options 
 plot.covariogram        Plot Empirical Covariogram
+pois.krige              Conditional Simulation and Prediction for the
+                        Poisson Spatial model with a link function from
+                        the Box-Cox class
 pois.krige.bayes        Bayesian Posterior Simulation and Prediction
                         for the Poisson Spatial model
-pois.log.krige          Conditional Simulation and Prediction for the
-                        Poisson-log Spatial model
 prior.glm.control       Defines prior options 
 rongelap                Radionuclide Concentrations on Rongelap Island

@@ -257,8 +257,8 @@
     if(messages.screen){
       cat(switch(model$trend.d,
                  "cte" = "krige.bayes.extnd: model with mean being constant",
-                 "1st" = "krige.bayes.extnd: model with mean given by a 1st degree polynomial on the coordinates",
-                 "2nd" = "krige.bayes.extnd: model with mean given by a 2nd degree polynomial on the coordinates",
+                 "1st" = "krige.bayes.extnd: model with mean given by a 1st order polynomial on the coordinates",
+                 "2nd" = "krige.bayes.extnd: model with mean given by a 2nd order polynomial on the coordinates",
                  "krige.bayes.extnd: model with mean defined by covariates provided by the user"))
       cat("\n")
     }
@@ -631,8 +631,8 @@ function(geodata, coords = geodata$coords, data = geodata$data, locations, krige
     else
       cat(switch(as.character(krige$trend.d)[1],
                  "cte" = "krige.conv.extnd: model with mean being constant",
-                 "1st" = "krige.conv.extnd: model with mean given by a 1st degree polinomial on the coordinates",
-                 "2nd" = "krige.conv.extnd: model with mean given by a 2nd degree polinomial on the coordinates",
+                 "1st" = "krige.conv.extnd: model with mean given by a 1st order polynomial on the coordinates",
+                 "2nd" = "krige.conv.extnd: model with mean given by a 2nd order polynomial on the coordinates",
                  "krige.conv.extnd: model with mean defined by covariates provided by the user"))
     cat("\n")
   }
@@ -654,8 +654,7 @@ function(geodata, coords = geodata$coords, data = geodata$data, locations, krige
   ## Box-Cox transformation
   ##
   if(lambda != 1) {
-    if(messages.screen)
-      cat("krige.conv.extnd: Data transformation (Box-Cox) performed.\n")
+    if(messages.screen) cat("krige.conv.extnd: Data transformation (Box-Cox) performed.\n")
     if(lambda == 0)
       data <- log(data)
     else data <- ((data^lambda) - 1)/lambda
@@ -731,8 +730,7 @@ function(geodata, coords = geodata$coords, data = geodata$data, locations, krige
     if(is.R()) remove("beta.flat")
     else remove(list = c("beta.flat"), frame = sys.nframe())
   }
-  bitb <- tv0ivv0 <- NULL
-  if(any(kc.result$krige.var < 0))
+  if(any(round(kc.result$krige.var, dig=12) < 0))
     cat("krige.conv.extnd: negative kriging variance found! Investigate why this is happening.\n")
   message <- "krige.conv.extnd: Kriging performed using global neighbourhood"
   if(messages.screen)
@@ -784,45 +782,31 @@ function(geodata, coords = geodata$coords, data = geodata$data, locations, krige
   }
 ######################	Back-transforming predictions ############
   if(lambda != 1) {
-    if(lambda == 0) {
+    predict.transf <- kc.result$predict
+    if(lambda == 0){
       if(messages.screen) cat("krige.conv.extnd: back-transforming the predictions using formula for EXP() \n")
-      predict.transf <- kc.result$predict
       kc.result$predict <- exp(predict.transf + 0.5 * kc.result$krige.var)
       kc.result$krige.var <- (exp(2 * predict.transf - kc.result$krige.var)) * (exp(kc.result$krige.var) - 1)
-      if(is.R()) remove("predict.transf")
-      else remove(list = c("predict.transf"), frame = sys.nframe())
     }
     if(lambda > 0){
-      ## Some day, here analytic formulas (approximative).
-      if(messages.screen) cat("krige.conv.extnd: back-transformation done by sampling from the predictive distribution\n")
-      ap.warn <- options()$warn
-      options(warn = -1)
-      temp.sim <- matrix(rnorm(ni * n.back.moments, mean = rep(0, ni * n.back.moments), sd = sqrt(kc.result$krige.var)), nrow = ni)
-      temp.sim[(kc.result$krige.var == 0),  ] <- 0
-      predict.transf <- as.double(rep(0, ni * n.datasets))
-      krige.var.transf <- as.double(rep(0, ni * n.datasets))
-      for(i in 1:n.datasets) {
-        ## must be done in C, some day 
-        temp.data <- as.vector(kc.result$predict[,i]) + temp.sim
-        temp.data[temp.data < -1/lambda] <- -1/lambda
-        temp.data <- ((temp.data * lambda) + 1)^(1/lambda)
-        predict.transf[i(1:ni)] <- as.vector(apply(temp.data, 1, mean))
-        krige.var.transf[i(1:ni)] <- as.vector(apply(temp.data, 1, var))
-        temp.data <- NULL
-      }
-      options(warn = ap.warn)
-      if(!is.R()) remove(list = c("temp.data", "temp.sim"), frame = 2)
-      kc.result$predict <- array(predict.transf, dim = c(ni, n.datasets))
-      if(!is.R()) remove(list = c("predict.transf"), frame = 2)
-      kc.result$krige.var <- array(krige.var.transf, dim = c(ni, n.datasets))
-      if(!is.R()) remove(list = c("krige.var.transf"), frame = 2)
+      ## using second order taylor-expansion + facts for N(0,1) [third moment = 0 ; fourth moment = 12].
+      if(messages.screen) cat("krige.conv.extnd: back-transforming predictions using 2. order Taylor expansion for g^{-1}() \n")
+      ivBC <- BC.inv(predict.transf,lambda)
+      kc.result$predict <- ivBC + 0.5 * ((1-lambda)*ivBC^(1-2*lambda))*kc.result$krige.var
+      kc.result$krige.var <- (ivBC^(1-lambda))^2*kc.result$krige.var + (11/4)*((1-lambda)*ivBC^(1-2*lambda))^2*kc.result$krige.var^2
     }
+    remove("predict.transf")
     if(lambda < 0){
       cat("krige.conv.extnd: resulting distribution has no mean for lambda < 0 - back transformation not performed\n")
     }
     if(n.predictive > 0) {
-        kc.result$simulations <- BC.inv(kc.result$simulations,lambda)
+      kc.result$simulations <- BC.inv(kc.result$simulations,lambda)
     }
+  }
+  else{
+    temp <- kc.result$krige.var
+    kc.result$krige.var <- matrix(0, nrow = ni, ncol = n.datasets)
+    kc.result$krige.var[] <- temp
   }
   kc.result <- c(kc.result, list(message = message, call = cl))
 #######################################

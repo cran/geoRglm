@@ -1,7 +1,7 @@
 
 
 "mcmc.bayes.pois.log" <- 
-  function(data, units.m, trend, mcmc.input, cov.model, kappa, tausq.rel, distcoords, ss.sigma, df, phi.prior, phi.discrete, phi)
+  function(data, units.m, trend, mcmc.input, messages.screen, cov.model, kappa, tausq.rel, coords, ss.sigma, df, phi.prior, phi.discrete)
 {
   ##
 #### This is the MCMC engine for the Bayesian analysis of a spatial Poisson log Normal model
@@ -17,19 +17,17 @@
     S <- as.vector(ifelse(data > 0, log(data), 0) - log(units.m))
   }
   else{
-    if(is.numeric(mcmc.input$S.start)){
-      if(length(mcmc.input$S.start) != n) stop("dimension of mcmc-starting-value must equal dimension of data")
-      S <- as.vector(mcmc.input$S.start)
+    if(any(mcmc.input$S.start=="random")){
+      if(is.numeric(mcmc.input$S.start)){
+        if(length(mcmc.input$S.start) != n) stop("dimension of mcmc-starting-value must equal dimension of data")
+        S <- as.vector(mcmc.input$S.start)
+      }
+      else  stop(" S.start must be a vector of same dimension as data ")
     }
-    else  stop(" S.start must be a vector of same dimension as data ")
   }
   burn.in <- mcmc.input$burn.in
   thin <- mcmc.input$thin
   n.iter <- mcmc.input$n.iter
-  if(phi.prior == "fixed"){
-    phi.discrete <- phi
-    phi.prior <- "uniform"
-  }
   if(any(mcmc.input$phi.start=="default")) phi <- median(phi.discrete)
   else  phi <- mcmc.input$phi.start
   nmphi <-  length(phi.discrete)
@@ -42,83 +40,60 @@
     if(nmphi > 1 && pnorm((phi.discrete[nmphi] - phi.discrete[1])/(nmphi - 1), sd = sqrt(phi.scale)) > 0.975)
       print("Consider making the grid in phi.discrete more dense. The algorithm may have problems moving.")
   }
+  messages.screen <- ifelse(messages.screen,1,0)
   ##                                                                      
 ##### ---------- sampling ----------- ###### 
   cov.model.number <- cor.number(cov.model)
-  phi.prior.number <- phi.number(phi.prior)
-  if(is.null(phi)) {
-    if(phi.prior == "exponential")
-      stop("Must give the parameter in exponential prior-distribution for phi")
-    else e.mean <- 0
-  }
-  else e.mean <- phi
-   if(is.vector(trend)) beta.size <- 1
+  if(is.vector(trend)) beta.size <- 1
   else beta.size <- ncol(trend)
   n.sim <- floor(n.iter/thin)
-  Sdata <- as.double(as.vector(c(S, rep(0, (n.sim - 1) * n))))
+  ## remeber this rather odd coding for telling that S.start is from the prior !!!
+  if(!any(mcmc.input$S.start=="random")) Sdata <- as.double(as.vector(c(rep(0, n.sim*n - 1),1)))
+  else Sdata <- as.double(as.vector(c(S, rep(0, (n.sim - 1) * n))))
   phi.sample <- as.double(rep(phi, n.sim))
-  if(is.R()){
-    result <-  .C("mcmcrun4",
-                  as.integer(n),
-                  as.double(data),
-                  as.double(units.m),
-                  as.double(as.vector(t(trend))),
-                  as.integer(beta.size),
-                  as.integer(cov.model.number),
-                  as.double(kappa),
-                  as.double(tausq.rel),
-                  as.double(distcoords),
-                  as.double(S.scale),
-                  as.double(phi.scale),
-                  as.double(Htrunc),
-                  as.integer(n.iter),
-                  as.integer(thin),
-                  as.integer(burn.in),
-                  as.double(ss.sigma),
-                  as.integer(df),
-                  as.integer(phi.prior.number),
-                  as.double(phi.discrete),
-                  as.integer(nmphi),
-                  as.double(e.mean),
-                  Sdata = Sdata,
-                  phi.sample = phi.sample, DUP=FALSE, PACKAGE = "geoRglm")[c("Sdata", "phi.sample")]
-  }
-  else{
-    result <- .C("mcmcrun4",
-                 COPY = c(FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE,
-                   FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, TRUE, TRUE),
-                 as.integer(n),
-                 as.double(data),
-                 as.double(units.m),
-                 as.double(as.vector(t(trend))),
-                 as.integer(beta.size),
-                 as.integer(cov.model.number),
-                 as.double(kappa),
-                 as.double(tausq.rel),
-                 as.double(distcoords),
-                 as.double(S.scale),
-                 as.double(phi.scale),
-                 as.double(Htrunc),
-                 as.integer(n.iter),
-                 as.integer(thin),
-                 as.integer(burn.in),
-                 as.double(ss.sigma),
-                 as.integer(df),
-                 as.integer(phi.prior.number),
-                 as.double(phi.discrete),
-                 as.integer(nmphi),
-                 as.double(e.mean),
-                 Sdata = Sdata,
-                 phi.sample = phi.sample)[c("Sdata", "phi.sample")]
-  }
+  acc.rate <- rep(0,floor(n.iter/1000)+1)
+  acc.rate.phi <- rep(0,floor(n.iter/1000)+1)
+  result <-  .C("mcmcrun4",
+                as.integer(n),
+                as.double(data),
+                as.double(units.m),
+                as.double(as.vector(t(trend))),
+                as.integer(beta.size),
+                as.integer(cov.model.number),
+                as.double(kappa),
+                as.double(tausq.rel),
+		as.double(coords[,1]),
+                as.double(coords[,2]),
+                as.double(S.scale),
+                as.double(phi.scale),
+                as.double(Htrunc),
+                as.integer(n.iter),
+                as.integer(thin),
+                as.integer(burn.in),
+                as.integer(messages.screen),
+                as.double(ss.sigma),
+                as.integer(df),
+                as.double(phi.prior),
+                as.double(phi.discrete),
+                as.integer(nmphi),
+                Sdata = Sdata,
+                phi.sample = phi.sample,
+		acc.rate = acc.rate, 
+		acc.rate.phi = acc.rate.phi, DUP=FALSE, PACKAGE = "geoRglm")[c("Sdata", "phi.sample","acc.rate","acc.rate.phi" )]
   attr(result$Sdata, "dim") <- c(n, n.sim)
+  if(nmphi>1) result$acc.rate <- as.data.frame(cbind(burn.in + seq(0,floor(n.iter/1000))*1000, result$acc.rate,result$acc.rate.phi))
+  else result$acc.rate <- as.data.frame(cbind(burn.in + seq(0,floor(n.iter/1000))*1000, result$acc.rate))
+  result$acc.rate.phi <- NULL
+  if(burn.in==0) result$acc.rate <- result$acc.rate[-1,]
+  if(nmphi>1) names(result$acc.rate) <- c("iter.numb", "Acc.rate", "Acc.rate.phi")
+  else names(result$acc.rate) <- c("iter.numb", "Acc.rate")
   cat(paste("MCMC performed: n.iter. = ", n.iter, "; thinning = ", thin, "; burn.in = ", burn.in, "\n"))
   return(result)
 }
 
 
 "mcmc.bayes.pois.boxcox" <- 
-  function(data, units.m, trend, mcmc.input, cov.model, kappa, tausq.rel, distcoords, ss.sigma, df, phi.prior, phi.discrete, phi, lambda)  
+  function(data, units.m, trend, mcmc.input, messages.screen, cov.model, kappa, tausq.rel, coords, ss.sigma, df, phi.prior, phi.discrete, lambda) 
 {
   ##
 #### This is the MCMC engine for the Bayesian analysis of a spatial Poisson boxcox Normal model, when lambda >0
@@ -129,11 +104,13 @@
     S <- as.vector(ifelse(data > 0, ((data/units.m)^lambda -1)/lambda, 0) )         
   }
   else{
-    if(is.numeric(mcmc.input$S.start)){
-      if(length(mcmc.input$S.start) != n) stop("dimension of mcmc-starting-value must equal dimension of data")
-      S <- as.vector(mcmc.input$S.start)
+    if(any(mcmc.input$S.start=="random")){
+      if(is.numeric(mcmc.input$S.start)){
+        if(length(mcmc.input$S.start) != n) stop("dimension of mcmc-starting-value must equal dimension of data")
+        S <- as.vector(mcmc.input$S.start)
+      }
+      else  stop(" S.start must be a vector of same dimension as data ")
     }
-    else  stop(" S.start must be a vector of same dimension as data ")
   }
   if(any(mcmc.input$Htrunc=="default")) Htrunc <- 2*data + 5 
   else {
@@ -143,10 +120,6 @@
   burn.in <- mcmc.input$burn.in
   thin <- mcmc.input$thin
   n.iter <- mcmc.input$n.iter
-  if(phi.prior == "fixed"){
-    phi.discrete <- phi
-    phi.prior <- "uniform"
-  }
   if(any(mcmc.input$phi.start=="default")) phi <- median(phi.discrete)
   else  phi <- mcmc.input$phi.start
   nmphi <-  length(phi.discrete)
@@ -159,86 +132,61 @@
     if(nmphi > 1 && pnorm((phi.discrete[nmphi] - phi.discrete[1])/(nmphi - 1), sd = sqrt(phi.scale)) > 0.975)
       print("Consider making the grid in phi.discrete more dense. The algorithm may have problems moving. ")
   }
+  messages.screen <- ifelse(messages.screen,1,0)
   ##                                                                      
 ##### ---------- sampling ----------- ###### 
   cov.model.number <- cor.number(cov.model)
-  phi.prior.number <- phi.number(phi.prior)
-  if(is.null(phi)) {
-    if(phi.prior == "exponential")
-      stop("Must give the parameter in exponential prior-distribution for phi")
-    else e.mean <- 0
-  }
-  else e.mean <- phi
   if(is.vector(trend)) beta.size <- 1
   else beta.size <- ncol(trend)
   n.sim <- floor(n.iter/thin)
-  Sdata <- as.double(as.vector(c(S, rep(0, (n.sim - 1) * n))))
+  ## remeber this rather odd coding for telling that S.start is from the prior !!!
+  if(!any(mcmc.input$S.start=="random")) Sdata <- as.double(as.vector(c(rep(0, n.sim*n - 1),1)))
+  else Sdata <- as.double(as.vector(c(S, rep(0, (n.sim - 1) * n))))
   phi.sample <- as.double(rep(phi, n.sim))
-  if(is.R()){
-    result <-  .C("mcmcrun4boxcox",
-                  as.integer(n),
-                  as.double(data),
-                  as.double(units.m),              
-                  as.double(as.vector(t(trend))),
-                  as.integer(beta.size),
-                  as.integer(cov.model.number),
-                  as.double(kappa),
-                  as.double(tausq.rel),
-                  as.double(distcoords),
-                  as.double(S.scale),
-                  as.double(phi.scale),
-                  as.double(Htrunc),
-                  as.integer(n.iter),
-                  as.integer(thin),
-                  as.integer(burn.in),
-                  as.double(ss.sigma),
-                  as.integer(df),
-                  as.integer(phi.prior.number),
-                  as.double(phi.discrete),
-                  as.integer(nmphi),
-                  as.double(e.mean),
-                  as.double(lambda),
-                  Sdata = Sdata,
-                  phi.sample = phi.sample, DUP=FALSE, PACKAGE = "geoRglm")[c("Sdata", "phi.sample")]    
-  }
-  else{
-    result <- .C("mcmcrun4boxcox",
-                 COPY = c(FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE,
-                   FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, TRUE, TRUE),
-                 as.integer(n),
-                 as.double(data),
-                 as.double(units.m),                 
-                 as.double(as.vector(t(trend))),
-                 as.integer(beta.size),
-                 as.integer(cov.model.number),
-                 as.double(kappa),
-                 as.double(tausq.rel),
-                 as.double(distcoords),
-                 as.double(S.scale),
-                 as.double(phi.scale),
-                 as.double(Htrunc),
-                 as.integer(n.iter),
-                 as.integer(thin),
-                 as.integer(burn.in),
-                 as.double(ss.sigma),
-                 as.integer(df),
-                 as.integer(phi.prior.number),
-                 as.double(phi.discrete),
-                 as.integer(nmphi),
-                 as.double(e.mean),
-                 as.double(lambda),
-                 Sdata = Sdata,
-                 phi.sample = phi.sample)[c("Sdata", "phi.sample")]    
-  }
+  acc.rate <- rep(0,floor(n.iter/1000)+1)
+  acc.rate.phi <- rep(0,floor(n.iter/1000)+1)
+  result <-  .C("mcmcrun4boxcox",
+                as.integer(n),
+                as.double(data),
+                as.double(units.m),              
+                as.double(as.vector(t(trend))),
+                as.integer(beta.size),
+                as.integer(cov.model.number),
+                as.double(kappa),
+                as.double(tausq.rel),
+		as.double(coords[,1]),
+                as.double(coords[,2]),
+                as.double(S.scale),
+                as.double(phi.scale),
+                as.double(Htrunc),
+                as.integer(n.iter),
+                as.integer(thin),
+                as.integer(burn.in),
+                as.integer(messages.screen),
+                as.double(ss.sigma),
+                as.integer(df),
+                as.double(phi.prior),
+                as.double(phi.discrete),
+                as.integer(nmphi),
+                as.double(lambda),
+                Sdata = Sdata,
+                phi.sample = phi.sample, 
+		acc.rate = acc.rate, 
+		acc.rate.phi = acc.rate.phi, DUP=FALSE, PACKAGE = "geoRglm")[c("Sdata", "phi.sample","acc.rate","acc.rate.phi" )]   
   attr(result$Sdata, "dim") <- c(n, n.sim)
+  if(nmphi>1) result$acc.rate <- as.data.frame(cbind(burn.in + seq(0,floor(n.iter/1000))*1000, result$acc.rate,result$acc.rate.phi))
+  else result$acc.rate <- as.data.frame(cbind(burn.in + seq(0,floor(n.iter/1000))*1000, result$acc.rate))
+  result$acc.rate.phi <- NULL
+  if(burn.in==0) result$acc.rate <- result$acc.rate[-1,]
+  if(nmphi>1) names(result$acc.rate) <- c("iter.numb", "Acc.rate", "Acc.rate.phi")
+  else names(result$acc.rate) <- c("iter.numb", "Acc.rate")
   cat(paste("MCMC performed: n.iter. = ", n.iter, "; thinning = ", thin, "; burn.in = ", burn.in, "\n"))
   return(result)
 }
 
 
 "mcmc.bayes.conj.pois.log" <- 
-  function(data, units.m, meanS, ttvbetatt, mcmc.input, cov.model, kappa, tausq.rel, distcoords, ss.sigma, df, phi.prior,
-           phi.discrete, phi)
+  function(data, units.m, meanS, ttvbetatt, mcmc.input, messages.screen, cov.model, kappa, tausq.rel, coords, ss.sigma, df, phi.prior, phi.discrete)
 {
   ##
   ## This is the MCMC engine for the Bayesian analysis (with normal prior for beta) of a spatial Poisson logit Normal model
@@ -249,11 +197,13 @@
     S <- as.vector(ifelse(data > 0, log(data), 0) - log(units.m)) - meanS
   }
   else{
-    if(is.numeric(mcmc.input$S.start)){
-      if(length(mcmc.input$S.start) != n) stop("dimension of mcmc-starting-value must equal dimension of data")
-      S <- as.vector(mcmc.input$S.start)
+    if(any(mcmc.input$S.start=="random")){
+      if(is.numeric(mcmc.input$S.start)){
+        if(length(mcmc.input$S.start) != n) stop("dimension of mcmc-starting-value must equal dimension of data")
+        S <- as.vector(mcmc.input$S.start)
+      }
+      else  stop(" S.start must be a vector of same dimension as data ")
     }
-    else  stop(" S.start must be a vector of same dimension as data ")
   }
   if(any(mcmc.input$Htrunc=="default")) Htrunc <- 2*data + 5 
   else {
@@ -263,10 +213,6 @@
   burn.in <- mcmc.input$burn.in
   thin <- mcmc.input$thin
   n.iter <- mcmc.input$n.iter
-  if(phi.prior == "fixed"){
-    phi.discrete <- phi
-    phi.prior <- "uniform"
-  }
   if(any(mcmc.input$phi.start=="default")) phi <- median(phi.discrete)
   else  phi <- mcmc.input$phi.start
   nmphi <-  length(phi.discrete)
@@ -279,20 +225,18 @@
     if(nmphi > 1 && pnorm((phi.discrete[nmphi] - phi.discrete[1])/(nmphi - 1), sd = sqrt(phi.scale)) > 0.975)
       print("Consider making the grid in phi.discrete more dense. The algorithm may have problems moving. ")
   }
+  messages.screen <- ifelse(messages.screen,1,0)
   ##                                                                      
   ## ---------- sampling ----------- ###### 
   cov.model.number <- cor.number(cov.model)
-  phi.prior.number <- phi.number(phi.prior)
-  if(is.null(phi)) {
-    if(phi.prior == "exponential")
-      stop("Must give the parameter in exponential prior-distribution for phi")
-    else e.mean <- 0
-  }
-  else e.mean <- phi
   if(is.null(ttvbetatt)) ttvbetatt <- matrix(0,beta.size,beta.size)
   n.sim <- floor(n.iter/thin)
-  Sdata <- as.double(as.vector(c(S, rep(0, (n.sim - 1) * n))))
-  phi.sample <- as.double(rep(phi, n.sim)) 
+  ## remeber this rather odd coding for telling that S.start is from the prior !!!
+  if(!any(mcmc.input$S.start=="random")) Sdata <- as.double(as.vector(c(rep(0, n.sim*n - 1),1)))
+  else Sdata <- as.double(as.vector(c(S, rep(0, (n.sim - 1) * n))))
+  phi.sample <- as.double(rep(phi, n.sim))
+  acc.rate <- rep(0,floor(n.iter/1000)+1)
+  acc.rate.phi <- rep(0,floor(n.iter/1000)+1)
   result <-  .C("mcmcrun5",
                 as.integer(n),
                 as.double(data),
@@ -302,29 +246,38 @@
                 as.integer(cov.model.number),
                 as.double(kappa),
                 as.double(tausq.rel),
-                as.double(distcoords),
+                as.double(coords[,1]),
+                as.double(coords[,2]),
                 as.double(S.scale),
                 as.double(phi.scale),
                 as.double(Htrunc),
                 as.integer(n.iter),
                 as.integer(thin),
                 as.integer(burn.in),
+                as.integer(messages.screen),
                 as.double(ss.sigma),
                 as.integer(df),
-                as.integer(phi.prior.number),
+                as.double(phi.prior),
                 as.double(phi.discrete),
                 as.integer(nmphi),
-                as.double(e.mean),
                 Sdata = Sdata,
-                phi.sample = phi.sample, DUP=FALSE, PACKAGE = "geoRglm")[c("Sdata", "phi.sample")]
-  attr(result$Sdata, "dim") <- c(n, n.sim)
+                phi.sample = phi.sample,
+		acc.rate = acc.rate, 
+		acc.rate.phi = acc.rate.phi, DUP=FALSE, PACKAGE = "geoRglm")[c("Sdata", "phi.sample","acc.rate","acc.rate.phi" )]
+  attr(result$Sdata, "dim") <- c(n, n.sim) 
+  if(nmphi>1) result$acc.rate <- as.data.frame(cbind(burn.in + seq(0,floor(n.iter/1000))*1000, result$acc.rate,result$acc.rate.phi))
+  else result$acc.rate <- as.data.frame(cbind(burn.in + seq(0,floor(n.iter/1000))*1000, result$acc.rate))
+  result$acc.rate.phi <- NULL
+  if(burn.in==0) result$acc.rate <- result$acc.rate[-1,]
+  if(nmphi>1) names(result$acc.rate) <- c("iter.numb", "Acc.rate", "Acc.rate.phi")
+  else names(result$acc.rate) <- c("iter.numb", "Acc.rate")
   cat(paste("MCMC performed: n.iter. = ", n.iter, "; thinning = ", thin, "; burn.in = ", burn.in, "\n"))
   return(result)
 }
 
 "mcmc.bayes.conj.pois.boxcox" <- 
-  function(data, units.m, meanS, ttvbetatt, mcmc.input, cov.model, kappa, tausq.rel, distcoords, ss.sigma, df, phi.prior,
-           phi.discrete, phi, lambda)
+  function(data, units.m, meanS, ttvbetatt, mcmc.input, messages.screen, cov.model, kappa, tausq.rel, coords, ss.sigma, df, phi.prior,
+           phi.discrete, lambda)
 {
   ##
   ## This is the MCMC engine for the Bayesian analysis (with normal prior for beta) of a spatial Poisson logit Normal model
@@ -335,11 +288,13 @@
     S <- as.vector(ifelse(data > 0, ((data/units.m)^lambda -1)/lambda, 0) ) - meanS
   }
   else{
-    if(is.numeric(mcmc.input$S.start)){
-      if(length(mcmc.input$S.start) != n) stop("dimension of mcmc-starting-value must equal dimension of data")
-      S <- as.vector(mcmc.input$S.start)
+    if(any(mcmc.input$S.start=="random")){
+      if(is.numeric(mcmc.input$S.start)){
+        if(length(mcmc.input$S.start) != n) stop("dimension of mcmc-starting-value must equal dimension of data")
+        S <- as.vector(mcmc.input$S.start)
+      }
+      else  stop(" S.start must be a vector of same dimension as data ")
     }
-    else  stop(" S.start must be a vector of same dimension as data ")
   }
   if(any(mcmc.input$Htrunc=="default")) Htrunc <- 2*data + 5 
   else {
@@ -349,10 +304,6 @@
   burn.in <- mcmc.input$burn.in
   thin <- mcmc.input$thin
   n.iter <- mcmc.input$n.iter
-  if(phi.prior == "fixed"){
-    phi.discrete <- phi
-    phi.prior <- "uniform"
-  }
   if(any(mcmc.input$phi.start=="default")) phi <- median(phi.discrete)
   else  phi <- mcmc.input$phi.start
   nmphi <-  length(phi.discrete)
@@ -365,20 +316,18 @@
     if(nmphi > 1 && pnorm((phi.discrete[nmphi] - phi.discrete[1])/(nmphi - 1), sd = sqrt(phi.scale)) > 0.975)
       print("Consider making the grid in phi.discrete more dense. The algorithm may have problems moving. ")
   }
+  messages.screen <- ifelse(messages.screen,1,0)
   ##                                         
   ## ---------- sampling ----------- ###### 
   cov.model.number <- cor.number(cov.model)
-  phi.prior.number <- phi.number(phi.prior)
-  if(is.null(phi)) {
-    if(phi.prior == "exponential")
-      stop("Must give the parameter in exponential prior-distribution for phi")
-    else e.mean <- 0
-  }
-  else e.mean <- phi
   if(is.null(ttvbetatt)) ttvbetatt <- matrix(0,beta.size,beta.size)
   n.sim <- floor(n.iter/thin)
-  Sdata <- as.double(as.vector(c(S, rep(0, (n.sim - 1) * n))))
-  phi.sample <- as.double(rep(phi, n.sim)) 
+  ## remeber this rather odd coding for telling that S.start is from the prior !!!
+  if(!any(mcmc.input$S.start=="random")) Sdata <- as.double(as.vector(c(rep(0, n.sim*n - 1),1)))
+  else Sdata <- as.double(as.vector(c(S, rep(0, (n.sim - 1) * n))))
+  phi.sample <- as.double(rep(phi, n.sim))
+  acc.rate <- rep(0,floor(n.iter/1000)+1)
+  acc.rate.phi <- rep(0,floor(n.iter/1000)+1)
   result <-  .C("mcmcrun5boxcox",
                 as.integer(n),
                 as.double(data),
@@ -388,23 +337,32 @@
                 as.integer(cov.model.number),
                 as.double(kappa),
                 as.double(tausq.rel),
-                as.double(distcoords),
+		as.double(coords[,1]),
+                as.double(coords[,2]),
                 as.double(S.scale),
                 as.double(phi.scale),
                 as.double(Htrunc),
                 as.integer(n.iter),
                 as.integer(thin),
                 as.integer(burn.in),
+                as.integer(messages.screen),
                 as.double(ss.sigma),
                 as.integer(df),
-                as.integer(phi.prior.number),
+                as.double(phi.prior),
                 as.double(phi.discrete),
                 as.integer(nmphi),
-                as.double(e.mean),
                 as.double(lambda),
                 Sdata = Sdata,
-                phi.sample = phi.sample, DUP=FALSE, PACKAGE = "geoRglm")[c("Sdata", "phi.sample")]
+                phi.sample = phi.sample, 
+		acc.rate = acc.rate, 
+		acc.rate.phi = acc.rate.phi, DUP=FALSE, PACKAGE = "geoRglm")[c("Sdata", "phi.sample","acc.rate","acc.rate.phi" )]
   attr(result$Sdata, "dim") <- c(n, n.sim)
+  if(nmphi>1) result$acc.rate <- as.data.frame(cbind(burn.in + seq(0,floor(n.iter/1000))*1000, result$acc.rate,result$acc.rate.phi))
+  else result$acc.rate <- as.data.frame(cbind(burn.in + seq(0,floor(n.iter/1000))*1000, result$acc.rate))
+  result$acc.rate.phi <- NULL
+  if(burn.in==0) result$acc.rate <- result$acc.rate[-1,]
+  if(nmphi>1) names(result$acc.rate) <- c("iter.numb", "Acc.rate", "Acc.rate.phi")
+  else names(result$acc.rate) <- c("iter.numb", "Acc.rate")
   cat(paste("MCMC performed: n.iter. = ", n.iter, "; thinning = ", thin, "; burn.in = ", burn.in, "\n"))
   return(result)
 }
@@ -542,6 +500,7 @@
         if(is.null(output$sim.posterior)) output$sim.posterior <- TRUE
         if(is.null(output$sim.predict)) output$sim.predict <- FALSE
         if(is.null(output$keep.mcmc.sim)) output$keep.mcmc.sim <- TRUE 
+	if(is.null(output$quantile)) output$quantile <- TRUE 
         if(is.null(output$inference)) output$inference <- TRUE
         if(is.null(output$messages.screen)) output$messages.screen <- TRUE        
         output <- output.glm.control(sim.posterior = output$sim.posterior,
@@ -564,8 +523,8 @@
   if(messages.screen) {
     cat(switch(as.character(trend.d)[1],
                  "cte" = "pois.krige.bayes: model with mean being constant",
-                 "1st" = "pois.krige.bayes: model with mean given by a 1st degree polinomial on the coordinates",
-                 "2nd" = "pois.krige.bayes: model with mean given by a 2nd degree polinomial on the coordinates",
+                 "1st" = "pois.krige.bayes: model with mean given by a 1st order polynomial on the coordinates",
+                 "2nd" = "pois.krige.bayes: model with mean given by a 2nd order polynomial on the coordinates",
                  "pois.krige.bayes: model with mean defined by covariates provided by the user"))
     cat("\n")
   }
@@ -668,21 +627,27 @@
                                cov.pars = c(sigmasq,phi), inv = TRUE, func.inv = "cholesky",
                                try.another.decomposition = FALSE)$inverse
     if(beta.prior != "fixed"){
-      ivtt <- invcov%*%trend.data
-      ittivtt <- solve.geoR(crossprod(trend.data, ivtt) + ttvbetatt)
+      ivtt <- invcov%*%trend.data     
+      if(beta.prior == "normal") ittivtt <- solve.geoR(crossprod(trend.data, ivtt) + solve(beta.var))
+      else ittivtt <- solve.geoR(crossprod(trend.data, ivtt))
       invcov <- invcov-ivtt%*%ittivtt%*%t(ivtt)
     }
   }
+  if((phi.prior == "fixed") & (sigmasq.prior != "fixed")){
+    phi.prior.prob <- 1
+    phi.discrete <- phi
+  }
+  else phi.prior.prob <-  prior$priors.info$phi$probs   
   ##
 ############----------PART 2 ------------##############################
 ############-----------MCMC -------------##############################
   ##
   if(sigmasq.prior == "fixed"){ 
     if(lambda == 0){ 
-      gauss.post <- mcmc.pois.log(data = data, units.m = units.m, meanS = mean.d, invcov=invcov, mcmc.input = mcmc.input)  
+      gauss.post <- mcmc.pois.log(data = data, units.m = units.m, meanS = mean.d, invcov=invcov, mcmc.input = mcmc.input, messages.screen=messages.screen)
     }
     else{
-      gauss.post <- mcmc.pois.boxcox(data=data, units.m=units.m, meanS=mean.d, invcov=invcov, mcmc.input=mcmc.input, lambda=lambda)
+      gauss.post <- mcmc.pois.boxcox(data=data, units.m=units.m, meanS=mean.d, invcov=invcov, mcmc.input=mcmc.input, messages.screen=messages.screen, lambda=lambda)
     }
   } 
   else {
@@ -690,42 +655,36 @@
     ## take care re-using gauss.post !
     if(beta.prior == "flat"){
       if(lambda == 0){ 
-        gauss.post <- mcmc.bayes.pois.log(data=data, units.m=units.m, trend=trend.data, mcmc.input=mcmc.input, cov.model=cov.model, 
-                                        kappa=kappa, tausq.rel = tausq.rel, distcoords=distdiag(coords.transf), 
-                                        ss.sigma = df.sigmasq*S2.prior, df = df.model, phi.prior = phi.prior,
-                                        phi.discrete = phi.discrete, phi = phi)
+        gauss.post <- mcmc.bayes.pois.log(data=data, units.m=units.m, trend=trend.data, mcmc.input=mcmc.input, messages.screen=messages.screen, cov.model=cov.model, 
+                                        kappa=kappa, tausq.rel = tausq.rel, coords=coords.transf, 
+                                        ss.sigma = df.sigmasq*S2.prior, df = df.model, phi.prior = phi.prior.prob,
+                                        phi.discrete = phi.discrete)
       }
       else{
-        gauss.post <- mcmc.bayes.pois.boxcox(data=data, units.m=units.m, trend=trend.data, mcmc.input=mcmc.input, cov.model=cov.model, 
-                                           kappa=kappa, tausq.rel = tausq.rel, distcoords=distdiag(coords.transf),
-                                           ss.sigma = df.sigmasq*S2.prior, df = df.model,  phi.prior = phi.prior,
-                                             phi.discrete = phi.discrete, phi = phi, lambda = lambda)
+        gauss.post <- mcmc.bayes.pois.boxcox(data=data, units.m=units.m, trend=trend.data, mcmc.input=mcmc.input, messages.screen=messages.screen, cov.model=cov.model, 
+                                           kappa=kappa, tausq.rel = tausq.rel, coords=coords.transf,
+                                           ss.sigma = df.sigmasq*S2.prior, df = df.model,  phi.prior = phi.prior.prob,
+                                             phi.discrete = phi.discrete, lambda = lambda)
       }
     }
     else{
       if(lambda == 0){ 
         gauss.post <- mcmc.bayes.conj.pois.log(data=data, units.m=units.m, meanS = mean.d, ttvbetatt = ttvbetatt, mcmc.input=mcmc.input,
-                                               cov.model=cov.model,  kappa=kappa, tausq.rel = tausq.rel,
-                                               distcoords=distdiag(coords.transf),  ss.sigma = df.sigmasq*S2.prior, df = df.model,
-                                               phi.prior = phi.prior, phi.discrete = phi.discrete, phi = phi)
+                                               messages.screen=messages.screen, cov.model=cov.model,  kappa=kappa, tausq.rel = tausq.rel,
+                                               coords=coords.transf,  ss.sigma = df.sigmasq*S2.prior, df = df.model,
+                                               phi.prior = phi.prior.prob, phi.discrete = phi.discrete,)
       }
       else{ 
         gauss.post <- mcmc.bayes.conj.pois.boxcox(data=data, units.m=units.m, meanS = mean.d, ttvbetatt = ttvbetatt,
-                                                  mcmc.input=mcmc.input, cov.model=cov.model,  kappa=kappa, tausq.rel = tausq.rel,
-                                                  distcoords=distdiag(coords.transf),  ss.sigma = df.sigmasq*S2.prior, df = df.model,
-                                                  phi.prior = phi.prior, phi.discrete = phi.discrete, phi = phi, lambda = lambda)
+                                                  mcmc.input=mcmc.input, messages.screen=messages.screen, cov.model=cov.model,  kappa=kappa, tausq.rel = tausq.rel,
+                                                  coords=coords.transf,  ss.sigma = df.sigmasq*S2.prior, df = df.model,
+                                                  phi.prior = phi.prior.prob, phi.discrete = phi.discrete, lambda = lambda)
       }
     }
     kb.results$posterior$phi$sample <- gauss.post$phi.sample
-    gauss.post <- gauss.post$Sdata
-  }
-  ## ######### removing junk #########################################
-  if(is.R()){
-    remove("ttvbetatt") 
-  }
-  else {
-    remove("ttvbetatt", frame = sys.nframe())
-  }  
+  }   
+  kb.results$posterior$acc.rate  <- gauss.post$acc.rate
+  gauss.post <- gauss.post$Sdata
   ##           
 ##############-------------PART 3----------######################
 ##############------------prediction-------######################
@@ -823,140 +782,141 @@
         }
       }
     }
-    if(is.R()) remove("temp.result")
-    else remove("temp.result", frame = sys.nframe())
+    remove("temp.result")
     if(do.prediction) {
       ##
       d0mat <- loccoords(coords, locations)
       loc.coincide <- (apply(d0mat < 1e-10, 2, sum) == 1)
-      ##
-      ##------- calculating medians and uncertainty
-      ##
-      temp.med <- apply(temp.pred$mean, 1, median)
-      temp.unc <- sqrt(apply(temp.pred$mean, 1, var) + apply(temp.pred$var, 1, median))
-      not.accurate <- (!loc.coincide)
-      diffe <- pmixed(temp.med, temp.pred,df.model)-0.5
-      temp.med.new <- temp.med[not.accurate]+0.1*(temp.med[not.accurate]+0.1) # to get started
-      inv.sl <- rep(0,ni)
-      parms.temp <- list()
-      while(any(not.accurate)){
-        parms.temp$mean<-temp.pred$mean[not.accurate,,drop=FALSE]
-        parms.temp$var<-temp.pred$var[not.accurate,,drop=FALSE]
-        diffe.new <- pmixed(temp.med.new, parms.temp,df.model)-0.5
-        inv.sl[not.accurate] <- (temp.med.new-temp.med[not.accurate])/(diffe.new-diffe[not.accurate])
-        temp.med[not.accurate] <- ifelse(abs(diffe[not.accurate]) > abs(diffe.new), temp.med.new,temp.med[not.accurate])
-        diffe[not.accurate] <- ifelse(abs(diffe[not.accurate]) > abs(diffe.new), diffe.new, diffe[not.accurate])
-        not.accurate[not.accurate] <- ifelse(abs(diffe[not.accurate])>0.0005, TRUE, FALSE)
-        temp.med.new <- temp.med[not.accurate] - diffe[not.accurate]*inv.sl[not.accurate]
-      }
-      temp.upper <- qnorm(rep(0.975, ni), mean = temp.med, sd = temp.unc)
-      not.accurate <- (!loc.coincide)
-      diffe <- pmixed(temp.upper, temp.pred,df.model)-0.975
-      temp.upper.new <- temp.upper[not.accurate]+0.5*(temp.upper[not.accurate]+0.5) # to get started
-      inv.sl <- rep(0,ni)      
-      while(any(not.accurate)){
-        parms.temp$mean<-temp.pred$mean[not.accurate,,drop=FALSE]
-        parms.temp$var<-temp.pred$var[not.accurate,,drop=FALSE]
-        diffe.new <- pmixed(temp.upper.new, parms.temp,df.model)-0.975
-        inv.sl[not.accurate] <- (temp.upper.new-temp.upper[not.accurate])/(diffe.new-diffe[not.accurate])
-        temp.upper[not.accurate] <- ifelse(abs(diffe[not.accurate]) > abs(diffe.new), temp.upper.new,temp.upper[not.accurate])
-        diffe[not.accurate] <- ifelse(abs(diffe[not.accurate]) > abs(diffe.new), diffe.new, diffe[not.accurate])
-        not.accurate[not.accurate] <- ifelse(abs(diffe[not.accurate])>0.0005, TRUE, FALSE)
-        temp.upper.new <- temp.upper[not.accurate] - diffe[not.accurate]*inv.sl[not.accurate]
-      }      
-      temp.lower <- qnorm(rep(0.025, ni), mean = temp.med, sd = temp.unc)
-      not.accurate <- (!loc.coincide)
-      diffe <- pmixed(temp.lower, temp.pred,df.model)-0.025
-      temp.lower.new <- temp.lower[not.accurate]+0.5*(temp.lower[not.accurate]+0.5) # to get started
-      inv.sl <- rep(0,ni)
-      while(any(not.accurate)){
-        parms.temp$mean<-temp.pred$mean[not.accurate,,drop=FALSE]
-        parms.temp$var<-temp.pred$var[not.accurate,,drop=FALSE]
-        diffe.new <- pmixed(temp.lower.new,parms.temp,df.model)-0.025
-        inv.sl[not.accurate] <- (temp.lower.new-temp.lower[not.accurate])/(diffe.new-diffe[not.accurate])
-        temp.lower[not.accurate] <- ifelse(abs(diffe[not.accurate]) > abs(diffe.new), temp.lower.new,temp.lower[not.accurate])
-        diffe[not.accurate] <- ifelse(abs(diffe[not.accurate]) > abs(diffe.new), diffe.new, diffe[not.accurate])
-        not.accurate[not.accurate] <- ifelse(abs(diffe[not.accurate])>0.0005, TRUE, FALSE)
-        temp.lower.new <- temp.lower[not.accurate] - diffe[not.accurate]*inv.sl[not.accurate]
-      }
-      if(any(loc.coincide)){
-        temp.med[loc.coincide] <- apply(temp.pred$mean[loc.coincide,,drop=FALSE], 1, median)
-        temp.upper[loc.coincide] <- apply(temp.pred$mean[loc.coincide,,drop=FALSE], 1, quantile, probs = 0.975)
-        temp.lower[loc.coincide] <- apply(temp.pred$mean[loc.coincide,,drop=FALSE], 1, quantile, probs = 0.025) 
-      }
-      kb.results$predictive$median <- BC.inv(temp.med,lambda)
-      kb.results$predictive$uncertainty <- (BC.inv(temp.upper,lambda) - BC.inv(temp.lower,lambda))/4
-      ## calculating quantiles
-      if(is.null(quantile.estimator)) {
-        kb.results$predictive$quantiles <- as.data.frame(cbind(BC.inv(temp.lower,lambda), BC.inv(temp.med,lambda), BC.inv(temp.upper,lambda)))
-      }
-      if(is.numeric(quantile.estimator)) {
-        nmq <- length(quantile.estimator)
-        if(nmq > 1) {
-          temp.quan <- matrix(NA, ni, nmq)
-          dig <- rep(3, nmq)
-          for(i in 1:nmq) {
-            while(quantile.estimator[i] != round(quantile.estimator[i], digits = dig[i])) dig[i] <-dig[i] + 1
-            temp.quan[, i] <- qnorm(rep(quantile.estimator[i], ni), mean = temp.med, sd = temp.unc)
-            if(any(loc.coincide)) temp.quan[loc.coincide, i] <- temp.med[loc.coincide]
+      if((is.logical(quantile.estimator) && (quantile.estimator)) || (is.numeric(quantile.estimator))){
+        ##
+        ##------- calculating medians and uncertainty
+        ##
+        temp.med <- apply(temp.pred$mean, 1, median)
+        temp.unc <- sqrt(apply(temp.pred$mean, 1, var) + apply(temp.pred$var, 1, median))
+        not.accurate <- (!loc.coincide)
+        diffe <- pmixed(temp.med, temp.pred,df.model)-0.5
+        temp.med.new <- temp.med[not.accurate]+0.1*(temp.med[not.accurate]+0.1) # to get started
+        inv.sl <- rep(0,ni)
+        parms.temp <- list()
+        while(any(not.accurate)){
+          parms.temp$mean<-temp.pred$mean[not.accurate,,drop=FALSE]
+          parms.temp$var<-temp.pred$var[not.accurate,,drop=FALSE]
+          diffe.new <- pmixed(temp.med.new, parms.temp,df.model)-0.5
+          inv.sl[not.accurate] <- (temp.med.new-temp.med[not.accurate])/(diffe.new-diffe[not.accurate])
+          temp.med[not.accurate] <- ifelse(abs(diffe[not.accurate]) > abs(diffe.new), temp.med.new,temp.med[not.accurate])
+          diffe[not.accurate] <- ifelse(abs(diffe[not.accurate]) > abs(diffe.new), diffe.new, diffe[not.accurate])
+          not.accurate[not.accurate] <- ifelse(abs(diffe[not.accurate])>0.0005, TRUE, FALSE)
+          temp.med.new <- temp.med[not.accurate] - diffe[not.accurate]*inv.sl[not.accurate]
+        }
+        temp.upper <- qnorm(rep(0.975, ni), mean = temp.med, sd = temp.unc)
+        not.accurate <- (!loc.coincide)
+        diffe <- pmixed(temp.upper, temp.pred,df.model)-0.975
+        temp.upper.new <- temp.upper[not.accurate]+0.5*(temp.upper[not.accurate]+0.5) # to get started
+        inv.sl <- rep(0,ni)      
+        while(any(not.accurate)){
+          parms.temp$mean<-temp.pred$mean[not.accurate,,drop=FALSE]
+          parms.temp$var<-temp.pred$var[not.accurate,,drop=FALSE]
+          diffe.new <- pmixed(temp.upper.new, parms.temp,df.model)-0.975
+          inv.sl[not.accurate] <- (temp.upper.new-temp.upper[not.accurate])/(diffe.new-diffe[not.accurate])
+          temp.upper[not.accurate] <- ifelse(abs(diffe[not.accurate]) > abs(diffe.new), temp.upper.new,temp.upper[not.accurate])
+          diffe[not.accurate] <- ifelse(abs(diffe[not.accurate]) > abs(diffe.new), diffe.new, diffe[not.accurate])
+          not.accurate[not.accurate] <- ifelse(abs(diffe[not.accurate])>0.0005, TRUE, FALSE)
+          temp.upper.new <- temp.upper[not.accurate] - diffe[not.accurate]*inv.sl[not.accurate]
+        }      
+        temp.lower <- qnorm(rep(0.025, ni), mean = temp.med, sd = temp.unc)
+        not.accurate <- (!loc.coincide)
+        diffe <- pmixed(temp.lower, temp.pred,df.model)-0.025
+        temp.lower.new <- temp.lower[not.accurate]+0.5*(temp.lower[not.accurate]+0.5) # to get started
+        inv.sl <- rep(0,ni)
+        while(any(not.accurate)){
+          parms.temp$mean<-temp.pred$mean[not.accurate,,drop=FALSE]
+          parms.temp$var<-temp.pred$var[not.accurate,,drop=FALSE]
+          diffe.new <- pmixed(temp.lower.new,parms.temp,df.model)-0.025
+          inv.sl[not.accurate] <- (temp.lower.new-temp.lower[not.accurate])/(diffe.new-diffe[not.accurate])
+          temp.lower[not.accurate] <- ifelse(abs(diffe[not.accurate]) > abs(diffe.new), temp.lower.new,temp.lower[not.accurate])
+          diffe[not.accurate] <- ifelse(abs(diffe[not.accurate]) > abs(diffe.new), diffe.new, diffe[not.accurate])
+          not.accurate[not.accurate] <- ifelse(abs(diffe[not.accurate])>0.0005, TRUE, FALSE)
+          temp.lower.new <- temp.lower[not.accurate] - diffe[not.accurate]*inv.sl[not.accurate]
+        }
+        if(any(loc.coincide)){
+          temp.med[loc.coincide] <- apply(temp.pred$mean[loc.coincide,,drop=FALSE], 1, median)
+          temp.upper[loc.coincide] <- apply(temp.pred$mean[loc.coincide,,drop=FALSE], 1, quantile, probs = 0.975)
+          temp.lower[loc.coincide] <- apply(temp.pred$mean[loc.coincide,,drop=FALSE], 1, quantile, probs = 0.025) 
+        }
+        kb.results$predictive$median <- BC.inv(temp.med,lambda)
+        kb.results$predictive$uncertainty <- (BC.inv(temp.upper,lambda) - BC.inv(temp.lower,lambda))/4
+        ## calculating quantiles
+        if(is.logical(quantile.estimator) && (quantile.estimator)){
+          kb.results$predictive$quantiles <- as.data.frame(cbind(BC.inv(temp.lower,lambda), BC.inv(temp.med,lambda), BC.inv(temp.upper,lambda)))
+        }
+        if(is.numeric(quantile.estimator)){
+          nmq <- length(quantile.estimator)
+          if(nmq > 1) {
+            temp.quan <- matrix(NA, ni, nmq)
+            dig <- rep(3, nmq)
+            for(i in 1:nmq) {
+              while(quantile.estimator[i] != round(quantile.estimator[i], digits = dig[i])) dig[i] <-dig[i] + 1
+              temp.quan[, i] <- qnorm(rep(quantile.estimator[i], ni), mean = temp.med, sd = temp.unc)
+              if(any(loc.coincide)) temp.quan[loc.coincide, i] <- temp.med[loc.coincide]
+              not.accurate <- (!loc.coincide)
+              diffe <- pmixed(temp.quan[,i], temp.pred,df.model)-quantile.estimator[i]
+              numb <- 0.1+abs(quantile.estimator[i]-0.5)
+              temp.quan.new <- temp.quan[not.accurate,i]+numb*(temp.quan[not.accurate,i]+numb) # to get started
+              inv.sl <- rep(0,ni)
+              while(any(not.accurate)) {
+                parms.temp$mean <-temp.pred$mean[not.accurate,,drop=FALSE]
+                parms.temp$var <-temp.pred$var[not.accurate,,drop=FALSE]
+                diffe.new <- pmixed(temp.quan.new,parms.temp,df.model)-quantile.estimator[i]
+                inv.sl[not.accurate] <- (temp.quan.new-temp.quan[not.accurate, i])/(diffe.new-diffe[not.accurate])
+                temp.quan[not.accurate, i] <- ifelse(abs(diffe[not.accurate]) > abs(diffe.new), temp.quan.new,temp.quan[not.accurate, i])
+                diffe[not.accurate] <- ifelse(abs(diffe[not.accurate]) > abs(diffe.new), diffe.new, diffe[not.accurate])
+                not.accurate[not.accurate] <- ifelse(abs(diffe[not.accurate])>0.0005, TRUE, FALSE)
+                temp.quan.new <- temp.quan[not.accurate, i] - diffe[not.accurate]*inv.sl[not.accurate]
+              }            
+              if(any(loc.coincide)){
+                temp.quan[loc.coincide,i] <- apply(temp.pred$mean[loc.coincide,,drop=FALSE], 1, quantile, probs = quantile.estimator[i])
+              }
+            }
+            kb.results$predictive$quantiles <- as.data.frame(BC.inv(temp.quan,lambda))
+          }
+          else {
+            dig <- 3
+            while(quantile.estimator != round(quantile.estimator,digits = dig)) dig <- dig + 1
+            temp.quan <- qnorm(rep(quantile.estimator,ni), mean = temp.med, sd = temp.unc)
             not.accurate <- (!loc.coincide)
-            diffe <- pmixed(temp.quan[,i], temp.pred,df.model)-quantile.estimator[i]
-            numb <- 0.1+abs(quantile.estimator[i]-0.5)
-            temp.quan.new <- temp.quan[not.accurate,i]+numb*(temp.quan[not.accurate,i]+numb) # to get started
+            diffe <- pmixed(temp.quan, temp.pred,df.model)-quantile.estimator
+            numb <- 0.1+abs(quantile.estimator-0.5)
+            temp.quan.new <- temp.quan[not.accurate]+numb*(temp.quan[not.accurate]+numb) # to get started
             inv.sl <- rep(0,ni)
             while(any(not.accurate)) {
               parms.temp$mean <-temp.pred$mean[not.accurate,,drop=FALSE]
               parms.temp$var <-temp.pred$var[not.accurate,,drop=FALSE]
-              diffe.new <- pmixed(temp.quan.new,parms.temp,df.model)-quantile.estimator[i]
-              inv.sl[not.accurate] <- (temp.quan.new-temp.quan[not.accurate, i])/(diffe.new-diffe[not.accurate])
-              temp.quan[not.accurate, i] <- ifelse(abs(diffe[not.accurate]) > abs(diffe.new), temp.quan.new,temp.quan[not.accurate, i])
+              diffe.new <- pmixed(temp.quan.new,parms.temp,df.model)-quantile.estimator
+              inv.sl[not.accurate] <- (temp.quan.new-temp.quan[not.accurate])/(diffe.new-diffe[not.accurate])
+              temp.quan[not.accurate] <- ifelse(abs(diffe[not.accurate]) > abs(diffe.new), temp.quan.new,temp.quan[not.accurate])
               diffe[not.accurate] <- ifelse(abs(diffe[not.accurate]) > abs(diffe.new), diffe.new, diffe[not.accurate])
               not.accurate[not.accurate] <- ifelse(abs(diffe[not.accurate])>0.0005, TRUE, FALSE)
-              temp.quan.new <- temp.quan[not.accurate, i] - diffe[not.accurate]*inv.sl[not.accurate]
-            }            
-            if(any(loc.coincide)){
-              temp.quan[loc.coincide,i] <- apply(temp.pred$mean[loc.coincide,,drop=FALSE], 1, quantile, probs = quantile.estimator[i])
+              temp.quan.new <- temp.quan[not.accurate] - diffe[not.accurate]*inv.sl[not.accurate]
             }
+            if(any(loc.coincide)){
+              temp.quan[loc.coincide] <- apply(temp.pred$mean[loc.coincide,,drop=FALSE], 1, quantile, probs = quantile.estimator)
+            }
+            kb.results$predictive$quantiles <- as.vector(BC.inv(temp.quan,lambda))
           }
-          kb.results$predictive$quantiles <- as.data.frame(BC.inv(temp.quan,lambda))
         }
-        else {
-          dig <- 3
-          while(quantile.estimator != round(quantile.estimator,digits = dig)) dig <- dig + 1
-          temp.quan <- qnorm(rep(quantile.estimator,ni), mean = temp.med, sd = temp.unc)
-          not.accurate <- (!loc.coincide)
-          diffe <- pmixed(temp.quan, temp.pred,df.model)-quantile.estimator
-          numb <- 0.1+abs(quantile.estimator-0.5)
-          temp.quan.new <- temp.quan[not.accurate]+numb*(temp.quan[not.accurate]+numb) # to get started
-          inv.sl <- rep(0,ni)
-          while(any(not.accurate)) {
-            parms.temp$mean <-temp.pred$mean[not.accurate,,drop=FALSE]
-            parms.temp$var <-temp.pred$var[not.accurate,,drop=FALSE]
-            diffe.new <- pmixed(temp.quan.new,parms.temp,df.model)-quantile.estimator
-            inv.sl[not.accurate] <- (temp.quan.new-temp.quan[not.accurate])/(diffe.new-diffe[not.accurate])
-            temp.quan[not.accurate] <- ifelse(abs(diffe[not.accurate]) > abs(diffe.new), temp.quan.new,temp.quan[not.accurate])
-            diffe[not.accurate] <- ifelse(abs(diffe[not.accurate]) > abs(diffe.new), diffe.new, diffe[not.accurate])
-            not.accurate[not.accurate] <- ifelse(abs(diffe[not.accurate])>0.0005, TRUE, FALSE)
-            temp.quan.new <- temp.quan[not.accurate] - diffe[not.accurate]*inv.sl[not.accurate]
-          }
-          if(any(loc.coincide)){
-            temp.quan[loc.coincide] <- apply(temp.pred$mean[loc.coincide,,drop=FALSE], 1, quantile, probs = quantile.estimator)
-          }
-          kb.results$predictive$quantiles <- as.vector(BC.inv(temp.quan,lambda))
+        if(is.logical(quantile.estimator) && (quantile.estimator)){
+          qname <- rep(0, 3)
+          qname[1] <- paste("q0.025", sep = "")
+          qname[2] <- paste("q0.5", sep = "")
+          qname[3] <- paste("q0.975", sep = "")
+          names(kb.results$predictive$quantiles) <- qname
         }
-      }
-      if(is.null(quantile.estimator)){
-        qname <- rep(0, 3)
-        qname[1] <- paste("q0.025", sep = "")
-        qname[2] <- paste("q0.5", sep = "")
-        qname[3] <- paste("q0.975", sep = "")
-        names(kb.results$predictive$quantiles) <- qname
-      }
-      if(is.numeric(quantile.estimator) && nmq > 1) {
-        qname <- rep(0, length(quantile.estimator))
-        for(i in 1:length(quantile.estimator))
-          qname[i] <- paste("q", 100 * quantile.estimator[i], sep = "")
-        names(kb.results$predictive$quantiles) <- qname
+        if(is.numeric(quantile.estimator) && nmq > 1) {
+          qname <- rep(0, length(quantile.estimator))
+          for(i in 1:length(quantile.estimator))
+            qname[i] <- paste("q", 100 * quantile.estimator[i], sep = "")
+          names(kb.results$predictive$quantiles) <- qname
+        }
       }
       ##
       ## ------ probability estimators
@@ -1047,8 +1007,8 @@
   kb.results$mcmc.input <- mcmc.input
   kb.results$.Random.seed <- seed
   kb.results$call <- call.fc
-  if(is.R()) attr(kb.results, "class") <- c("krige.bayes", "kriging")
-  else attr(kb.results, "class") <- setOldClass(c("krige.bayes", "kriging"))
+  ##attr(kb.results, "class") <- c("krige.bayes", "kriging")
+  attr(kb.results, "class") <- c("pois.krige.bayes")
   if(messages.screen) cat("pois.krige.bayes: done!\n")
   return(kb.results)
 }
