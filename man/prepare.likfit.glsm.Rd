@@ -30,11 +30,6 @@ prepare.likfit.glsm(mcmc.output, use.intensity = FALSE)
   An object containing the sample and the approximating density to be used in \code{\link{likfit.glsm}}.
 }
 
-\references{  
-  Further information about \bold{geoRglm} can be found at:\cr
-  \url{http://www.maths.lancs.ac.uk/~christen/geoRglm}.
-}
-
 \author{
   Ole F. Christensen \email{olefc@birc.au.dk}, \cr
   Paulo J. Ribeiro Jr. \email{Paulo.Ribeiro@est.ufpr.br}.

@@ -49,7 +49,7 @@ Springer Verlag, 43-86.
 Christensen, O. F. and Ribeiro Jr, P. J. (2002). geoRglm - a package for generalised linear spatial models. \emph{R News}, 2(2), 26-28.
   
 Further information about \bold{geoRglm} can be found at:\cr
-\url{http://www.maths.lancs.ac.uk/~christen/geoRglm}.
+\url{http://www.daimi.au.dk/~olefc/geoRglm}.
 }
 
 \keyword{datasets}

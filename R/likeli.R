@@ -1,6 +1,5 @@
 
-"prepare.likfit.glsm" <-
-  function(mcmc.output, use.intensity = FALSE)
+"prepare.likfit.glsm" <- function(mcmc.output, use.intensity = FALSE)
 {
 ### this is for the glsm.mcmc() function
   ##
@@ -99,7 +98,7 @@
     betanew <- beta 
     sigmasqnew <- sigmasq 
   } 
-  return(list(betanew=betanew, sigmasqnew=sigmasqnew, flat = flat.message))  
+  return(list(betanew=betanew, sigmasqnew=sigmasqnew, flat = flat.message))
 }
 
 "maxim.aux1" <-
@@ -335,11 +334,11 @@
     }
     if(another.boxcox){
       lik.optim <- optim(par = ini, fn = lik.sim.boxcox, method = "L-BFGS-B",lower = lower.optim, upper = upper.optim,
-                         fp = fixed.values, ip = ip, temp.list = temp.list)
+                         fp = fixed.values, ip = ip, temp.list = temp.list, ...)
     }
     else{
       lik.optim <- optim(par = ini, fn = lik.sim, method = "L-BFGS-B",lower = lower.optim, upper = upper.optim,
-                         fp = fixed.values, ip = ip, temp.list = temp.list)
+                         fp = fixed.values, ip = ip, temp.list = temp.list, ...)
     }
     ##
     if(messages.screen) 
@@ -370,7 +369,7 @@
   else{
     siv <- varcov.spatial(coords = coords, cov.model = cov.model, kappa = kappa, nugget = nugget.rel, cov.pars = c(1, phi),
                           only.inv.lower.diag = TRUE)
-  }  
+  }
   if(another.boxcox){
     if(lambda == 0){
       result <- maxim.aux1(S = log(mcmc.obj$mu), invcov = siv, trend = temp.list$xmat, log.f.sim = temp.list$log.f.sim - apply(log(mcmc.obj$mu),2,sum)*(lambda-1), messages.screen=messages.screen)
@@ -389,15 +388,27 @@
     results <- list(family=mcmc.obj$family, link=mcmc.obj$link, cov.model = cov.model, beta = result$beta, cov.pars = c(result$sigmasq, phi), nugget.rel = nugget.rel,
                     kappa = kappa, aniso.pars = aniso.pars, lambda = mcmc.obj$lambda, trend = trend, npars=npars, loglik = loglik.max, call = call.fc)
   }
-  par.su <- data.frame(status=rep(-9, beta.size + 4))
-  par.su$status <- c(rep("estimated", beta.size+2), ifelse(c(fix.nugget.rel,fix.lambda),"fixed", "estimated"))
-  if(cov.model == "pure.nugget"){
-    par.su$status[beta.size+2] <- ""
-  }
-  par.su$values <- round(c(results$beta, results$cov.pars, results$nugget.rel, results$lambda), dig=4)
+  ##
   if(beta.size == 1) beta.name <- "beta"
   else beta.name <- paste("beta", 0:(beta.size-1), sep="")
-  row.names(par.su) <- c(beta.name, "sigmasq", "phi", "tausq.rel", "lambda")
+  if(mcmc.obj$family == "poisson"){
+    par.su <- data.frame(status=rep(-9, beta.size + 4))
+    par.su$status <- c(rep("estimated", beta.size+2), ifelse(c(fix.nugget.rel,fix.lambda),"fixed", "estimated"))
+    if(cov.model == "pure.nugget"){
+      par.su$status[beta.size+2] <- ""
+    }
+    par.su$values <- round(c(results$beta, results$cov.pars, results$nugget.rel, results$lambda), dig=4)
+    row.names(par.su) <- c(beta.name, "sigmasq", "phi", "tausq.rel", "lambda")
+  }
+  else{  ### binomial distribution so far only includes the logit-link. Therefore no transformation parameter
+    par.su <- data.frame(status=rep(-9, beta.size + 3))
+    par.su$status <- c(rep("estimated", beta.size+2), ifelse(fix.nugget.rel,"fixed"))
+    if(cov.model == "pure.nugget"){
+      par.su$status[beta.size+2] <- ""
+    }
+    par.su$values <- round(c(results$beta, results$cov.pars, results$nugget.rel), dig=4)
+    row.names(par.su) <- c(beta.name, "sigmasq", "phi", "tausq.rel")
+  }
   results$parameters.summary <- par.su
   class(results) <- "likGLSM"
   return(results)

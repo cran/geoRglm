@@ -62,15 +62,18 @@ likfit.glsm(mcmc.obj, trend = mcmc.obj$trend, cov.model = "matern",
     The auxiliary function \code{\link[geoR]{pars.limits()}} is used to set the limits.  }
   \item{messages}{logical. Indicates whether status messages should be printed on the screen (or output device)
     while the function is running.  }
-  \item{\dots}{additional parameters to be passed to the minimization
+  \item{\dots}{additional parameters to be passed to the optimisation
     function. Typically  arguments of the type \code{control()} which controls the
-    behavior of the minimization algorithm. For further details, see the documentation 
+    behavior of the optimization algorithm. For further details, see the documentation 
     for the minimization function \code{\link{optim}}.  }
 }
 
 \details{
 This function estimates the parameters in the Poisson/Binomial normal
 model, using a Monte Carlo approximation to the likelihood. Further details can be found in Christensen (2004).
+
+Parameter estimation is done numerically using the \R function
+\code{\link{optim}} with box-constraints, i.e. \code{method="L-BFGS-B"}.
 
 Lower and upper limits for parameter values can be specified using the function \code{pars.limits()}.
 For example, including \code{limits = pars.limits(phi=c(0, 10))} in the function call
@@ -123,7 +126,7 @@ Summary and print methods for summarising and printing the output also exist.
   Journal of computational and graphical statistics \bold{13} 702-718.
    
   Further information about \bold{geoRglm} can be found at:\cr
-  \url{http://www.maths.lancs.ac.uk/~christen/geoRglm}.
+  \url{http://www.daimi.au.dk/~olefc/geoRglm}.
 }
 
 \author{
@@ -163,9 +166,11 @@ mcmcobj.5 <- prepare.likfit.glsm(outmcmc.5)
 lik.5 <- likfit.glsm(mcmcobj.5, ini.phi = 0.4, fix.nugget.rel = TRUE)
 print(lik.5)
 summary(lik.5)
+data(b50)
+b9 <- list(data=b50$data[1:9],coords=b50$coords[1:9,])
 trend5 <- 1:9-5
-model5 <- list(cov.pars=c(0.1, 1), beta=c(1.2,0),family="poisson",trend=~trend5)
-outmcmc5 <- glsm.mcmc(y9, model= model5, mcmc.input = mcmc.5)  
+model5 <- list(cov.pars=c(0.1, 1), beta=c(1.2,0),family="binomial",trend=~trend5)
+outmcmc5 <- glsm.mcmc(b9, model= model5, mcmc.input = mcmc.5)  
 mcmcobj5 <- prepare.likfit.glsm(outmcmc5)   
 lik5 <- likfit.glsm(mcmcobj5, trend=model5$trend, ini.phi = 1,
                     fix.nugget.rel = TRUE)

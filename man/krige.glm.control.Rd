@@ -81,11 +81,6 @@ krige.glm.control(type.krige = "sk", trend.d = "cte", trend.l = "cte",
   function. 
 }
 
-\references{
-Further information about \bold{geoRglm} can be found at:\cr
-  \url{http://www.maths.lancs.ac.uk/~christen/geoRglm}.
-}
-
 \author{
   Ole F. Christensen \email{olefc@birc.au.dk}, \cr
   Paulo J. Ribeiro Jr. \email{Paulo.Ribeiro@est.ufpr.br}.

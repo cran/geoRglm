@@ -7,7 +7,8 @@
 #define Real double
 
 
-/* OFC: Updated 15 August 2002 */
+/* OFC: Updated 18 January 2005 */
+
 
 
 Real geoRmatern(Real uphi, Real kappa)
@@ -42,15 +43,15 @@ Real corrfctvalue(Real phi, Real kappa, Real h, Integer cornr)
      
      Correlation functions implemented and their numbers
      
-     1: PURE NUGGET
-     2: EXPONENTIAL
-     3: SPHERICAL
-     4: GAUSSIAN
-     5: WAVE (hole effect)
-     6: CUBIC
-     7: POWER
-     8: POWERED EXPONENTIAL
-     9: CAUCHY
+      1: PURE NUGGET
+      2: EXPONENTIAL
+      3: SPHERICAL
+      4: GAUSSIAN
+      5: WAVE (hole effect)
+      6: CUBIC
+      7: POWER
+      8: POWERED EXPONENTIAL
+      9: CAUCHY
      10: GNEITING
      11: CIRCULAR
      12: MATERN
@@ -60,7 +61,10 @@ Real corrfctvalue(Real phi, Real kappa, Real h, Integer cornr)
      "cor.number"
   */
   
-  Real hphi, hphi2, hphi4;
+  Real hphi; 
+  Real hphi2;
+  Real hphi4;
+
   if(h==0) return 1;
   else{  
     hphi  = h/phi ;
@@ -81,7 +85,7 @@ Real corrfctvalue(Real phi, Real kappa, Real h, Integer cornr)
       return exp(-(hphi * hphi)) ;
       break;
     case 5: /* wave (hole effect) */
-      return hphi*sin(hphi) ;
+      return sin(hphi)/hphi ;
       break;
     case 6: /* cubic */
       if (h < phi){
@@ -103,8 +107,9 @@ Real corrfctvalue(Real phi, Real kappa, Real h, Integer cornr)
       return R_pow((1 + (hphi * hphi)), (-kappa)) ;
       break;
     case 10:  /* gneiting */
-      hphi4 = 1 - hphi;
-      if (hphi4 > 0) hphi4 = R_pow(hphi4, 8);
+      hphi = 0.301187465825 * hphi ;
+      hphi4 = 1 - hphi ;
+      if (hphi4 > 0) hphi4 = R_pow(hphi4, 8) ;
       else hphi4 = 0 ;
       hphi2 = hphi * hphi ;
       return (1 + 8 * hphi + 25 * hphi2 + 32 * (hphi2 * hphi)) * hphi4 ;
@@ -129,5 +134,4 @@ Real corrfctvalue(Real phi, Real kappa, Real h, Integer cornr)
     }
   }
 }
-
 

@@ -67,11 +67,6 @@ output.glm.control(sim.posterior, sim.predict, keep.mcmc.sim, quantile,
   A list with processed arguments to be passed to the main function.
 }
 
-\references{ 
-  Further information about \bold{geoRglm} can be found at:\cr
-  \url{http://www.maths.lancs.ac.uk/~christen/geoRglm}.
-}
-
 \author{
   Ole F. Christensen \email{olefc@birc.au.dk}, \cr
   Paulo J. Ribeiro Jr. \email{Paulo.Ribeiro@est.ufpr.br}.

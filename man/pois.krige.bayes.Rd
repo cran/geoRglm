@@ -214,7 +214,7 @@ the guess is too low, it is adjusted upwards, and vise verse.
 
 \references{
 Further information about \bold{geoRglm} can be found at:\cr
-  \url{http://www.maths.lancs.ac.uk/~christen/geoRglm}.
+  \url{http://www.daimi.au.dk/~olefc/geoRglm}.
 }
 
 \author{

@@ -99,7 +99,7 @@ and Langevin-type Markov chain Monte Carlo.
 \emph{Research report R-00-2009}, Aalborg University.
 
   Further information about \bold{geoRglm} can be found at:\cr
-  \url{http://www.maths.lancs.ac.uk/~christen/geoRglm}.
+  \url{http://www.daimi.au.dk/~olefc/geoRglm}.
 }
 
 \author{

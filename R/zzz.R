@@ -11,10 +11,10 @@
   }
   library.dynam("geoRglm", package=pkg, lib.loc=lib)
   if(messages.screen){
-    pkg.info <- packageDescription("geoRglm", lib.loc = lib, fields=c("Title","Version","Date"))
-    cat(pkg.info$Title)
+    pkg.info <- drop(read.dcf(file=system.file("DESCRIPTION", package="geoRglm"), fields=c("Title","Version","Date")))
+    cat(pkg.info["Title"])
     cat("\n")
-    cat(paste("geoRglm version ", pkg.info$Version, " (", pkg.info$Date, ") is now loaded\n", sep=""))
+    cat(paste("geoRglm version ", pkg.info["Version"], " (", pkg.info["Date"], ") is now loaded\n", sep=""))
     cat("-----------------------------------------------------------\n")
     cat("\n")
   }

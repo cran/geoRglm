@@ -50,7 +50,7 @@ proflik.glsm(mcmc.obj, obj.likfit.glsm, phi.values, nugget.rel.values,
 
 \references{
   Further information about \bold{geoRglm} can be found at:\cr
-  \url{http://www.maths.lancs.ac.uk/~christen/geoRglm}.
+  \url{http://www.daimi.au.dk/~olefc/geoRglm}.
 }
 
 \author{
