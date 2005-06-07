@@ -3,7 +3,6 @@
 
 \alias{prepare.likfit.glsm}
 
-\alias{prepare.lik.sim}
 
 \title{Prepare for Monte Carlo MLE}
 

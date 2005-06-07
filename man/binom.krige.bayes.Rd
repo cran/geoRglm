@@ -1,8 +1,8 @@
 \name{binom.krige.bayes}
 
 \alias{binom.krige.bayes}
-\alias{mcmc.bayes.binom.logit}
-\alias{mcmc.bayes.conj.binom.logit}
+\alias{.mcmc.bayes.binom.logit}
+\alias{.mcmc.bayes.conj.binom.logit}
 
 %- Also NEED an `\alias' for EACH other topic documented here.
 
@@ -285,7 +285,8 @@ prior4.b9 <- prior.glm.control(beta.prior = "flat", phi.prior = "fixed", phi = 2
 mcmc4.b9 <- mcmc.control(S.scale = 0.2, thin = 1, n.iter =10)
 run4.b9 <- binom.krige.bayes(b9, prior = prior4.b9, mcmc.input =
 mcmc4.b9, locations = pred.grid, output = output.glm.control(sim.predict
-= TRUE))  }
+= TRUE))
+}
 }
 
 \keyword{spatial}

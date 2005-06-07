@@ -1,10 +1,10 @@
 \name{pois.krige}
 
 \alias{pois.krige}
-\alias{mcmc.aux}
-\alias{mcmc.boxcox.aux}
-\alias{mcmc.pois.log}
-\alias{mcmc.pois.boxcox}
+\alias{.mcmc.aux}
+\alias{.mcmc.boxcox.aux}
+\alias{.mcmc.pois.log}
+\alias{.mcmc.pois.boxcox}
 
 
 
@@ -136,7 +136,6 @@ data(p50)
 test <- pois.krige(p50, krige = list(cov.pars = c(1,1), beta = 1),
       mcmc.input = mcmc.control(S.scale = 0.2, thin = 1))
 plot(log(test$intensity[45,]), type = "l")
-\dontshow{if(!("package:stats" \%in\% search())) require("ts")}
 acf(log(test$intensity[45,]), type = "correlation", plot = TRUE)
 \dontrun{# Now we make prediction (we decide to thin to every 10, which is the default),
 # where we now use S.scale = 0.55.

@@ -52,8 +52,8 @@
   for(i in seq(along=phi.values)){
     for(j in seq(along=nugget.rel.values)){
       ini <- c(phi.values[i],nugget.rel.values[j])      
-      if(est.boxcox) lik.val[i,j] <- lik.sim.boxcox(pars=ini, fp = fixed.values, ip = ip, temp.list = temp.list)
-      else proflik.val[i,j] <- lik.sim(pars=ini, fp = fixed.values, ip = ip, temp.list = temp.list)
+      if(est.boxcox) lik.val[i,j] <- .lik.sim.boxcox(pars=ini, fp = fixed.values, ip = ip, temp.list = temp.list)
+      else proflik.val[i,j] <- .lik.sim(pars=ini, fp = fixed.values, ip = ip, temp.list = temp.list)
     }
   }
   result <- list()

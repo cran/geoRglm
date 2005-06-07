@@ -1,6 +1,6 @@
 
 
-"mcmc.aux" <- 
+".mcmc.aux" <- 
   function(z, data, meanS, QQ, Htrunc, S.scale, nsim, thin, QtivQ)
 {
   ##
@@ -27,7 +27,7 @@
 }
 
 
-"mcmc.pois.log" <- 
+".mcmc.pois.log" <- 
   function(data, units.m, meanS, invcov, mcmc.input, messages.screen)
 {
   ## This is the MCMC engine for the spatial Poisson log Normal model ----
@@ -61,7 +61,7 @@
   n.iter <- mcmc.input$n.iter
 ## ---------------- burn-in ----------------- ######### 
   if(burn.in > 0) {
-    mcmc.output <- mcmc.aux(z, data, meanS + log(units.m), QQ, Htrunc, S.scale, 1, burn.in, QtivQ)
+    mcmc.output <- .mcmc.aux(z, data, meanS + log(units.m), QQ, Htrunc, S.scale, 1, burn.in, QtivQ)
     if(messages.screen) cat(paste("burn-in = ", burn.in, " is finished. Acc.-rate = ", round(mcmc.output$acc.rate, digits=3), "\n"))
     acc.rate.burn.in <- c(burn.in, mcmc.output$acc.rate)
   }
@@ -79,7 +79,7 @@
   Sdata <- matrix(NA, n, n.sim)
   acc.rate <- matrix(NA, n.turn, 2)
   for(i in seq(length=n.turn)) {
-    mcmc.output <- mcmc.aux(mcmc.output$z, data, meanS + log(units.m), QQ, Htrunc, S.scale, n.temp, thin, QtivQ)
+    mcmc.output <- .mcmc.aux(mcmc.output$z, data, meanS + log(units.m), QQ, Htrunc, S.scale, n.temp, thin, QtivQ)
     Sdata[, seq((n.temp * (i - 1) + 1),(n.temp * i))] <- mcmc.output$S+meanS
     if(messages.screen) cat(paste("iter. numb.", i * n.temp * thin+burn.in, " : Acc.-rate = ", round(mcmc.output$acc.rate, digits=3), "\n"))
     acc.rate[i,1] <-  i * n.temp * thin
@@ -93,7 +93,7 @@
 }
 
 
-"mcmc.boxcox.aux" <- 
+".mcmc.boxcox.aux" <- 
   function(z, data, units.m, meanS, QQ, Htrunc, S.scale, nsim, thin, QtivQ, lambda)
 {
   ##
@@ -121,7 +121,7 @@
   return(result)
 }
 
-"mcmc.pois.boxcox" <- 
+".mcmc.pois.boxcox" <- 
   function(data, units.m, meanS, invcov, mcmc.input, messages.screen, lambda)
 {
   ## This is the MCMC engine for the spatial Poisson - Normal model with link from the box-cox-family ----
@@ -157,7 +157,7 @@
   n.iter <- mcmc.input$n.iter
   ## ---------------- burn-in ----------------- ######### 
   if(burn.in > 0) {
-    mcmc.output <- mcmc.boxcox.aux(z, data, units.m, meanS, QQ, Htrunc, S.scale, 1, burn.in, QtivQ, lambda)
+    mcmc.output <- .mcmc.boxcox.aux(z, data, units.m, meanS, QQ, Htrunc, S.scale, 1, burn.in, QtivQ, lambda)
     if(messages.screen) cat(paste("burn-in = ", burn.in, " is finished. Acc.-rate = ", round(mcmc.output$acc.rate, digits=3), "\n"))
     acc.rate.burn.in <- c(burn.in, mcmc.output$acc.rate)
   }
@@ -175,7 +175,7 @@
   Sdata <- matrix(NA, n, n.sim)
   acc.rate <- matrix(NA, n.turn, 2)
   for(i in seq(length=n.turn)){
-    mcmc.output <- mcmc.boxcox.aux(mcmc.output$z, data, units.m, meanS, QQ, Htrunc, S.scale, n.temp, thin, QtivQ, lambda)
+    mcmc.output <- .mcmc.boxcox.aux(mcmc.output$z, data, units.m, meanS, QQ, Htrunc, S.scale, n.temp, thin, QtivQ, lambda)
     Sdata[, seq((n.temp * (i - 1) + 1),(n.temp * i))] <- mcmc.output$S+meanS
     if(messages.screen) cat(paste("iter. numb.", i * n.temp * thin+burn.in, " : Acc.-rate = ", round(mcmc.output$acc.rate, digits=3), "\n"))
     acc.rate[i,1] <-  i * n.temp * thin
@@ -263,7 +263,7 @@
   return(res)
 }
 
-"krige.glm.check.aux" <-
+".krige.glm.check.aux" <-
   function(krige,fct)
 {
   if(class(krige) != "krige.geoRglm"){
@@ -272,7 +272,7 @@
     else{
       krige.names <-c("type.krige","trend.d","trend.l","obj.model","beta","cov.model",
                       "cov.pars","kappa","nugget","micro.scale","dist.epsilon","lambda","aniso.pars")
-      krige <- object.match.names(krige,krige.names)
+      krige <- .object.match.names(krige,krige.names)
       if(is.null(krige$type.krige)) krige$type.krige <- "sk"  
       if(is.null(krige$trend.d)) krige$trend.d <-  "cte"
       if(is.null(krige$trend.l)) krige$trend.l <-  "cte"
@@ -307,7 +307,7 @@ function(geodata, coords = geodata$coords, data = geodata$data, units.m = "defau
     else units.m <- rep(1, n)
   }
   if(missing(krige)) stop("must provide object krige")
-  krige <- krige.glm.check.aux(krige,fct="pois.krige")
+  krige <- .krige.glm.check.aux(krige,fct="pois.krige")
   cov.model <- krige$cov.model
   kappa <- krige$kappa
   beta <- krige$beta
@@ -322,7 +322,7 @@ function(geodata, coords = geodata$coords, data = geodata$data, units.m = "defau
   if(krige$type.krige == "ok") beta.prior <- "flat"
   if(krige$type.krige == "sk") beta.prior <- "deg"
   if(missing(output)) output <- output.glm.control()
-  output <- output.glm.check.aux(output, fct="pois.krige")
+  output <- .output.glm.check.aux(output, fct="pois.krige")
   sim.predict <- output$sim.predict
   messages.screen <- output$messages.screen
   ##
@@ -337,7 +337,7 @@ function(geodata, coords = geodata$coords, data = geodata$data, units.m = "defau
     if(messages.screen) cat(paste("locations need to be specified for prediction; prediction not performed \n"))
   }
   else {
-    locations <- check.locations(locations)
+    locations <- .check.locations(locations)
     if(is.null(trend.l))
       stop("trend.l needed for prediction")
     ## Checking for 1D prediction 
@@ -358,7 +358,7 @@ function(geodata, coords = geodata$coords, data = geodata$data, units.m = "defau
   ## preparing for MCMC 
   ##
   if(missing(mcmc.input)) stop("pois.krige: argument mcmc.input must be given")
-  mcmc.input <- mcmc.check.aux(mcmc.input, fct="pois.krige")
+  mcmc.input <- .mcmc.check.aux(mcmc.input, fct="pois.krige")
   ##
   if(beta.prior == "deg") mean.d <-  as.vector(trend.data %*% beta)
   else mean.d <- rep(0,n)
@@ -376,17 +376,17 @@ function(geodata, coords = geodata$coords, data = geodata$data, units.m = "defau
   ##
   if(beta.prior == "flat") {
     ivtt <- invcov%*%trend.data
-    invcov <- invcov-ivtt%*%solve.geoR(crossprod(trend.data, ivtt),t(ivtt))
+    invcov <- invcov-ivtt%*%.solve.geoR(crossprod(trend.data, ivtt),t(ivtt))
   }
   if(lambda == 0){
-    intensity <- mcmc.pois.log(data = data, units.m = units.m, meanS = mean.d, invcov=invcov, mcmc.input = mcmc.input, messages.screen=messages.screen)
+    intensity <- .mcmc.pois.log(data = data, units.m = units.m, meanS = mean.d, invcov=invcov, mcmc.input = mcmc.input, messages.screen=messages.screen)
     acc.rate <- intensity$acc.rate
     intensity <- exp(intensity$Sdata)
   }
   else{
-    intensity <- mcmc.pois.boxcox(data=data, units.m=units.m, meanS=mean.d, invcov=invcov, mcmc.input=mcmc.input, messages.screen=messages.screen, lambda=lambda)
+    intensity <- .mcmc.pois.boxcox(data=data, units.m=units.m, meanS=mean.d, invcov=invcov, mcmc.input=mcmc.input, messages.screen=messages.screen, lambda=lambda)
     acc.rate <- intensity$acc.rate
-    intensity <- BC.inv(intensity$Sdata, lambda)    
+    intensity <- .BC.inv(intensity$Sdata, lambda)    
   }
   ##
   ##------------------------------------------------------------
@@ -402,7 +402,7 @@ function(geodata, coords = geodata$coords, data = geodata$data, units.m = "defau
     krige <- list(type.krige = krige$type.krige, beta = beta, trend.d = trend.d, trend.l = trend.l, cov.model = cov.model, 
                   cov.pars = cov.pars, kappa = kappa, nugget = nugget, micro.scale = micro.scale, dist.epsilon = dist.epsilon, 
                   aniso.pars = aniso.pars, lambda = lambda)
-    kpl.result <- krige.conv.extnd(data = intensity, coords = coords, locations = locations, krige = krige,
+    kpl.result <- .krige.conv.extnd(data = intensity, coords = coords, locations = locations, krige = krige,
                                    output = list(n.predictive = ifelse(sim.predict,1,0), signal = TRUE, messages = FALSE))
     remove(list = c("intensity"))
     kpl.result$krige.var <- rowMeans(kpl.result$krige.var) + apply(kpl.result$predict, 1, var) 
@@ -418,7 +418,7 @@ function(geodata, coords = geodata$coords, data = geodata$data, units.m = "defau
   else{
     if(beta.prior == "flat") {
       ## GLS
-      beta.est <- solve.geoR(crossprod(trend.data, ivtt),t(ivtt))%*%rowMeans(log(intensity))
+      beta.est <- .solve.geoR(crossprod(trend.data, ivtt),t(ivtt))%*%rowMeans(log(intensity))
       kpl.result <- list(intensity=intensity, beta.est = beta.est, acc.rate=acc.rate)
     }
     else kpl.result <- list(intensity=intensity, acc.rate=acc.rate)

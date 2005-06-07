@@ -1,5 +1,7 @@
 \name{b50, p50 and b64}
 
+\encoding{latin1}
+
 \alias{b50}
 \alias{p50}
 \alias{b64}

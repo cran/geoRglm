@@ -15,7 +15,7 @@
   else if(!is.numeric(micro.scale) || length(micro.scale)>1) stop("micro.scale must be a numeric number ")
   ##
   if(missing(output)) output <- output.glm.control()
-  else output <- output.glm.check.aux(output, fct = "glsm.krige")
+  else output <- .output.glm.check.aux(output, fct = "glsm.krige")
   sim.predict <- output$sim.predict
   messages.screen <- output$messages.screen
   if(messages.screen) cat(" glsm.krige: Prediction for a generalised linear spatial model \n")
@@ -24,7 +24,7 @@
   if(missing(locations))
     stop("locations need to be specified for prediction; prediction not performed")
   else {
-    locations <- check.locations(locations)
+    locations <- .check.locations(locations)
     if(is.null(trend.l))
       stop("trend.l needed for prediction")
     if(length(unique(locations[,1])) == 1 | length(unique(locations[,2])) == 1)
@@ -49,7 +49,7 @@
     krige <- list(type.krige = "sk", beta = beta, trend.d = trend.d, trend.l = trend.l, cov.model = cov.model, 
                   cov.pars = cov.pars, kappa = kappa, nugget = nugget, micro.scale = micro.scale, dist.epsilon = dist.epsilon, 
                   aniso.pars = aniso.pars, link = mcmc.output$model$link)
-    kpl.result <- glm.krige.aux(data = mcmc.output$simulations, coords = coords, locations = locations, krige = krige,
+    kpl.result <- .glm.krige.aux(data = mcmc.output$simulations, coords = coords, locations = locations, krige = krige,
                                 output = list(n.predictive = ifelse(sim.predict,1,0),
                                   signal = TRUE, messages=FALSE))
   }
@@ -58,7 +58,7 @@
     krige <- list(type.krige = "sk", beta = beta, trend.d = trend.d, trend.l = trend.l, cov.model = cov.model, 
                   cov.pars = cov.pars, kappa = kappa, nugget = nugget, micro.scale = micro.scale, dist.epsilon = dist.epsilon, 
                   aniso.pars = aniso.pars, lambda = lambda)
-    kpl.result <- krige.conv.extnd(data = BC.inv(mcmc.output$simulations, lambda), coords = coords, locations = locations, krige = krige,
+    kpl.result <- .krige.conv.extnd(data = .BC.inv(mcmc.output$simulations, lambda), coords = coords, locations = locations, krige = krige,
                                    output = list(n.predictive = ifelse(sim.predict,1,0), signal = TRUE, messages = FALSE))
     
   }

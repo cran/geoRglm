@@ -20,7 +20,7 @@
   coords <- as.matrix(coords)
   dimnames(coords) <- list(NULL, NULL)
   ##
-  model <- model.glsm.mcmc.check.aux(model)
+  model <- .model.glsm.mcmc.check.aux(model)
   cov.model <- model$cov.model
   kappa <- model$kappa
   beta <- model$beta
@@ -39,7 +39,7 @@
   ## preparing for MCMC 
   ##
   if(missing(mcmc.input)) stop("glsm.mcmc: argument mcmc.input must be given")
-  mcmc.input <- mcmc.check.aux(mcmc.input, fct="glsm.mcmc")
+  mcmc.input <- .mcmc.check.aux(mcmc.input, fct="glsm.mcmc")
   ##
   mean.d <- as.vector(trend.data %*% beta)
   if(!is.null(aniso.pars)) {
@@ -55,14 +55,14 @@
 ########################----- MCMC ------#####################
   ##
   if(model$family == "binomial"){
-    simulations <- mcmc.binom.logit(data = data, units.m = units.m, meanS = mean.d, invcov=invcov, mcmc.input = mcmc.input, messages.screen=messages.screen)
+    simulations <- .mcmc.binom.logit(data = data, units.m = units.m, meanS = mean.d, invcov=invcov, mcmc.input = mcmc.input, messages.screen=messages.screen)
   }
   else{
     if(lambda == 0){
-      simulations <- mcmc.pois.log(data = data, units.m = units.m, meanS = mean.d, invcov=invcov, mcmc.input = mcmc.input, messages.screen=messages.screen)
+      simulations <- .mcmc.pois.log(data = data, units.m = units.m, meanS = mean.d, invcov=invcov, mcmc.input = mcmc.input, messages.screen=messages.screen)
     }
     else{
-      simulations <- mcmc.pois.boxcox(data = data, units.m = units.m, meanS = mean.d, invcov=invcov, mcmc.input = mcmc.input, messages.screen=messages.screen, lambda=lambda)
+      simulations <- .mcmc.pois.boxcox(data = data, units.m = units.m, meanS = mean.d, invcov=invcov, mcmc.input = mcmc.input, messages.screen=messages.screen, lambda=lambda)
     }
   }
   kpl.result <- list(simulations=simulations$Sdata, acc.rate=simulations$acc.rate, model=model, geodata=geodata)
@@ -73,7 +73,7 @@
 }
 
 
-"model.glsm.mcmc.check.aux" <-
+".model.glsm.mcmc.check.aux" <-
   function(model)
 {
   if(class(model)=="likGLSM"){
@@ -83,7 +83,7 @@
   else{
     if(!is.list(model)) stop("glsm.mcmc : the argument model only takes a list ")
     model.names <- c("beta", "cov.pars", "trend", "cov.model", "kappa", "aniso.pars", "nugget", "nugget.rel", "family", "link", "lambda")
-    model <- object.match.names(model,model.names)
+    model <- .object.match.names(model,model.names)
     if(is.null(model$beta) | !is.numeric(model$beta)) stop("glsm.mcmc : need to provide beta in the model argument")
     if(is.null(model$cov.pars)) stop("glsm.mcmc : need to provide cov.pars in the model argument")
     if(is.null(model$trend)) model$trend <- "cte"   

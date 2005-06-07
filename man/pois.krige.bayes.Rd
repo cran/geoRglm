@@ -1,10 +1,10 @@
 \name{pois.krige.bayes}
 
 \alias{pois.krige.bayes}
-\alias{mcmc.bayes.pois.log}
-\alias{mcmc.bayes.pois.boxcox}
-\alias{mcmc.bayes.conj.pois.log}
-\alias{mcmc.bayes.conj.pois.boxcox}
+\alias{.mcmc.bayes.pois.log}
+\alias{.mcmc.bayes.pois.boxcox}
+\alias{.mcmc.bayes.conj.pois.log}
+\alias{.mcmc.bayes.conj.pois.boxcox}
 
 
 \title{Bayesian Posterior Simulation and Prediction for the Poisson

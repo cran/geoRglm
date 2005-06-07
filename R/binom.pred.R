@@ -1,6 +1,6 @@
 
 
-"mcmc.binom.aux" <- function(z, data, units.m, meanS, QQ, S.scale, nsim, thin, QtivQ)
+".mcmc.binom.aux" <- function(z, data, units.m, meanS, QQ, S.scale, nsim, thin, QtivQ)
 {
   ##
 ###### ------------------------ doing the mcmc-steps -----------
@@ -26,7 +26,7 @@
   return(result)
 }
 
-"mcmc.binom.logit" <- function(data, units.m, meanS, invcov, mcmc.input, messages.screen)
+".mcmc.binom.logit" <- function(data, units.m, meanS, invcov, mcmc.input, messages.screen)
 {
 ####
   ## This is the MCMC engine for the spatial Binomial logit Normal model ----
@@ -77,7 +77,7 @@
   Sdata <- matrix(NA, n, n.sim)
   acc.rate <- matrix(NA, n.turn, 2)
   for(i in seq(length=n.turn)) {
-    mcmc.output <- mcmc.binom.aux(mcmc.output$z, data, units.m, meanS, QQ, S.scale, n.temp, thin, QtivQ)
+    mcmc.output <- .mcmc.binom.aux(mcmc.output$z, data, units.m, meanS, QQ, S.scale, n.temp, thin, QtivQ)
     Sdata[, seq((n.temp * (i - 1) + 1),(n.temp * i))] <- mcmc.output$S+meanS    
     if(messages.screen) cat(paste("iter. numb.", i * n.temp * thin+burn.in, " : Acc.-rate = ", round(mcmc.output$acc.rate, digits=3), "\n"))
     acc.rate[i,1] <-  i * n.temp * thin
@@ -102,7 +102,7 @@
     else units.m <- rep(1, n)
   }
   if(missing(krige)) stop("must provide object krige")
-  krige <- krige.glm.check.aux(krige,fct="binom.krige")
+  krige <- .krige.glm.check.aux(krige,fct="binom.krige")
   cov.model <- krige$cov.model
   kappa <- krige$kappa
   beta <- krige$beta
@@ -116,7 +116,7 @@
   if(krige$type.krige == "ok") beta.prior <- "flat"
   if(krige$type.krige == "sk") beta.prior <- "deg"
   if(missing(output)) output <- output.glm.control()
-  else output <- output.glm.check.aux(output, fct = "binom.krige")
+  else output <- .output.glm.check.aux(output, fct = "binom.krige")
   sim.predict <- output$sim.predict
   messages.screen <- output$messages.screen
   ##
@@ -130,7 +130,7 @@
     if(messages.screen) cat(paste("locations need to be specified for prediction; prediction not performed \n"))
   }
   else{
-    locations <- check.locations(locations)
+    locations <- .check.locations(locations)
     if(is.null(trend.l))
       stop("trend.l needed for prediction")
     if(length(unique(locations[,1])) == 1 | length(unique(locations[,2])) == 1)
@@ -150,7 +150,7 @@
   ## preparing for MCMC 
   ##
   if(missing(mcmc.input)) stop("binom.krige: argument mcmc.input must be given")
-  mcmc.input <- mcmc.check.aux(mcmc.input, fct="binom.krige")
+  mcmc.input <- .mcmc.check.aux(mcmc.input, fct="binom.krige")
   ##
   if(beta.prior == "deg") mean.d <-  as.vector(trend.data %*% beta)
   else mean.d <- rep(0,n)
@@ -168,9 +168,9 @@
   ##
   if(beta.prior == "flat") {
     ivtt <- invcov%*%trend.data
-    invcov <- invcov-ivtt%*%solve.geoR(crossprod(trend.data, ivtt),t(ivtt))
+    invcov <- invcov-ivtt%*%.solve.geoR(crossprod(trend.data, ivtt),t(ivtt))
   }
-  res.mcmc <- mcmc.binom.logit(data = data, units.m = units.m, meanS= mean.d, invcov=invcov, mcmc.input = mcmc.input, messages.screen=messages.screen)
+  res.mcmc <- .mcmc.binom.logit(data = data, units.m = units.m, meanS= mean.d, invcov=invcov, mcmc.input = mcmc.input, messages.screen=messages.screen)
   acc.rate <- res.mcmc$acc.rate
   ##
   ##------------------------------------------------------------
@@ -184,7 +184,7 @@
     krige <- list(type.krige = krige$type.krige, beta = beta, trend.d = trend.d, trend.l = trend.l, cov.model = cov.model, 
                   cov.pars = cov.pars, kappa = kappa, nugget = nugget, micro.scale = micro.scale, dist.epsilon = dist.epsilon, 
                   aniso.pars = aniso.pars, link = "logit")
-    kpl.result <- glm.krige.aux(data = res.mcmc$Sdata, coords = coords, locations = locations, krige = krige,
+    kpl.result <- .glm.krige.aux(data = res.mcmc$Sdata, coords = coords, locations = locations, krige = krige,
 					output = list(n.predictive = ifelse(sim.predict,1,0),
 					      signal = TRUE, messages=FALSE))			   
     remove(list = c("res.mcmc"))
@@ -201,7 +201,7 @@
   else{
     if(beta.prior == "flat") {
       ## GLS
-      beta.est <- solve.geoR(crossprod(trend.data, ivtt),t(ivtt))%*%rowMeans(res.mcmc$Sdata)
+      beta.est <- .solve.geoR(crossprod(trend.data, ivtt),t(ivtt))%*%rowMeans(res.mcmc$Sdata)
       kpl.result <- list(prevalence=plogis(res.mcmc$Sdata), beta.est = beta.est, acc.rate=acc.rate)
     }
     else kpl.result <- list(prevalence=plogis(res.mcmc$Sdata), acc.rate=acc.rate)
@@ -215,12 +215,13 @@
   return(kpl.result)
 }
 
-"glm.krige.aux" <- 
+".glm.krige.aux" <- 
 function(data, coords, locations, krige, output)
 {
   krige$lambda <- 1
   krige$link <- NULL 
-  kc.result <- krige.conv.extnd(data = data, coords = coords, locations = locations, krige = krige, output = output)	
+  kc.result <- .krige.conv.extnd(data = data, coords = coords, locations = locations, krige = krige, output = output)
+  kc.result$message <- NULL 
   ##
   ##################### Back-transforming predictions
   ## using second order taylor-expansion + facts for N(0,1) [third moment = 0 ; fourth moment = 12].

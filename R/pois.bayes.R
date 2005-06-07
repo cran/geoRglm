@@ -1,6 +1,6 @@
 
 
-"mcmc.bayes.pois.log" <- 
+".mcmc.bayes.pois.log" <- 
   function(data, units.m, trend, mcmc.input, messages.screen, cov.model, kappa, tausq.rel, coords, ss.sigma, df, phi.prior, phi.discrete)
 {
   ##
@@ -43,7 +43,7 @@
   messages.C <- ifelse(messages.screen,1,0)
   ##                                                                      
 ##### ---------- sampling ----------- ###### 
-  cov.model.number <- cor.number(cov.model)
+  cov.model.number <- .cor.number(cov.model)
   if(is.vector(trend)) beta.size <- 1
   else beta.size <- ncol(trend)
   n.sim <- floor(n.iter/thin)
@@ -89,7 +89,7 @@
 }
 
 
-"mcmc.bayes.pois.boxcox" <- 
+".mcmc.bayes.pois.boxcox" <- 
   function(data, units.m, trend, mcmc.input, messages.screen, cov.model, kappa, tausq.rel, coords, ss.sigma, df, phi.prior, phi.discrete, lambda) 
 {
   ##
@@ -132,7 +132,7 @@
   messages.C <- ifelse(messages.screen,1,0)
   ##                                                                      
 ##### ---------- sampling ----------- ###### 
-  cov.model.number <- cor.number(cov.model)
+  cov.model.number <- .cor.number(cov.model)
   if(is.vector(trend)) beta.size <- 1
   else beta.size <- ncol(trend)
   n.sim <- floor(n.iter/thin)
@@ -179,7 +179,7 @@
 }
 
 
-"mcmc.bayes.conj.pois.log" <- 
+".mcmc.bayes.conj.pois.log" <- 
   function(data, units.m, meanS, ttvbetatt, mcmc.input, messages.screen, cov.model, kappa, tausq.rel, coords, ss.sigma, df, phi.prior, phi.discrete)
 {
   ##
@@ -222,7 +222,7 @@
   messages.C <- ifelse(messages.screen,1,0)
   ##                                                                      
   ## ---------- sampling ----------- ###### 
-  cov.model.number <- cor.number(cov.model)
+  cov.model.number <- .cor.number(cov.model)
   if(is.null(ttvbetatt)) ttvbetatt <- matrix(0,beta.size,beta.size)
   n.sim <- floor(n.iter/thin)
   ## remeber this rather odd coding for telling that S.start is from the prior !!!
@@ -266,7 +266,7 @@
   return(result)
 }
 
-"mcmc.bayes.conj.pois.boxcox" <- 
+".mcmc.bayes.conj.pois.boxcox" <- 
   function(data, units.m, meanS, ttvbetatt, mcmc.input, messages.screen, cov.model, kappa, tausq.rel, coords, ss.sigma, df, phi.prior,
            phi.discrete, lambda)
 {
@@ -310,7 +310,7 @@
   messages.C <- ifelse(messages.screen,1,0)
   ##                                         
   ## ---------- sampling ----------- ###### 
-  cov.model.number <- cor.number(cov.model)
+  cov.model.number <- .cor.number(cov.model)
   if(is.null(ttvbetatt)) ttvbetatt <- matrix(0,beta.size,beta.size)
   n.sim <- floor(n.iter/thin)
   ## remeber this rather odd coding for telling that S.start is from the prior !!!
@@ -355,12 +355,12 @@
   return(result)
 }
 
-"pred.aux" <- function(S, coords, locations, model, prior, output, phi.posterior, link)
+".pred.aux" <- function(S, coords, locations, model, prior, output, phi.posterior, link)
 {
   n.sim <- ncol(S)
   ni <- nrow(locations)
   do.prediction <- ifelse(all(locations == "no"), FALSE, TRUE)
-  locations <- check.locations(locations)
+  locations <- .check.locations(locations)
   beta.size <- ncol(unclass(trend.spatial(trend=model$trend.d, geodata = list(coords=coords))))
   lambda <- model$lambda
   ##
@@ -393,7 +393,7 @@
   if(phi.posterior$phi.prior == "fixed" || length(phi.posterior$phi.discrete) == 1) {
     if(phi.posterior$phi.prior == "fixed") prior.temp$phi <- phi.posterior$phi
     else prior.temp$phi <- phi.posterior$phi.discrete
-    temp.result <- krige.bayes.extnd(data = S, coords = coords, locations = locations,
+    temp.result <- .krige.bayes.extnd(data = S, coords = coords, locations = locations,
                                      model = model.temp, prior = prior.temp, output = output.temp)
     temp.post$beta.mean <- temp.result$posterior$beta$pars$mean
     temp.post$beta.var <- temp.result$posterior$beta$pars$var
@@ -405,7 +405,7 @@
         if(link=="logit") pred.simulations <- plogis(temp.result$predictive$simulations)
         else{
           if(lambda==0) pred.simulations <- exp(temp.result$predictive$simulations)
-          else pred.simulations <- BC.inv(temp.result$predictive$simulations, lambda)
+          else pred.simulations <- .BC.inv(temp.result$predictive$simulations, lambda)
         }
       }
     }
@@ -431,7 +431,7 @@
       prior.temp$phi <- phi.sample.unique[i]
       if(phi.table[i]==1)
         temp.result <- krige.bayes(data = S[, id.phi.i], coords = coords, locations = locations, model = model.temp, prior = prior.temp, output = output.temp)
-      else temp.result <- krige.bayes.extnd(data = S[, id.phi.i], coords = coords, locations = locations, 
+      else temp.result <- .krige.bayes.extnd(data = S[, id.phi.i], coords = coords, locations = locations, 
                                             model = model.temp, prior = prior.temp, output = output.temp)
       temp.post$beta.mean[, id.phi.i] <- temp.result$posterior$beta$pars$mean         
       temp.post$beta.var[,  , id.phi.i] <- temp.result$posterior$beta$pars$var
@@ -443,7 +443,7 @@
           if(link=="logit") pred.simulations[ , id.phi.i] <- plogis(temp.result$predictive$simulations)
           else{
             if(lambda==0) pred.simulations[ , id.phi.i] <- exp(temp.result$predictive$simulations)
-            else pred.simulations[ , id.phi.i] <- BC.inv(temp.result$predictive$simulations, lambda)
+            else pred.simulations[ , id.phi.i] <- .BC.inv(temp.result$predictive$simulations, lambda)
           }
         }
       }
@@ -455,20 +455,20 @@
 }
 
 
-"pred.quan.aux" <- 
+".pred.quan.aux" <- 
   function(temp.pred, loc.coincide, df.model, ni, quantile.estimator)
 {
   temp.med <- apply(temp.pred$mean, 1, median)
   temp.unc <- sqrt(apply(temp.pred$mean, 1, var) + apply(temp.pred$var, 1, median))
   not.accurate <- (!loc.coincide)
-  diffe <- pmixed(temp.med, temp.pred,df.model)-0.5
+  diffe <- .pmixed(temp.med, temp.pred,df.model)-0.5
   temp.med.new <- temp.med[not.accurate]+0.1*(temp.med[not.accurate]+0.1) # to get started
   inv.sl <- rep(0,ni)
   parms.temp <- list()
   while(any(not.accurate)){
     parms.temp$mean<-temp.pred$mean[not.accurate,,drop=FALSE]
     parms.temp$var<-temp.pred$var[not.accurate,,drop=FALSE]
-    diffe.new <- pmixed(temp.med.new, parms.temp,df.model)-0.5
+    diffe.new <- .pmixed(temp.med.new, parms.temp,df.model)-0.5
     inv.sl[not.accurate] <- (temp.med.new-temp.med[not.accurate])/(diffe.new-diffe[not.accurate])
     temp.med[not.accurate] <- ifelse(abs(diffe[not.accurate]) > abs(diffe.new), temp.med.new,temp.med[not.accurate])
     diffe[not.accurate] <- ifelse(abs(diffe[not.accurate]) > abs(diffe.new), diffe.new, diffe[not.accurate])
@@ -477,13 +477,13 @@
   }
   temp.upper <- qnorm(rep(0.975, ni), mean = temp.med, sd = temp.unc)
   not.accurate <- (!loc.coincide)
-  diffe <- pmixed(temp.upper, temp.pred,df.model)-0.975
+  diffe <- .pmixed(temp.upper, temp.pred,df.model)-0.975
   temp.upper.new <- temp.upper[not.accurate]+0.5*(temp.upper[not.accurate]+0.5) # to get started
   inv.sl <- rep(0,ni)      
   while(any(not.accurate)){
     parms.temp$mean<-temp.pred$mean[not.accurate,,drop=FALSE]
     parms.temp$var<-temp.pred$var[not.accurate,,drop=FALSE]
-    diffe.new <- pmixed(temp.upper.new, parms.temp,df.model)-0.975
+    diffe.new <- .pmixed(temp.upper.new, parms.temp,df.model)-0.975
     inv.sl[not.accurate] <- (temp.upper.new-temp.upper[not.accurate])/(diffe.new-diffe[not.accurate])
     temp.upper[not.accurate] <- ifelse(abs(diffe[not.accurate]) > abs(diffe.new), temp.upper.new,temp.upper[not.accurate])
     diffe[not.accurate] <- ifelse(abs(diffe[not.accurate]) > abs(diffe.new), diffe.new, diffe[not.accurate])
@@ -492,13 +492,13 @@
   }      
   temp.lower <- qnorm(rep(0.025, ni), mean = temp.med, sd = temp.unc)
   not.accurate <- (!loc.coincide)
-  diffe <- pmixed(temp.lower, temp.pred,df.model)-0.025
+  diffe <- .pmixed(temp.lower, temp.pred,df.model)-0.025
   temp.lower.new <- temp.lower[not.accurate]+0.5*(temp.lower[not.accurate]+0.5) # to get started
   inv.sl <- rep(0,ni)
   while(any(not.accurate)){
     parms.temp$mean<-temp.pred$mean[not.accurate,,drop=FALSE]
     parms.temp$var<-temp.pred$var[not.accurate,,drop=FALSE]
-    diffe.new <- pmixed(temp.lower.new,parms.temp,df.model)-0.025
+    diffe.new <- .pmixed(temp.lower.new,parms.temp,df.model)-0.025
     inv.sl[not.accurate] <- (temp.lower.new-temp.lower[not.accurate])/(diffe.new-diffe[not.accurate])
     temp.lower[not.accurate] <- ifelse(abs(diffe[not.accurate]) > abs(diffe.new), temp.lower.new,temp.lower[not.accurate])
     diffe[not.accurate] <- ifelse(abs(diffe[not.accurate]) > abs(diffe.new), diffe.new, diffe[not.accurate])
@@ -524,14 +524,14 @@
         temp.quan[, i] <- qnorm(rep(quantile.estimator[i], ni), mean = temp.med, sd = temp.unc)
         if(any(loc.coincide)) temp.quan[loc.coincide, i] <- temp.med[loc.coincide]
         not.accurate <- (!loc.coincide)
-        diffe <- pmixed(temp.quan[,i], temp.pred,df.model)-quantile.estimator[i]
+        diffe <- .pmixed(temp.quan[,i], temp.pred,df.model)-quantile.estimator[i]
         numb <- 0.1+abs(quantile.estimator[i]-0.5)
         temp.quan.new <- temp.quan[not.accurate,i]+numb*(temp.quan[not.accurate,i]+numb) # to get started
         inv.sl <- rep(0,ni)
         while(any(not.accurate)) {
           parms.temp$mean <-temp.pred$mean[not.accurate,,drop=FALSE]
           parms.temp$var <-temp.pred$var[not.accurate,,drop=FALSE]
-          diffe.new <- pmixed(temp.quan.new,parms.temp,df.model)-quantile.estimator[i]
+          diffe.new <- .pmixed(temp.quan.new,parms.temp,df.model)-quantile.estimator[i]
           inv.sl[not.accurate] <- (temp.quan.new-temp.quan[not.accurate, i])/(diffe.new-diffe[not.accurate])
           temp.quan[not.accurate, i] <- ifelse(abs(diffe[not.accurate]) > abs(diffe.new), temp.quan.new,temp.quan[not.accurate, i])
           diffe[not.accurate] <- ifelse(abs(diffe[not.accurate]) > abs(diffe.new), diffe.new, diffe[not.accurate])
@@ -549,14 +549,14 @@
       while(quantile.estimator != round(quantile.estimator,digits = dig)) dig <- dig + 1
       temp.quan <- qnorm(rep(quantile.estimator,ni), mean = temp.med, sd = temp.unc)
       not.accurate <- (!loc.coincide)
-      diffe <- pmixed(temp.quan, temp.pred,df.model)-quantile.estimator
+      diffe <- .pmixed(temp.quan, temp.pred,df.model)-quantile.estimator
       numb <- 0.1+abs(quantile.estimator-0.5)
       temp.quan.new <- temp.quan[not.accurate]+numb*(temp.quan[not.accurate]+numb) # to get started
       inv.sl <- rep(0,ni)
       while(any(not.accurate)) {
         parms.temp$mean <-temp.pred$mean[not.accurate,,drop=FALSE]
         parms.temp$var <-temp.pred$var[not.accurate,,drop=FALSE]
-        diffe.new <- pmixed(temp.quan.new,parms.temp,df.model)-quantile.estimator
+        diffe.new <- .pmixed(temp.quan.new,parms.temp,df.model)-quantile.estimator
         inv.sl[not.accurate] <- (temp.quan.new-temp.quan[not.accurate])/(diffe.new-diffe[not.accurate])
         temp.quan[not.accurate] <- ifelse(abs(diffe[not.accurate]) > abs(diffe.new), temp.quan.new,temp.quan[not.accurate])
         diffe[not.accurate] <- ifelse(abs(diffe[not.accurate]) > abs(diffe.new), diffe.new, diffe[not.accurate])
@@ -615,7 +615,7 @@
   ## reading model input
   ##
   if(missing(model)) model <- model.glm.control()
-  else model <- model.glm.check.aux(model, fct = "pois.krige.bayes")
+  else model <- .model.glm.check.aux(model, fct = "pois.krige.bayes")
   cov.model <- model$cov.model
   kappa <- model$kappa
   tausq.rel <- prior$tausq.rel
@@ -624,7 +624,7 @@
   ## reading prior input
   ##
   if(missing(prior)) stop("pois.krige.bayes: argument prior must be given")
-  else prior <- prior.glm.check.aux(prior, fct = "pois.krige.bayes")
+  else prior <- .prior.glm.check.aux(prior, fct = "pois.krige.bayes")
   beta.prior <- prior$beta.prior
   beta <- prior$beta
   beta.var <- prior$beta.var.std
@@ -642,7 +642,7 @@
   ## reading output options
   ##
   if(missing(output)) output <- output.glm.control()
-  else output <- output.glm.check.aux(output, fct = "pois.krige.bayes")
+  else output <- .output.glm.check.aux(output, fct = "pois.krige.bayes")
   quantile.estimator <- output$quantile.estimator
   probability.estimator <- output$probability.estimator  
   inference <- output$inference
@@ -679,7 +679,7 @@
   ## checking prediction locations
   ##
   if((inference) & (do.prediction)){
-    locations <- check.locations(locations)
+    locations <- .check.locations(locations)
     ## Checking the consistency between coords, locations, and trends
     trend.l <- model$trend.l
     ni <- nrow(locations)
@@ -713,7 +713,7 @@
   ## ##### preparing for MCMC -------------------------------------------------------
   ##
   if(missing(mcmc.input)) stop("pois.krige.bayes: argument mcmc.input must be given")
-  mcmc.input <- mcmc.check.aux(mcmc.input, fct="pois.krige.bayes")
+  mcmc.input <- .mcmc.check.aux(mcmc.input, fct="pois.krige.bayes")
   ##
   if(beta.prior == "fixed" | beta.prior == "normal") mean.d <- as.vector(trend.data%*%beta)
   else mean.d <- rep(0,n)
@@ -733,8 +733,8 @@
                                try.another.decomposition = FALSE)$inverse
     if(beta.prior != "fixed"){
       ivtt <- invcov%*%trend.data
-      if(beta.prior == "normal") invcov <- invcov-ivtt%*%solve.geoR(crossprod(trend.data, ivtt) + solve(beta.var), t(ivtt))
-      else invcov <- invcov-ivtt%*%solve.geoR(crossprod(trend.data, ivtt), t(ivtt))
+      if(beta.prior == "normal") invcov <- invcov-ivtt%*%.solve.geoR(crossprod(trend.data, ivtt) + solve(beta.var), t(ivtt))
+      else invcov <- invcov-ivtt%*%.solve.geoR(crossprod(trend.data, ivtt), t(ivtt))
     }
   }
   if((phi.prior == "fixed") & (sigmasq.prior != "fixed")){
@@ -748,10 +748,10 @@
   ##
   if(sigmasq.prior == "fixed"){ 
     if(lambda == 0){ 
-      gauss.post <- mcmc.pois.log(data = data, units.m = units.m, meanS = mean.d, invcov=invcov, mcmc.input = mcmc.input, messages.screen=messages.screen)
+      gauss.post <- .mcmc.pois.log(data = data, units.m = units.m, meanS = mean.d, invcov=invcov, mcmc.input = mcmc.input, messages.screen=messages.screen)
     }
     else{
-      gauss.post <- mcmc.pois.boxcox(data=data, units.m=units.m, meanS=mean.d, invcov=invcov, mcmc.input=mcmc.input, messages.screen=messages.screen, lambda=lambda)
+      gauss.post <- .mcmc.pois.boxcox(data=data, units.m=units.m, meanS=mean.d, invcov=invcov, mcmc.input=mcmc.input, messages.screen=messages.screen, lambda=lambda)
     }
   } 
   else {
@@ -759,13 +759,13 @@
     ## take care re-using gauss.post !
     if(beta.prior == "flat"){
       if(lambda == 0){ 
-        gauss.post <- mcmc.bayes.pois.log(data=data, units.m=units.m, trend=trend.data, mcmc.input=mcmc.input, messages.screen=messages.screen, cov.model=cov.model, 
+        gauss.post <- .mcmc.bayes.pois.log(data=data, units.m=units.m, trend=trend.data, mcmc.input=mcmc.input, messages.screen=messages.screen, cov.model=cov.model, 
                                         kappa=kappa, tausq.rel = tausq.rel, coords=coords.transf, 
                                         ss.sigma = df.sigmasq*S2.prior, df = df.model, phi.prior = phi.prior.prob,
                                         phi.discrete = phi.discrete)
       }
       else{
-        gauss.post <- mcmc.bayes.pois.boxcox(data=data, units.m=units.m, trend=trend.data, mcmc.input=mcmc.input, messages.screen=messages.screen, cov.model=cov.model, 
+        gauss.post <- .mcmc.bayes.pois.boxcox(data=data, units.m=units.m, trend=trend.data, mcmc.input=mcmc.input, messages.screen=messages.screen, cov.model=cov.model, 
                                            kappa=kappa, tausq.rel = tausq.rel, coords=coords.transf,
                                            ss.sigma = df.sigmasq*S2.prior, df = df.model,  phi.prior = phi.prior.prob,
                                              phi.discrete = phi.discrete, lambda = lambda)
@@ -773,13 +773,13 @@
     }
     else{
       if(lambda == 0){ 
-        gauss.post <- mcmc.bayes.conj.pois.log(data=data, units.m=units.m, meanS = mean.d, ttvbetatt = ttvbetatt, mcmc.input=mcmc.input,
+        gauss.post <- .mcmc.bayes.conj.pois.log(data=data, units.m=units.m, meanS = mean.d, ttvbetatt = ttvbetatt, mcmc.input=mcmc.input,
                                                messages.screen=messages.screen, cov.model=cov.model,  kappa=kappa, tausq.rel = tausq.rel,
                                                coords=coords.transf,  ss.sigma = df.sigmasq*S2.prior, df = df.model,
                                                phi.prior = phi.prior.prob, phi.discrete = phi.discrete,)
       }
       else{ 
-        gauss.post <- mcmc.bayes.conj.pois.boxcox(data=data, units.m=units.m, meanS = mean.d, ttvbetatt = ttvbetatt,
+        gauss.post <- .mcmc.bayes.conj.pois.boxcox(data=data, units.m=units.m, meanS = mean.d, ttvbetatt = ttvbetatt,
                                                   mcmc.input=mcmc.input, messages.screen=messages.screen, cov.model=cov.model,  kappa=kappa, tausq.rel = tausq.rel,
                                                   coords=coords.transf,  ss.sigma = df.sigmasq*S2.prior, df = df.model,
                                                   phi.prior = phi.prior.prob, phi.discrete = phi.discrete, lambda = lambda)
@@ -797,7 +797,7 @@
   if(inference){
     if(phi.prior=="fixed") phi.posterior <- list(phi.prior=phi.prior, phi=phi)
     else  phi.posterior <- list(phi.prior=phi.prior, phi.discrete=phi.discrete, sample=kb.results$posterior$phi$sample)
-    predict.temp <- pred.aux(S=gauss.post, coords=coords, locations=locations, model=model, prior=prior, output=output, phi.posterior=phi.posterior, link="boxcox")
+    predict.temp <- .pred.aux(S=gauss.post, coords=coords, locations=locations, model=model, prior=prior, output=output, phi.posterior=phi.posterior, link="boxcox")
     temp.post <- predict.temp$temp.post
     if(do.prediction){
       temp.pred <- predict.temp$temp.pred
@@ -811,15 +811,15 @@
       ## ------ median, quantiles and uncertainty 
       ##
       if((is.logical(quantile.estimator) && (quantile.estimator)) || (is.numeric(quantile.estimator))){
-        predi.q <- pred.quan.aux(temp.pred, loc.coincide, df.model, ni, quantile.estimator)
-        kb.results$predictive$median <- BC.inv(predi.q$median,lambda)
-        kb.results$predictive$uncertainty <- (BC.inv(predi.q$upper,lambda) - BC.inv(predi.q$lower,lambda))/4      
+        predi.q <- .pred.quan.aux(temp.pred, loc.coincide, df.model, ni, quantile.estimator)
+        kb.results$predictive$median <- .BC.inv(predi.q$median,lambda)
+        kb.results$predictive$uncertainty <- (.BC.inv(predi.q$upper,lambda) - .BC.inv(predi.q$lower,lambda))/4      
         if(is.data.frame(predi.q$quantiles)){
           names.q <- names(predi.q$quantiles)
-          kb.results$predictive$quantiles <- as.data.frame(BC.inv(as.matrix(predi.q$quantiles),lambda))
+          kb.results$predictive$quantiles <- as.data.frame(.BC.inv(as.matrix(predi.q$quantiles),lambda))
           names(kb.results$predictive$quantiles) <- names.q
         }
-        else kb.results$predictive$quantiles <- BC.inv(predi.q$quantiles,lambda)
+        else kb.results$predictive$quantiles <- .BC.inv(predi.q$quantiles,lambda)
       }
       ##
       ## ------ probability estimators
@@ -829,12 +829,12 @@
           else transf.probab <- ifelse(probability.estimator > 0, (probability.estimator^lambda-1)/lambda, -1e+17)
         len.p <- length(probability.estimator)
         if(len.p==1){
-          kb.results$predictive$probability <- round(pmixed(transf.probab, temp.pred, df.model), digits = 3)
+          kb.results$predictive$probability <- round(.pmixed(transf.probab, temp.pred, df.model), digits = 3)
         }
         else{
           kb.results$predictive$probability <- matrix(NA, ni,len.p)
           for(ii in seq(length=len.p)){
-            kb.results$predictive$probability[,ii] <- round(pmixed(transf.probab[ii], temp.pred, df.model), digits = 3)
+            kb.results$predictive$probability[,ii] <- round(.pmixed(transf.probab[ii], temp.pred, df.model), digits = 3)
           }
         }
       }
@@ -888,21 +888,21 @@
       else {
         if(sigmasq.prior == "fixed") {
           if(beta.prior != "fixed")
-            kb.results$posterior$beta$sample <- array(apply(temp.post$beta.var,3,multgauss),dim=c(beta.size, n.sim))+temp.post$beta.mean
+            kb.results$posterior$beta$sample <- array(apply(temp.post$beta.var,3,.multgauss),dim=c(beta.size, n.sim))+temp.post$beta.mean
         }
         else {
           kb.results$posterior$sigmasq$sample <- rinvchisq(n.sim, df.model, temp.post$S2)
           if(beta.prior != "fixed"){
             if(is.R()) cond.beta.var <- temp.post$beta.var *rep(kb.results$posterior$sigmasq$sample/temp.post$S2,rep(beta.size^2,n.sim))
             else cond.beta.var <- temp.post$beta.var *rep(kb.results$posterior$sigmasq$sample/temp.post$S2,each = beta.size^2)
-            kb.results$posterior$beta$sample <- array(apply(cond.beta.var,3,multgauss),dim=c(beta.size, n.sim)) + temp.post$beta.mean
+            kb.results$posterior$beta$sample <- array(apply(cond.beta.var,3,.multgauss),dim=c(beta.size, n.sim)) + temp.post$beta.mean
           }
         }
       }
     }
     remove("temp.post")
   }
-  if(output$keep.mcmc.sim) kb.results$posterior$simulations <- BC.inv(gauss.post, lambda)
+  if(output$keep.mcmc.sim) kb.results$posterior$simulations <- .BC.inv(gauss.post, lambda)
   kb.results$model <- model
   kb.results$prior <- prior$priors.info
   kb.results$mcmc.input <- mcmc.input

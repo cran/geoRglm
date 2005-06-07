@@ -138,7 +138,7 @@
 }
 
 
-"prior.glm.check.aux" <-
+".prior.glm.check.aux" <-
   function(prior, fct)
 {
   if(class(prior) != "prior.geoRglm"){
@@ -147,7 +147,7 @@
     else{
       prior.names <- c("beta.prior", "beta", "beta.var.std", "sigmasq.prior",
                        "sigmasq", "df.sigmasq", "phi.prior", "phi", "phi.discrete", "tausq.rel") 
-      prior <- object.match.names(prior,prior.names)
+      prior <- .object.match.names(prior,prior.names)
       if(is.null(prior$beta.prior)) prior$beta.prior <- "flat"
       if(is.null(prior$sigmasq.prior)) prior$sigmasq.prior <- "uniform"
       if(is.null(prior$phi.prior)) prior$phi.prior <- "uniform"
@@ -169,13 +169,11 @@
   function (x, locations, borders, 
             values.to.plot = c("median", "uncertainty",
               "quantiles", "probabilities", "simulation"),
-            number.col, coords.data, xlim, ylim,
-            x.leg, y.leg, ...) 
+            number.col, coords.data,
+            x.leg, y.leg, messages, ...) 
 {
+  ## apart from the "values.to.plot" argument, this function is identical to "image.glm.krige.bayes"
   ldots <- match.call(expand.dots = FALSE)$...
-  ldots[!is.na(match(names(ldots), "offset.leg"))] <- NULL
-  if(is.null(ldots[!is.na(match(names(ldots), "xlab"))])) ldots$xlab <- "X Coord"
-  if(is.null(ldots[!is.na(match(names(ldots), "ylab"))])) ldots$ylab <- "Y Coord"
   if(missing(x)) x <- NULL
   attach(x)
   on.exit(detach(x))
@@ -184,13 +182,8 @@
   if(is.null(locations)) stop("prediction locations must be provided")
   if(ncol(locations) != 2)
     stop("locations must be a matrix or data-frame with two columns")
-  if(!is.numeric(values.to.plot))
-    values.to.plot <-
-      match.arg(values.to.plot,
-                choices = c("median", "uncertainty",
-                  "quantiles", "probabilities", "simulation"))
-
-
+  if(mode(values.to.plot) != "numeric")
+    values.to.plot <- match.arg(values.to.plot, choices = c("median", "uncertainty","quantiles", "probabilities", "simulation"))
   if(missing(borders)){
     if(!is.null(attr(x, "borders"))) borders.arg <- borders <- eval(attr(x, "borders"))
     else borders.arg <- borders <- NULL
@@ -199,77 +192,87 @@
     borders.arg <- borders
     if(is.null(borders)) borders <- eval(attr(x, "borders"))
   }
-  
-  if(missing(borders)){
-    if(!is.null(attr(x, "borders"))) borders <- eval(attr(x, "borders"))
-    else borders <- NULL
-  }
   if(missing(number.col)) number.col <- NULL
   if(missing(coords.data)) coords.data <- NULL
-  if(missing(xlim)) xlim <- NULL
-  if(missing(ylim)) ylim <- NULL
   if(missing(x.leg)) x.leg <- NULL
   if(missing(y.leg)) y.leg <- NULL
+  ##
+  ## Plotting 1D or 2D
+  ##
   if(!is.null(attr(x, 'sp.dim')) && attr(x, 'sp.dim') == '1D')
-    plot.1d(values, xlim=xlim, ylim = ylim,
-            x1vals = unique(round(locations[,1], dig=12)), ...)
+    do.call("plot.1d", c(list(x = values,
+                              x1vals = unique(round(locations[,1], dig=12))), .ldots.set(ldots, type="plot.1d",
+                                   data="prediction")))
   else{
-    locations <- prepare.graph.krige.bayes(obj=x, locations=locations,
+    ldots.image <- .ldots.set(ldots, type="image", data="prediction")
+    locations <- .prepare.graph.krige.bayes(obj=x,
+                                           locations=locations,
                                            borders=borders,
-                                           borders.obj = eval(attr(x,"borders")),
+                                           borders.obj = eval(attr(x, "borders")),
                                            values.to.plot=values.to.plot,
                                            number.col = number.col,
-                                           xlim = xlim, ylim = ylim)
-    pty.prev <- par()$pty
-    par(pty = "s")
-    do.call("image", c(list(x=locations$x, y=locations$y, z=locations$values,
-                          xlim = locations$coords.lims[,1], ylim = locations$coords.lims[,2]), ldots))
+                                           xlim= ldots.image$xlim,
+                                           ylim= ldots.image$ylim,
+                                           messages=messages, bound=TRUE)
+    do.call("image", c(list(x=locations$x, y=locations$y,
+                            z=locations$values), ldots.image))
     if(!is.null(coords.data)) points(coords.data)
     if(!is.null(borders.arg)) polygon(borders, lwd=2)
-    dots.l <- list(...)
-    if(is.null(dots.l$col)) dots.l$col <- heat.colors(12)
+    if(is.null(ldots$col)) ldots$col <- heat.colors(12)
     if(!is.null(x.leg) & !is.null(y.leg)){
-      legend.krige(x.leg=x.leg, y.leg=y.leg,
-                   values=locations$values,
-                   vertical = vertical, cex=cex.leg,
-                   col=dots.l$col, ...)
+      do.call("legend.krige", c(list(x.leg=x.leg, y.leg=y.leg,
+                                     values=locations$values),
+                                     ldots))
     }
   }
-  par(pty=pty.prev)
-  return(invisible())
+  return(invisible())  
 }
+
 
 "persp.glm.krige.bayes" <-
   function (x, locations, borders, 
             values.to.plot = c("median", "uncertainty",
-              "quantiles", "probabilities", "simulation"), number.col, ...) 
+              "quantiles", "probabilities", "simulation"), number.col, messages, ...) 
 {
+  ## apart from the "values.to.plot" argument, this function is identical to "image.glm.krige.bayes"
+  ldots <- match.call(expand.dots = FALSE)$...
   if(missing(x)) x <- NULL
   attach(x)
   on.exit(detach(x))
   if(missing(locations)) locations <-  eval(attr(x, "prediction.locations"))
   if(is.null(locations)) stop("prediction locations must be provided")
   if(ncol(locations) != 2) stop("locations must be a matrix or data-frame with two columns")
-  if(!is.numeric(values.to.plot)){
+  if(mode(values.to.plot) != "numeric"){
     values.to.plot <- match.arg(values.to.plot,
                                 choices = c("median", "uncertainty",
                                   "quantiles", "probabilities", "simulation"))
   }
   if(missing(borders)) borders <- NULL
   if(missing(number.col)) number.col <- NULL
+  ##
+  ## Plotting 1D or 2D
+  ##
   if(!is.null(attr(x, 'sp.dim')) && attr(x, 'sp.dim') == '1D')
-    plot.1d(values, xlim=xlim, ylim = ylim,
-            x1vals = unique(round(locations[,1], dig=12)), ...)
+    do.call("plot.1d", c(list(x = values,
+                              x1vals = unique(round(locations[,1], dig=12))), .ldots.set(ldots, type="plot.1d",
+                                    data="prediction")))
   else{
-    locations <- prepare.graph.krige.bayes(obj=x, locations=locations,
-                                         borders=borders,
-                                         borders.obj = eval(attr(x,"borders")),
-                                         values.to.plot=values.to.plot,
-                                         number.col = number.col)
-    persp(locations$x, locations$y, locations$values, ...)
+    ldots.persp <- .ldots.set(ldots, type="persp", data="prediction")
+    locations <- .prepare.graph.krige.bayes(obj=x, locations=locations,
+                                           borders=borders,
+                                           borders.obj = eval(attr(x, "borders")),
+                                           values.to.plot=values.to.plot,
+                                           xlim= ldots.persp$xlim,
+                                           ylim= ldots.persp$ylim,
+                                           number.col = number.col,
+                                           messages=messages, bound=TRUE)
+    do.call("persp", c(list(x=locations$x, y=locations$y,
+                            z=locations$values), ldots.persp))
   }
   return(invisible())
 }
+
+
 
 
 ### The cases where some of the parameters are fixed are not implemented yet.

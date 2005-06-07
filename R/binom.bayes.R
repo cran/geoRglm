@@ -1,6 +1,6 @@
 
 
-"mcmc.bayes.binom.logit" <- 
+".mcmc.bayes.binom.logit" <- 
   function(data, units.m, trend, mcmc.input, messages.screen, cov.model, kappa, tausq.rel, coords, ss.sigma, df, phi.prior, phi.discrete)
 {
   ##
@@ -39,7 +39,7 @@
   ##
   ##                                                                      
   ## ---------- sampling ----------- ###### 
-  cov.model.number <- cor.number(cov.model)
+  cov.model.number <- .cor.number(cov.model)
   if(is.vector(trend)) beta.size <- 1
   else beta.size <- ncol(trend)
   n.sim <- floor(n.iter/thin)
@@ -83,7 +83,7 @@
   return(result)
 }
 
-"mcmc.bayes.conj.binom.logit" <- 
+".mcmc.bayes.conj.binom.logit" <- 
   function(data, units.m, meanS, ttvbetatt, mcmc.input, messages.screen, cov.model, kappa, tausq.rel, coords, ss.sigma, df, phi.prior, phi.discrete)
 {
   ##
@@ -121,7 +121,7 @@
   messages.C <- ifelse(messages.screen,1,0) ## for C-code
   ##
   ## ---------- sampling ----------- ###### 
-  cov.model.number <- cor.number(cov.model)
+  cov.model.number <- .cor.number(cov.model)
   if(is.null(ttvbetatt)) ttvbetatt <- matrix(0,beta.size,beta.size)
   n.sim <- floor(n.iter/thin)
   ## remeber this rather odd coding for telling that S.start is from the prior !!!
@@ -191,14 +191,14 @@
   ## reading input
   ##
   if(missing(model)) model <- model.glm.control()
-  else model <- model.glm.check.aux(model, fct = "binom.krige.bayes")
+  else model <- .model.glm.check.aux(model, fct = "binom.krige.bayes")
   cov.model <- model$cov.model
   kappa <- model$kappa
   tausq.rel <- prior$tausq.rel
   ## reading prior input
   ##
   if(missing(prior))  stop("binom.krige.bayes: argument prior must be given ")
-  else prior <- prior.glm.check.aux(prior, fct = "binom.krige.bayes")
+  else prior <- .prior.glm.check.aux(prior, fct = "binom.krige.bayes")
   beta.prior <- prior$beta.prior
   beta <- prior$beta
   beta.var <- prior$beta.var.std
@@ -216,7 +216,7 @@
   ## reading output options
   ##
   if(missing(output)) output <- output.glm.control()
-  else output <- output.glm.check.aux(output, fct = "binom.krige.bayes")
+  else output <- .output.glm.check.aux(output, fct = "binom.krige.bayes")
   quantile.estimator <- output$quantile.estimator
   probability.estimator <- output$probability.estimator
   inference <- output$inference
@@ -258,7 +258,7 @@
   # checking prediction locations
   ##
   if((inference) & (do.prediction)){
-    locations <- check.locations(locations)
+    locations <- .check.locations(locations)
     ## Checking the consistency between coords, locations, and trends
     trend.l <- model$trend.l
     ni <- nrow(locations)
@@ -292,7 +292,7 @@
   ## ##### preparing for MCMC -------------------------------------------------------
   ##
   if(missing(mcmc.input)) stop("binom.krige.bayes: argument mcmc.input must be given")
-  mcmc.input <- mcmc.check.aux(mcmc.input, fct="binom.krige.bayes")
+  mcmc.input <- .mcmc.check.aux(mcmc.input, fct="binom.krige.bayes")
   ##
   if(beta.prior == "fixed" | beta.prior == "normal") mean.d <- as.vector(trend.data %*% beta)
   else mean.d <- rep(0, n)
@@ -312,8 +312,8 @@
                                try.another.decomposition = FALSE)$inverse
     if(beta.prior != "fixed"){
       ivtt <- invcov%*%trend.data
-      if(beta.prior == "normal") invcov <- invcov-ivtt%*%solve.geoR(crossprod(trend.data, ivtt) + solve(beta.var), t(ivtt))
-      else invcov <- invcov-ivtt%*%solve.geoR(crossprod(trend.data, ivtt), t(ivtt))
+      if(beta.prior == "normal") invcov <- invcov-ivtt%*%.solve.geoR(crossprod(trend.data, ivtt) + solve(beta.var), t(ivtt))
+      else invcov <- invcov-ivtt%*%.solve.geoR(crossprod(trend.data, ivtt), t(ivtt))
     }
   }
   if((phi.prior == "fixed") && (sigmasq.prior != "fixed")){
@@ -326,19 +326,19 @@
 ############-----------MCMC -------------##############################
   ##
   if(sigmasq.prior == "fixed"){ 
-    log.odds <- mcmc.binom.logit(data = data, units.m = units.m, meanS = mean.d, invcov=invcov, mcmc.input = mcmc.input, messages.screen=messages.screen)
+    log.odds <- .mcmc.binom.logit(data = data, units.m = units.m, meanS = mean.d, invcov=invcov, mcmc.input = mcmc.input, messages.screen=messages.screen)
   }
   else {
     kb.results$posterior$phi <- list()
     ## take care re-using log.odds !
     if(beta.prior == "flat"){
-      log.odds <- mcmc.bayes.binom.logit(data=data, units.m=units.m, trend=trend.data, mcmc.input=mcmc.input, messages.screen=messages.screen, cov.model=cov.model, 
+      log.odds <- .mcmc.bayes.binom.logit(data=data, units.m=units.m, trend=trend.data, mcmc.input=mcmc.input, messages.screen=messages.screen, cov.model=cov.model, 
                                          kappa=kappa, tausq.rel = tausq.rel, coords=coords.transf, 
                                          ss.sigma = df.sigmasq*S2.prior, df = df.model, phi.prior = phi.prior.prob,
                                          phi.discrete = phi.discrete)
     }
     else{     
-      log.odds <- mcmc.bayes.conj.binom.logit(data=data, units.m=units.m, meanS = mean.d, ttvbetatt = ttvbetatt, mcmc.input=mcmc.input, messages.screen=messages.screen,
+      log.odds <- .mcmc.bayes.conj.binom.logit(data=data, units.m=units.m, meanS = mean.d, ttvbetatt = ttvbetatt, mcmc.input=mcmc.input, messages.screen=messages.screen,
                                               cov.model=cov.model, kappa=kappa, tausq.rel = tausq.rel,
                                               coords=coords.transf, ss.sigma = df.sigmasq*S2.prior, df = df.model,
                                               phi.prior = phi.prior.prob, phi.discrete = phi.discrete)
@@ -355,7 +355,7 @@
   if(inference) {
     if(phi.prior=="fixed") phi.posterior <- list(phi.prior=phi.prior, phi=phi)
     else  phi.posterior <- list(phi.prior=phi.prior, phi.discrete=phi.discrete, sample=kb.results$posterior$phi$sample)
-    predict.temp <- pred.aux(S=log.odds, coords=coords, locations=locations, model=model, prior=prior, output=output, phi.posterior=phi.posterior, link="logit")
+    predict.temp <- .pred.aux(S=log.odds, coords=coords, locations=locations, model=model, prior=prior, output=output, phi.posterior=phi.posterior, link="logit")
     temp.post <- predict.temp$temp.post
     if(do.prediction) {
       temp.pred <- predict.temp$temp.pred
@@ -368,7 +368,7 @@
       loc.coincide <- (colSums(d0mat < 1e-10) == 1)
 
       if((is.logical(quantile.estimator) && (quantile.estimator)) || (is.numeric(quantile.estimator))){
-        predi.q <- pred.quan.aux(temp.pred, loc.coincide, df.model, ni, quantile.estimator)
+        predi.q <- .pred.quan.aux(temp.pred, loc.coincide, df.model, ni, quantile.estimator)
         kb.results$predictive$median <- plogis(predi.q$median)
         kb.results$predictive$uncertainty <- (plogis(predi.q$upper) - plogis(predi.q$lower))/4      
         if(is.data.frame(predi.q$quantiles)){
@@ -386,12 +386,12 @@
         logit.probab <- ifelse(probability.estimator > 0, logit.probab, 1e-17)
         len.p <- length(probability.estimator)
         if(len.p== 1){
-          kb.results$predictive$probability <- round(pmixed(logit.probab, temp.pred, df.model), digits = 3)
+          kb.results$predictive$probability <- round(.pmixed(logit.probab, temp.pred, df.model), digits = 3)
         }
         else{
           kb.results$predictive$probability <- matrix(NA,ni,len.p)
           for(ii in seq(length=len.p)){
-            kb.results$predictive$probability[,ii] <- round(pmixed(logit.probab[ii], temp.pred, df.model), digits = 3)
+            kb.results$predictive$probability[,ii] <- round(.pmixed(logit.probab[ii], temp.pred, df.model), digits = 3)
           }
         }
       }
@@ -445,14 +445,14 @@
       else {
         if(sigmasq.prior == "fixed"){
           if(beta.prior != "fixed")
-            kb.results$posterior$beta$sample <- array(apply(temp.post$beta.var,3,multgauss),dim=c(beta.size, n.sim))+temp.post$beta.mean
+            kb.results$posterior$beta$sample <- array(apply(temp.post$beta.var,3,.multgauss),dim=c(beta.size, n.sim))+temp.post$beta.mean
         }
         else {
           kb.results$posterior$sigmasq$sample <- rinvchisq(n.sim, df.model, temp.post$S2)
           if(beta.prior != "fixed"){
             if(is.R()) cond.beta.var <- temp.post$beta.var *rep(kb.results$posterior$sigmasq$sample/temp.post$S2,rep(beta.size^2,n.sim))
             else cond.beta.var <- temp.post$beta.var *rep(kb.results$posterior$sigmasq$sample/temp.post$S2,each = beta.size^2)
-            kb.results$posterior$beta$sample <- array(apply(cond.beta.var,3,multgauss),dim=c(beta.size, n.sim)) + temp.post$beta.mean
+            kb.results$posterior$beta$sample <- array(apply(cond.beta.var,3,.multgauss),dim=c(beta.size, n.sim)) + temp.post$beta.mean
           }
         }
       }

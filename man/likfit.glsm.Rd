@@ -1,11 +1,11 @@
 \name{likfit.glsm}
 
 \alias{likfit.glsm}
-\alias{func.val}
-\alias{NewtonRhapson.step}
-\alias{maxim.aux1}
-\alias{lik.sim}
-\alias{lik.sim.boxcox}
+\alias{.func.val}
+\alias{.NewtonRhapson.step}
+\alias{.maxim.aux1}
+\alias{.lik.sim}
+\alias{.lik.sim.boxcox}
 
 
 \title{Monte Carlo Maximum Likelihood Estimation in a Generalised Linear

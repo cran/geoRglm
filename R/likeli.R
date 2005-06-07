@@ -24,15 +24,15 @@
   else coords <- coords.aniso(coords = mcmc.output$geodata$coords, aniso.pars = mcmc.output$model$aniso.pars)
   invcov <- varcov.spatial(coords = coords, cov.model = cov.model, kappa = kappa, nugget = nugget.rel, 
                            cov.pars = c(1,phi), det = TRUE, only.inv.lower.diag = TRUE)
-  SivS <- diagquadraticformXAX(S, invcov$lower.inverse, invcov$diag.inverse) 
+  SivS <- .diagquadraticformXAX(S, invcov$lower.inverse, invcov$diag.inverse) 
   if(beta.size == 1){
-    DivD <- as.vector(bilinearformXAY(trend.data,invcov$lower.inverse,invcov$diag.inverse,trend.data)) 
-    SivD <- as.vector(bilinearformXAY(S, invcov$lower.inverse, invcov$diag.inverse, trend.data))
+    DivD <- as.vector(.bilinearformXAY(trend.data,invcov$lower.inverse,invcov$diag.inverse,trend.data)) 
+    SivD <- as.vector(.bilinearformXAY(S, invcov$lower.inverse, invcov$diag.inverse, trend.data))
     log.f.sim <- -invcov$log.det.to.half - 0.5*n.dat*log(sigmasq) - 0.5*(SivS-2*SivD*beta+DivD*beta^2)/sigmasq
   }
   else{
-    DivD <- bilinearformXAY(trend.data,invcov$lower.inverse,invcov$diag.inverse,trend.data)
-    SivD <- bilinearformXAY(S, invcov$lower.inverse, invcov$diag.inverse, trend.data)
+    DivD <- .bilinearformXAY(trend.data,invcov$lower.inverse,invcov$diag.inverse,trend.data)
+    SivD <- .bilinearformXAY(S, invcov$lower.inverse, invcov$diag.inverse, trend.data)
     log.f.sim <-  -invcov$log.det.to.half - 0.5*n.dat*log(sigmasq) - 0.5*as.vector(SivS-2*as.vector(SivD%*%beta)+t(beta)%*%DivD%*%beta)/sigmasq
   }
   if(use.intensity){
@@ -53,8 +53,7 @@
   }
 }
 
-"func.val" <-
-  function(SivS, SivD, DivD, beta, sigmasq, log.f)
+".func.val" <- function(SivS, SivD, DivD, beta, sigmasq, log.f)
 {
   beta.size <- length(beta)
   if(beta.size == 1) ff <- exp(-0.5*(SivS-2*SivD*beta+DivD*beta^2)/sigmasq-log.f)
@@ -62,7 +61,7 @@
   return(ff)
 }
 
-"NewtonRhapson.step" <-
+".NewtonRhapson.step" <-
   function(SivS, SivD, DivD, SivDi2, ff, n.dat, beta, sigmasq, steplen)
 {
   beta.size <- length(beta)
@@ -101,29 +100,29 @@
   return(list(betanew=betanew, sigmasqnew=sigmasqnew, flat = flat.message))
 }
 
-"maxim.aux1" <-
+".maxim.aux1" <-
   function(S, invcov, trend, log.f.sim, messages.screen=FALSE)
 {
   n.sim <- ncol(S)
   n.dat <- nrow(S)  
   if(is.matrix(trend)) beta.size <- ncol(trend)
   else beta.size <- 1
-  SivS <- diagquadraticformXAX(S,invcov$lower.inverse,invcov$diag.inverse)
+  SivS <- .diagquadraticformXAX(S,invcov$lower.inverse,invcov$diag.inverse)
   if(beta.size == 1){
-    SivD <- as.vector(bilinearformXAY(S,invcov$lower.inverse,invcov$diag.inverse,trend))
-    DivD <- as.vector(bilinearformXAY(trend,invcov$lower.inverse,invcov$diag.inverse,trend))
+    SivD <- as.vector(.bilinearformXAY(S,invcov$lower.inverse,invcov$diag.inverse,trend))
+    DivD <- as.vector(.bilinearformXAY(trend,invcov$lower.inverse,invcov$diag.inverse,trend))
     beta.hat <- SivD/DivD
-    sigmasq.hat <- diagquadraticformXAX(S-trend%*%t(beta.hat),invcov$lower.inverse,invcov$diag.inverse)/n.dat
+    sigmasq.hat <- .diagquadraticformXAX(S-trend%*%t(beta.hat),invcov$lower.inverse,invcov$diag.inverse)/n.dat
     SivDi2 <- SivD^2
     corr1 <- mean(-0.5*(SivS-2*SivD*mean(beta.hat)+DivD*mean(beta.hat)^2)/mean(sigmasq.hat)-log.f.sim)
     beta <- beta.hat[1]
     sigmasq <- sigmasq.hat[1]
   }
   else{
-    SivD <- bilinearformXAY(S,invcov$lower.inverse,invcov$diag.inverse,trend)
-    DivD <- bilinearformXAY(trend,invcov$lower.inverse,invcov$diag.inverse,trend)
+    SivD <- .bilinearformXAY(S,invcov$lower.inverse,invcov$diag.inverse,trend)
+    DivD <- .bilinearformXAY(trend,invcov$lower.inverse,invcov$diag.inverse,trend)
     beta.hat <- t(solve(DivD,t(SivD))) ####### might be improved (GLS)
-    sigmasq.hat <- diagquadraticformXAX(S-trend%*%t(beta.hat),invcov$lower.inverse,invcov$diag.inverse)/n.dat
+    sigmasq.hat <- .diagquadraticformXAX(S-trend%*%t(beta.hat),invcov$lower.inverse,invcov$diag.inverse)/n.dat
     "cp" <- function(x){return(x%*%t(x))}
     SivDi2 <- array(t(apply(SivD,1,cp)),dim=c(n.sim,beta.size,beta.size))
     corr1 <- mean(-0.5*(SivS-2*as.vector(SivD%*%colMeans(beta.hat))+t(colMeans(beta.hat))%*%DivD%*%colMeans(beta.hat))/mean(sigmasq.hat)-log.f.sim)
@@ -133,8 +132,8 @@
   log.f.c <- log.f.sim + corr1
   log.hh <- (-Inf)
   for(ll in seq(length=ncol(S))){
-    if(beta.size == 1) ff <- func.val(SivS, SivD, DivD, beta.hat[ll], sigmasq.hat[ll], log.f.c)
-    else ff <- func.val(SivS, SivD, DivD, beta.hat[ll,], sigmasq.hat[ll], log.f.c)
+    if(beta.size == 1) ff <- .func.val(SivS, SivD, DivD, beta.hat[ll], sigmasq.hat[ll], log.f.c)
+    else ff <- .func.val(SivS, SivD, DivD, beta.hat[ll,], sigmasq.hat[ll], log.f.c)
     log.hhnew <- log(mean(ff))-(n.dat/2)*log(sigmasq.hat[ll])
     if(log.hhnew>log.hh){
       if(beta.size == 1) beta <-beta.hat[ll]
@@ -147,15 +146,15 @@
   if(beta.size == 1) corr2 <- mean(-0.5*(SivS-2*SivD*beta+DivD*beta^2)/sigmasq-log.f.sim)
   else corr2 <- mean(-0.5*(SivS-2*as.vector(SivD%*%beta)+t(beta)%*%DivD%*%beta)/sigmasq-log.f.sim)
   log.f.c <- log.f.sim + corr2
-  ff <- func.val(SivS, SivD, DivD, beta, sigmasq, log.f.c)
+  ff <- .func.val(SivS, SivD, DivD, beta, sigmasq, log.f.c)
   log.hh <- log(mean(ff))-(n.dat/2)*log(sigmasq)
   ##
   test <- 1
   test2 <- 1
   steplen <- 1
   while(test>0.0000000000001 | test2 > 0 ){
-    New <- NewtonRhapson.step(SivS, SivD, DivD, SivDi2, ff, n.dat, beta, sigmasq, steplen)
-    ffnew <- func.val(SivS, SivD, DivD, New$beta, New$sigmasq, log.f.c)
+    New <- .NewtonRhapson.step(SivS, SivD, DivD, SivDi2, ff, n.dat, beta, sigmasq, steplen)
+    ffnew <- .func.val(SivS, SivD, DivD, New$beta, New$sigmasq, log.f.c)
     log.hhnew <- log(mean(ffnew))-(n.dat/2)*log(New$sigmasq)
     if(New$flat & messages.screen){
       cat(paste("Problems when optimising w.r.t. beta and sigmasq: likelihood is very flat \n"))
@@ -177,7 +176,7 @@
 }
 
 
-"lik.sim" <- function(pars, fp, ip, temp.list)
+".lik.sim" <- function(pars, fp, ip, temp.list)
 { 
   ## Obligatory parameter:
   phi <- pars[1]
@@ -190,12 +189,12 @@
   ##
   iv <- varcov.spatial(dists.lowertri = as.vector(dist(temp.list$coords)), cov.model = temp.list$cov.model, kappa = temp.list$kappa,
                        nugget = tausq.rel, cov.pars = c(1, phi), only.inv.lower.diag = TRUE, det = TRUE)
-  negloglik <- (iv$log.det.to.half - maxim.aux1(S=temp.list$z, invcov=iv, trend = temp.list$xmat, log.f.sim = temp.list$log.f.sim, messages.screen=messages.screen)$logh)
+  negloglik <- (iv$log.det.to.half - .maxim.aux1(S=temp.list$z, invcov=iv, trend = temp.list$xmat, log.f.sim = temp.list$log.f.sim, messages.screen=messages.screen)$logh)
   if(messages.screen) cat(paste("log-likelihood = ",-negloglik,"\n"))
   return(negloglik)
 }
 
-"lik.sim.boxcox" <-
+".lik.sim.boxcox" <-
   function(pars, fp, ip, temp.list)
 { 
 ### Function for finding m.l.e. for a given phi based on samples from mu=g^{-1}(S) ###############
@@ -223,7 +222,7 @@
   ##
   iv <- varcov.spatial(dists.lowertri = as.vector(dist(temp.list$coords)), cov.model = temp.list$cov.model, kappa = temp.list$kappa,
                        nugget = tausq.rel, cov.pars = c(1, phi), only.inv.lower.diag = TRUE, det = TRUE)
-  negloglik <- (iv$log.det.to.half - maxim.aux1(S=mu, invcov=iv, trend = temp.list$xmat, log.f.sim = temp.list$log.f.sim-log.J.lambda, messages.screen=messages.screen)$logh)
+  negloglik <- (iv$log.det.to.half - .maxim.aux1(S=mu, invcov=iv, trend = temp.list$xmat, log.f.sim = temp.list$log.f.sim-log.J.lambda, messages.screen=messages.screen)$logh)
   if(messages.screen) cat(paste("log-likelihood = ",-negloglik,"\n"))
   return(negloglik)
 }
@@ -333,11 +332,11 @@
       cat("likfit.glsm: likelihood maximisation using the function optim.\n") 
     }
     if(another.boxcox){
-      lik.optim <- optim(par = ini, fn = lik.sim.boxcox, method = "L-BFGS-B",lower = lower.optim, upper = upper.optim,
+      lik.optim <- optim(par = ini, fn = .lik.sim.boxcox, method = "L-BFGS-B",lower = lower.optim, upper = upper.optim,
                          fp = fixed.values, ip = ip, temp.list = temp.list, ...)
     }
     else{
-      lik.optim <- optim(par = ini, fn = lik.sim, method = "L-BFGS-B",lower = lower.optim, upper = upper.optim,
+      lik.optim <- optim(par = ini, fn = .lik.sim, method = "L-BFGS-B",lower = lower.optim, upper = upper.optim,
                          fp = fixed.values, ip = ip, temp.list = temp.list, ...)
     }
     ##
@@ -372,10 +371,10 @@
   }
   if(another.boxcox){
     if(lambda == 0){
-      result <- maxim.aux1(S = log(mcmc.obj$mu), invcov = siv, trend = temp.list$xmat, log.f.sim = temp.list$log.f.sim - apply(log(mcmc.obj$mu),2,sum)*(lambda-1), messages.screen=messages.screen)
+      result <- .maxim.aux1(S = log(mcmc.obj$mu), invcov = siv, trend = temp.list$xmat, log.f.sim = temp.list$log.f.sim - apply(log(mcmc.obj$mu),2,sum)*(lambda-1), messages.screen=messages.screen)
     }
     else{
-      result <- maxim.aux1(S = (mcmc.obj$mu^lambda-1)/lambda, invcov = siv, trend = as.vector(temp.list$xmat),
+      result <- .maxim.aux1(S = (mcmc.obj$mu^lambda-1)/lambda, invcov = siv, trend = as.vector(temp.list$xmat),
                            log.f.sim = temp.list$log.f.sim - apply(log(mcmc.obj$mu),2,sum)*(lambda-1), messages.screen=messages.screen)
     }
     if(cov.model == "pure.nugget") loglik.max <- result$logh
@@ -383,7 +382,7 @@
                     kappa = kappa, aniso.pars = aniso.pars, lambda = lambda, trend = trend, npars=npars, loglik = loglik.max, call = call.fc)
   }
   else{
-    result <- maxim.aux1(S = mcmc.obj$S, invcov = siv, trend = temp.list$xmat,log.f.sim = temp.list$log.f.sim, messages.screen=messages.screen)
+    result <- .maxim.aux1(S = mcmc.obj$S, invcov = siv, trend = temp.list$xmat,log.f.sim = temp.list$log.f.sim, messages.screen=messages.screen)
     if(cov.model == "pure.nugget") loglik.max <- result$logh
     results <- list(family=mcmc.obj$family, link=mcmc.obj$link, cov.model = cov.model, beta = result$beta, cov.pars = c(result$sigmasq, phi), nugget.rel = nugget.rel,
                     kappa = kappa, aniso.pars = aniso.pars, lambda = mcmc.obj$lambda, trend = trend, npars=npars, loglik = loglik.max, call = call.fc)

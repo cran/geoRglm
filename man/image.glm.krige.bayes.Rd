@@ -16,15 +16,14 @@
 \method{image}{glm.krige.bayes}(x, locations, borders,
                   values.to.plot=c("median", "uncertainty",
                      "quantiles", "probabilities", "simulation"),
-                  number.col, coords.data, xlim, ylim, x.leg, y.leg,
-                  \dots)
+                  number.col, coords.data, x.leg, y.leg, messages,\dots)
 
 
 
 \method{persp}{glm.krige.bayes}(x, locations, borders,
                   values.to.plot=c("median", "uncertainty",
                      "quantiles", "probabilities", "simulation"),
-                  number.col, \dots)
+                  number.col, messages, \dots)
 }
 
 \arguments{
@@ -50,11 +49,12 @@
     matrix with the data coordinates is
     provided, points indicating the data locations are included in the
     plot.  }
-  \item{xlim, ylim} {the ranges to be encompassed by the x and y axes.  }
-  \item{x.leg, y.leg}{limits for the legend in the horizontal and vertical directions.  }
+  \item{x.leg, y.leg}{limits for the legend in the horizontal and
+    vertical directions.  }
+  \item{messages}{logical, if TRUE status messages are printed while
+    running the function.  }
   \item{\dots}{extra arguments to be passed to the plotting function
-    \code{\link{image}} or \code{\link{persp}}.  }
-  
+    \code{\link{image}} or \code{\link{persp}}.  } 
 }
 
 \details{
@@ -76,7 +76,6 @@
   The documentation for the functions \code{\link{binom.krige.bayes}} and
   \code{\link{pois.krige.bayes}} provide
   further details about these options.
-
 }
 
 \value{

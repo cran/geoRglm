@@ -109,7 +109,7 @@ function(geodata, coords = geodata$coords, units.m = "default", obj.covariog, mo
   ## generating simulations from the model with parameters provided
   ##
   if(messages.screen) cat(paste("covariog.env: generating", nsim, "simulations(", obj.covariog$n.data,  "points). \n"))
-  simula <- pois.log.grf(obj.covariog$n.data, grid = as.matrix(coords), units.m = units.m, beta = beta, cov.model = cov.model, 
+  simula <- .pois.log.grf(obj.covariog$n.data, grid = as.matrix(coords), units.m = units.m, beta = beta, cov.model = cov.model, 
           cov.pars = cov.pars, nugget = nugget, kappa = kappa, nsim = nsim, messages = FALSE)
   ##
   ## computing empirical covariograms for the simulations
@@ -185,7 +185,7 @@ function(x, max.dist = max(x$u), ylim = "default", type = "b", envelope.obj = NU
 }
 
 
-"pois.log.grf" <- 
+".pois.log.grf" <- 
 function(n = NULL, grid, nx = round(sqrt(n)), ny = round(sqrt(n)), nsim = 1,
         xlims = c(0, 1), ylims = c(0, 1), units.m = "default", trend = "cte", beta = stop("beta parameter(s) needed"), 
         cov.model = c("exponential", "matern", "gaussian", "spherical", "cubic", "wave", "powered.exponential", "cauchy",
