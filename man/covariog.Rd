@@ -7,7 +7,9 @@
 
 \description{
   Computes the sample empirical (sample) covariogram described in Christensen, Moller and Waagepetersen (2000). 
-  Output is returned as a \code{binned covariogram}.
+  Output is returned as a \code{binned covariogram}. The function is NOT
+  a general function for computing the covariogram, and it is in fact of
+  very limited use.
 }
 
 \usage{
@@ -64,7 +66,11 @@ covariog(geodata, coords = geodata$coords, data = geodata$data,
 \details{
   Covariograms can be used in geostatistical analysis for exploratory
   purposes, to estimate covariance parameters and/or to compare theoretical
-  and fitted models against the empirical covariogram. 
+  and fitted models against the empirical covariogram.
+
+  The covariogram computed by this function assumes a specific model, a
+  spatial GLMM, and furthermore it assumes that the link-function is the
+  logarithm (i.e. it should not be used for the binomial-logistic model !).
   
   Assume that the conditional distribution of \eqn{Y_i}{Y_i} given \eqn{S_i}{S_i}
   has mean \eqn{t_i\exp(S_i)}{t_i*exp(S_i)}, where the values of \eqn{t_i} are given in \code{units.m}.

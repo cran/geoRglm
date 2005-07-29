@@ -401,7 +401,7 @@
   }
   else{  ### binomial distribution so far only includes the logit-link. Therefore no transformation parameter
     par.su <- data.frame(status=rep(-9, beta.size + 3))
-    par.su$status <- c(rep("estimated", beta.size+2), ifelse(fix.nugget.rel,"fixed"))
+    par.su$status <- c(rep("estimated", beta.size+2), ifelse(fix.nugget.rel,"fixed", "estimated"))
     if(cov.model == "pure.nugget"){
       par.su$status[beta.size+2] <- ""
     }
