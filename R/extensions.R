@@ -655,8 +655,8 @@ function(geodata, coords = geodata$coords, data = geodata$data, locations, krige
     kc.result$beta.est <- beta.flat
     remove("beta.flat")
   }
-  if(any(round(kc.result$krige.var, dig=12) < 0))
-    warning(".krige.conv.extnd: negative kriging variance found! Investigate why this is happening.\n")
+  kc.result$krige.var[kc.result$krige.var < 1e-12] <- 0
+  if(any(kc.result$krige.var < 0)) warning(".krige.conv.extnd: negative kriging variance found! Investigate why this is happening.\n")
   out.message <- ".krige.conv.extnd: Kriging performed using global neighbourhood"
   if(messages.screen) cat(paste(out.message, "\n"))
 ############## Sampling from the resulting distribution #####################

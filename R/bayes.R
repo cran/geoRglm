@@ -46,7 +46,7 @@
       stop("prior.glm.control: argument phi.discrete with support points for phi must be provided\n")
     if(length(phi.prior.probs) != length(phi.discrete))
       stop("prior.glm.control: user provided phi.prior and phi.discrete have incompatible dimensions\n")
-    if(round(sum(phi.prior.probs), dig=6) != 1)
+    if(round(sum(phi.prior.probs), dig=8) != 1)
       stop("prior.glm.control: prior probabilities provided for phi do not sum up to 1")
   }
   else phi.prior <- match.arg(phi.prior)
@@ -59,10 +59,6 @@
   else{
     if(phi.prior == "exponential" & (is.null(phi) | (length(phi) > 1)))
       stop("argument \"phi\" must be provided when using the exponential prior for the parameter phi")
-    if(any(phi.prior == c("reciprocal", "squared.reciprocal")) & any(phi.discrete == 0)){
-      warning("degenerated prior at phi = 0. Excluding value phi.discrete[1] = 0")
-      phi.discrete <- phi.discrete[phi.discrete > 1e-12]
-    }
     if(!is.null(phi.discrete)){
       discrete.diff <- diff(phi.discrete)
       if(round(max(1e08 * discrete.diff)) != round(min(1e08 * discrete.diff)))
@@ -117,15 +113,18 @@
     if(is.null(phi.discrete))
       stop("phi.discrete must be given when parameter phi is random")
     else{
+      pd <- as.vector(phi.discrete)
+      names(pd) <- NULL
       ip$phi$probs <- switch(phi.prior,
-                             uniform = rep(1/length(phi.discrete), length(phi.discrete)),
-                             exponential = (1/phi) * exp(- phi.discrete/phi),
-                             squared.reciprocal = (1/(phi.discrete^2))/sum(1/(phi.discrete^2)),
-                             reciprocal = (1/phi.discrete)/sum(1/phi.discrete),
+                             uniform = rep(1, length(pd)),
+                             exponential = dexp(pd, rate=1/phi),
+                             squared.reciprocal = ifelse((pd > 0), 1/(pd^2),0),
+                             reciprocal = ifelse((pd > 0), 1/pd, 0),
                              user = phi.prior.probs)
       names(ip$phi$probs) <- phi.discrete
     }
     if(phi.prior == "exponential") ip$phi$pars <- c(ip$phi$pars, exp.par=phi)
+    ip$phi$probs <- ip$phi$probs/sum(ip$phi$probs)
   }
   ##
   ip$tausq.rel <- list(status = "fixed", fixed.value = tausq.rel)
@@ -175,8 +174,8 @@
   ## apart from the "values.to.plot" argument, this function is identical to "image.glm.krige.bayes"
   ldots <- match.call(expand.dots = FALSE)$...
   if(missing(x)) x <- NULL
-  attach(x)
-  on.exit(detach(x))
+  attach(x, pos=2, warn.conflicts=FALSE)
+  on.exit(detach(2))
   if(missing(locations))
     locations <-  eval(attr(x, "prediction.locations"))
   if(is.null(locations)) stop("prediction locations must be provided")
@@ -194,6 +193,8 @@
   }
   if(missing(number.col)) number.col <- NULL
   if(missing(coords.data)) coords.data <- NULL
+  else
+    if(coords.data) coords.data <-  eval(attr(x, "data.locations"))
   if(missing(x.leg)) x.leg <- NULL
   if(missing(y.leg)) y.leg <- NULL
   ##
@@ -237,8 +238,8 @@
   ## apart from the "values.to.plot" argument, this function is identical to "image.glm.krige.bayes"
   ldots <- match.call(expand.dots = FALSE)$...
   if(missing(x)) x <- NULL
-  attach(x)
-  on.exit(detach(x))
+  attach(x, pos=2, warn.conflicts=FALSE)
+  on.exit(detach(2))
   if(missing(locations)) locations <-  eval(attr(x, "prediction.locations"))
   if(is.null(locations)) stop("prediction locations must be provided")
   if(ncol(locations) != 2) stop("locations must be a matrix or data-frame with two columns")

@@ -59,7 +59,7 @@
   n.iter <- mcmc.input$n.iter
 ## ---------------- burn-in ----------------- ######### 
   if(burn.in > 0) {
-    mcmc.output <- mcmc.binom.aux(z, data, units.m, meanS, QQ, S.scale, 1, burn.in, QtivQ)
+    mcmc.output <- .mcmc.binom.aux(z, data, units.m, meanS, QQ, S.scale, 1, burn.in, QtivQ)
     if(messages.screen) cat(paste("burn-in = ", burn.in, " is finished. Acc.-rate = ", round(mcmc.output$acc.rate, digits=3), "\n"))
     acc.rate.burn.in <- c(burn.in, mcmc.output$acc.rate)
   }
