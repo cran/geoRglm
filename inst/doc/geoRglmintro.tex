@@ -51,7 +51,7 @@
 \author{Ole F. Christensen \& Paulo J. Ribeiro Jr.}
 \date{Last update: \today}
 
-\usepackage{/users/olefc/local/lib/R/share/texmf/Sweave}
+\usepackage{/users/olefc/local2.2.1//lib/R/share/texmf/Sweave}
 \begin{document}
 
 \maketitle
@@ -87,9 +87,12 @@ where \verb+PATH_TO_geoR+ and \verb+PATH_TO_geoRglm+ are the paths to the direct
 If \pkg{geoRglm} is correctly loaded the following message will be displayed:
 \begin{Schunk}
 \begin{Soutput}
+Loading required package: sp
+\end{Soutput}
+\begin{Soutput}
 -----------------------------------------------------------
 geoRglm - a package for generalised linear spatial models
-geoRglm version 0.8-11 (2005-06-07) is now loaded
+geoRglm version 0.8-14 (2006-01-16) is now loaded
 -----------------------------------------------------------
 \end{Soutput}
 \end{Schunk}
@@ -218,6 +221,11 @@ here, we encourage the reader to investigate further.
 \begin{Schunk}
 \begin{Sinput}
 > library(coda)
+\end{Sinput}
+\begin{Soutput}
+Loading required package: lattice
+\end{Soutput}
+\begin{Sinput}
 > test2.tune.c <- create.mcmc.coda(test2.tune, mcmc.input = mcmc2.tune)
 \end{Sinput}
 \end{Schunk}

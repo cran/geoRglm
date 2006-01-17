@@ -58,6 +58,10 @@
   beta.size <- length(beta)
   if(beta.size == 1) ff <- exp(-0.5*(SivS-2*SivD*beta+DivD*beta^2)/sigmasq-log.f)
   else ff <- exp(-0.5*as.vector(SivS-2*as.vector(SivD%*%beta)+t(beta)%*%DivD%*%beta)/sigmasq-log.f)
+  if(any(!is.finite(ff))){
+    print(summary(ff))
+    stop("Some function values are not finite")
+  }
   return(ff)
 }
 
@@ -67,6 +71,10 @@
   beta.size <- length(beta)
   n.sim <- length(SivS)
   n.dat <- length(SivS)
+  if(any(!is.finite(ff))){
+    print(summary(ff))
+    stop("Some function values are not finite")
+  }
   meanff <-  mean(ff)
   ## removed 1/(sigmasq^(n.dat/2) everywhere
   if(beta.size == 1){
@@ -115,8 +123,8 @@
     sigmasq.hat <- .diagquadraticformXAX(S-trend%*%t(beta.hat),invcov$lower.inverse,invcov$diag.inverse)/n.dat
     SivDi2 <- SivD^2
     corr1 <- mean(-0.5*(SivS-2*SivD*mean(beta.hat)+DivD*mean(beta.hat)^2)/mean(sigmasq.hat)-log.f.sim)
-    beta <- beta.hat[1]
-    sigmasq <- sigmasq.hat[1]
+    ##beta <- beta.hat[1]
+    ##sigmasq <- sigmasq.hat[1]
   }
   else{
     SivD <- .bilinearformXAY(S,invcov$lower.inverse,invcov$diag.inverse,trend)
@@ -126,8 +134,8 @@
     "cp" <- function(x){return(x%*%t(x))}
     SivDi2 <- array(t(apply(SivD,1,cp)),dim=c(n.sim,beta.size,beta.size))
     corr1 <- mean(-0.5*(SivS-2*as.vector(SivD%*%colMeans(beta.hat))+t(colMeans(beta.hat))%*%DivD%*%colMeans(beta.hat))/mean(sigmasq.hat)-log.f.sim)
-    beta <- beta.hat[1,]
-    sigmasq <- sigmasq.hat[1]
+    ##beta <- beta.hat[1,]
+    ##sigmasq <- sigmasq.hat[1]
   }
   log.f.c <- log.f.sim + corr1
   log.hh <- (-Inf)
@@ -143,8 +151,8 @@
     }
   }
   ## new correction (again for numerical purposes).
-  if(beta.size == 1) corr2 <- mean(-0.5*(SivS-2*SivD*beta+DivD*beta^2)/sigmasq-log.f.sim)
-  else corr2 <- mean(-0.5*(SivS-2*as.vector(SivD%*%beta)+t(beta)%*%DivD%*%beta)/sigmasq-log.f.sim)
+  if(beta.size == 1) corr2 <- max(-0.5*(SivS-2*SivD*beta+DivD*beta^2)/sigmasq-log.f.sim)
+  else corr2 <- max(-0.5*(SivS-2*as.vector(SivD%*%beta)+t(beta)%*%DivD%*%beta)/sigmasq-log.f.sim)
   log.f.c <- log.f.sim + corr2
   ff <- .func.val(SivS, SivD, DivD, beta, sigmasq, log.f.c)
   log.hh <- log(mean(ff))-(n.dat/2)*log(sigmasq)
