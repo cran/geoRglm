@@ -20,7 +20,7 @@
 
 \usage{
 pois.krige(geodata, coords = geodata$coords, data = geodata$data,
-               units.m = "default", locations = NULL, borders = NULL,
+               units.m = "default", locations = NULL, borders,
                mcmc.input, krige, output)
 }
 

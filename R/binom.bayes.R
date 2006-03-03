@@ -166,10 +166,12 @@
 
 
 "binom.krige.bayes" <- 
-  function(geodata, coords = geodata$coords, data = geodata$data, units.m = "default", locations = "no", model, prior, mcmc.input, output){
+  function(geodata, coords = geodata$coords, data = geodata$data, units.m = "default", locations = "no", borders, model, prior, mcmc.input, output){
 ###########
   if(missing(geodata))
     geodata <- list(coords=coords, data=data, units.m=units.m)
+  if(missing(borders))
+    borders <- geodata$borders
   call.fc <- match.call()
   seed <- get(".Random.seed", envir=.GlobalEnv, inherits = FALSE)
   do.prediction <- ifelse(all(locations == "no"), FALSE, TRUE)
@@ -187,6 +189,7 @@
     if(!is.null(geodata$units.m)) units.m <- geodata$units.m
     else units.m <- rep(1, n)
   }
+  if(any(units.m <= 0)) stop("units.m must be postive")
   ##
   ## reading input
   ##
@@ -260,8 +263,7 @@
   if((inference) & (do.prediction)){
     locations <- .check.locations(locations)
     ## Checking the consistency between coords, locations, and trends
-    trend.l <- model$trend.l
-    ni <- nrow(locations)
+    trend.l <- model$trend.l 
     ## Checking for 1D prediction 
     if(length(unique(locations[,1])) == 1 | length(unique(locations[,2])) == 1)
       krige1d <- TRUE
@@ -279,8 +281,16 @@
       }
       else if(trend.d != trend.l) stop("trend.l is different from trend.d")
     }
-    if(nrow(unclass(trend.spatial(trend=model$trend.l, geodata = list(coords = locations)))) != ni)
+    ## 
+    if(nrow(unclass(trend.spatial(trend=model$trend.l, geodata = list(coords = locations)))) != nrow(locations))
       stop("binom.krige.bayes: number of points to be estimated is different of the number of trend locations")
+    if(!is.null(borders)){
+      ind.loc0  <- .geoR_inout(locations, borders)
+      if(any(ind.loc0)){
+        warning("\n binom.krige.bayes: no prediction to be performed.\n             There are no prediction locations inside the borders")
+        do.prediction <- FALSE
+      }
+    }
     kb.results <- list(posterior = list(), predictive = list())
   }
   else {
@@ -355,7 +365,7 @@
   if(inference) {
     if(phi.prior=="fixed") phi.posterior <- list(phi.prior=phi.prior, phi=phi)
     else  phi.posterior <- list(phi.prior=phi.prior, phi.discrete=phi.discrete, sample=kb.results$posterior$phi$sample)
-    predict.temp <- .pred.aux(S=log.odds, coords=coords, locations=locations, model=model, prior=prior, output=output, phi.posterior=phi.posterior, link="logit")
+    predict.temp <- .pred.aux(S=log.odds, coords=coords, locations=locations, borders=borders, model=model, prior=prior, output=output, phi.posterior=phi.posterior, link="logit")
     temp.post <- predict.temp$temp.post
     if(do.prediction) {
       temp.pred <- predict.temp$temp.pred
@@ -364,9 +374,14 @@
     ##
     if(do.prediction) {
       ##
+      if(!is.null(borders)){
+        nloc0 <- nrow(locations)
+        ind.loc0  <- .geoR_inout(locations, borders)
+        locations <- locations[ind.loc0,]
+      }
+      ni <- nrow(locations)  
       d0mat <- loccoords(coords, locations)
       loc.coincide <- (colSums(d0mat < 1e-10) == 1)
-
       if((is.logical(quantile.estimator) && (quantile.estimator)) || (is.numeric(quantile.estimator))){
         predi.q <- .pred.quan.aux(temp.pred, loc.coincide, df.model, ni, quantile.estimator)
         kb.results$predictive$median <- plogis(predi.q$median)

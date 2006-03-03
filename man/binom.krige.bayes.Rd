@@ -14,7 +14,7 @@
 
 \usage{
 binom.krige.bayes(geodata, coords = geodata$coords, data = geodata$data, 
-         units.m = "default", locations = "no", 
+         units.m = "default", locations = "no", borders,
          model, prior, mcmc.input, output)
 }
 
@@ -35,6 +35,9 @@ binom.krige.bayes(geodata, coords = geodata$coords, data = geodata$data,
   \item{locations}{an \eqn{N \times 2}{N x 2} matrix or data frame, or a
     list with the 2-D
     coordinates of the \eqn{N} prediction locations.  }
+  \item{borders}{optional. If a two column matrix defining a polygon is
+    provided the prediction is performed only at locations inside this
+    polygon.  }
   \item{model}{a list defining the components of the model. It can take an output from \code{model.glm.control} or
     a list with elements as for the arguments in \code{model.glm.control}.
     See documentation for \code{model.glm.control}.

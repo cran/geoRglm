@@ -11,7 +11,7 @@
 }
 
 \usage{
-glsm.krige(mcmc.output, locations, borders=NULL, trend.l,
+glsm.krige(mcmc.output, locations, borders, trend.l,
 micro.scale=NULL, dist.epsilon= 1e-10, output)
 }
 
@@ -93,6 +93,8 @@ model.5 <- list(cov.pars=c(0.6, 0.01), beta=1, family="binomial")
 outmcmc.5 <- glsm.mcmc(b50, model= model.5, mcmc.input = mcmc.5)
 test2 <- glsm.krige(outmcmc.5, locations=matrix(c(0.15,0.15,0.005,0.05),2,2))
 image(test2)
+test3 <- glsm.krige(outmcmc.5, locations=matrix(c(0.15,0.15,0.005,0.05),2,2),
+                     output=output.glm.control(sim.predict=TRUE, quantile=FALSE))
 }
 
 \keyword{spatial}

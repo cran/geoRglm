@@ -296,16 +296,19 @@
 
 
 "pois.krige" <- 
-function(geodata, coords = geodata$coords, data = geodata$data, units.m = "default", locations = NULL,  borders = NULL, mcmc.input, krige, output)
+function(geodata, coords = geodata$coords, data = geodata$data, units.m = "default", locations = NULL,  borders, mcmc.input, krige, output)
 {
   if(missing(geodata))
     geodata <- list(coords=coords, data=data, units.m=units.m)
+  if(missing(borders))
+    borders <- geodata$borders
   call.fc <- match.call()
   n <- length(data)
   if(any(units.m == "default")){
     if(!is.null(geodata$units.m)) units.m <- geodata$units.m
     else units.m <- rep(1, n)
   }
+  if(any(units.m <= 0)) stop("units.m must be postive")
   if(missing(krige)) stop("must provide object krige")
   krige <- .krige.glm.check.aux(krige,fct="pois.krige")
   cov.model <- krige$cov.model
@@ -392,17 +395,10 @@ function(geodata, coords = geodata$coords, data = geodata$data, units.m = "defau
   ##------------------------------------------------------------
 ######################## ---- prediction ----- #####################
   if(!is.null(locations)) {
-    if(!is.null(borders)){
-      locations <- locations.inside(locations, borders)
-      if(nrow(locations) == 0)
-        stop(" pois.krige : there are no prediction locations inside the borders")
-      if(messages.screen)
-        cat(" pois.krige: results will be returned only for prediction locations inside the borders\n")
-    }
     krige <- list(type.krige = krige$type.krige, beta = beta, trend.d = trend.d, trend.l = trend.l, cov.model = cov.model, 
                   cov.pars = cov.pars, kappa = kappa, nugget = nugget, micro.scale = micro.scale, dist.epsilon = dist.epsilon, 
                   aniso.pars = aniso.pars, lambda = lambda)
-    kpl.result <- .krige.conv.extnd(data = intensity, coords = coords, locations = locations, krige = krige,
+    kpl.result <- .krige.conv.extnd(data = intensity, coords = coords, locations = locations, borders=borders, krige = krige,
                                    output = list(n.predictive = ifelse(sim.predict,1,0), signal = TRUE, messages = FALSE))
     remove(list = c("intensity"))
     kpl.result$krige.var <- rowMeans(kpl.result$krige.var) + apply(kpl.result$predict, 1, var) 

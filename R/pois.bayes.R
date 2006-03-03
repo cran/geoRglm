@@ -355,7 +355,7 @@
   return(result)
 }
 
-".pred.aux" <- function(S, coords, locations, model, prior, output, phi.posterior, link)
+".pred.aux" <- function(S, coords, locations, borders, model, prior, output, phi.posterior, link)
 {
   n.sim <- ncol(S)
   ni <- nrow(locations)
@@ -393,7 +393,7 @@
   if(phi.posterior$phi.prior == "fixed" || length(phi.posterior$phi.discrete) == 1) {
     if(phi.posterior$phi.prior == "fixed") prior.temp$phi <- phi.posterior$phi
     else prior.temp$phi <- phi.posterior$phi.discrete
-    temp.result <- .krige.bayes.extnd(data = S, coords = coords, locations = locations,
+    temp.result <- .krige.bayes.extnd(data = S, coords = coords, locations = locations, borders=borders, 
                                      model = model.temp, prior = prior.temp, output = output.temp)
     temp.post$beta.mean <- temp.result$posterior$beta$pars$mean
     temp.post$beta.var <- temp.result$posterior$beta$pars$var
@@ -430,8 +430,8 @@
       id.phi.i <- indic.phi[i, seq(length=phi.table[i])]
       prior.temp$phi <- phi.sample.unique[i]
       if(phi.table[i]==1)
-        temp.result <- krige.bayes(data = S[, id.phi.i], coords = coords, locations = locations, model = model.temp, prior = prior.temp, output = output.temp)
-      else temp.result <- .krige.bayes.extnd(data = S[, id.phi.i], coords = coords, locations = locations, 
+        temp.result <- krige.bayes(data = S[, id.phi.i], coords = coords, locations = locations, borders=borders, model = model.temp, prior = prior.temp, output = output.temp)
+      else temp.result <- .krige.bayes.extnd(data = S[, id.phi.i], coords = coords, locations = locations, borders=borders,  
                                             model = model.temp, prior = prior.temp, output = output.temp)
       temp.post$beta.mean[, id.phi.i] <- temp.result$posterior$beta$pars$mean         
       temp.post$beta.var[,  , id.phi.i] <- temp.result$posterior$beta$pars$var
@@ -587,12 +587,14 @@
 
 
 "pois.krige.bayes" <- 
-  function(geodata, coords = geodata$coords, data = geodata$data, units.m = "default", locations = "no", 
+  function(geodata, coords = geodata$coords, data = geodata$data, units.m = "default", locations = "no", borders,
            model, prior, mcmc.input, output)
 {
 ###########
   if(missing(geodata))
     geodata <- list(coords=coords, data=data, units.m=units.m)
+  if(missing(borders))
+    borders <- geodata$borders
   call.fc <- match.call()
   seed <- get(".Random.seed", envir=.GlobalEnv, inherits = FALSE)
   do.prediction <- ifelse(all(locations == "no"), FALSE, TRUE)
@@ -611,6 +613,7 @@
     if(!is.null(geodata$units.m)) units.m <- geodata$units.m
     else units.m <- rep(1, n)
   }
+  if(any(units.m <= 0)) stop("units.m must be postive")
   ####
   ## reading model input
   ##
@@ -682,7 +685,6 @@
     locations <- .check.locations(locations)
     ## Checking the consistency between coords, locations, and trends
     trend.l <- model$trend.l
-    ni <- nrow(locations)
     ## Checking for 1D prediction 
     if(length(unique(locations[,1])) == 1 | length(unique(locations[,2])) == 1)
       krige1d <- TRUE
@@ -700,8 +702,15 @@
       }
       else if(trend.d != trend.l) stop("trend.l is different from trend.d")
     }
-    if(nrow(unclass(trend.spatial(trend=trend.l, geodata = list(coords = locations)))) != ni) 
+    if(nrow(unclass(trend.spatial(trend=trend.l, geodata = list(coords = locations)))) != nrow(locations)) 
       stop("pois.krige.bayes: number of points to be estimated is different of the number of trend locations")
+    if(!is.null(borders)){
+      ind.loc0  <- .geoR_inout(locations, borders)
+      if(any(ind.loc0)){
+        warning("\n pois.krige.bayes: no prediction to be performed.\n             There are no prediction locations inside the borders")
+        do.prediction <- FALSE
+      }
+    }
     kb.results <- list(posterior = list(), predictive = list())
   }
   else {
@@ -797,7 +806,7 @@
   if(inference){
     if(phi.prior=="fixed") phi.posterior <- list(phi.prior=phi.prior, phi=phi)
     else  phi.posterior <- list(phi.prior=phi.prior, phi.discrete=phi.discrete, sample=kb.results$posterior$phi$sample)
-    predict.temp <- .pred.aux(S=gauss.post, coords=coords, locations=locations, model=model, prior=prior, output=output, phi.posterior=phi.posterior, link="boxcox")
+    predict.temp <- .pred.aux(S=gauss.post, coords=coords, locations=locations, borders=borders, model=model, prior=prior, output=output, phi.posterior=phi.posterior, link="boxcox")
     temp.post <- predict.temp$temp.post
     if(do.prediction){
       temp.pred <- predict.temp$temp.pred
@@ -805,6 +814,12 @@
     }
     if(do.prediction) {
       ##
+      if(!is.null(borders)){
+        nloc0 <- nrow(locations)
+        ind.loc0  <- .geoR_inout(locations, borders)
+        locations <- locations[ind.loc0,]
+      }
+      ni <- nrow(locations)
       d0mat <- loccoords(coords, locations)
       loc.coincide <- (colSums(d0mat < 1e-10) == 1)
       ##

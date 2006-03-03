@@ -1,5 +1,5 @@
 
-"glsm.krige" <- function(mcmc.output, locations, borders = NULL, trend.l="cte", micro.scale=NULL, dist.epsilon= 1e-10,  output)
+"glsm.krige" <- function(mcmc.output, locations, borders, trend.l="cte", micro.scale=NULL, dist.epsilon= 1e-10,  output)
 {
   call.fc <- match.call()
   coords <- mcmc.output$geodata$coords
@@ -13,6 +13,7 @@
   lambda <- mcmc.output$model$lambda
   if(is.null(micro.scale)) micro.scale <- nugget
   else if(!is.numeric(micro.scale) || length(micro.scale)>1) stop("micro.scale must be a numeric number ")
+  if(missing(borders)) borders <- mcmc.output$geodata$borders
   ##
   if(missing(output)) output <- output.glm.control()
   else output <- .output.glm.check.aux(output, fct = "glsm.krige")
@@ -38,18 +39,11 @@
   ##
   ##------------------------------------------------------------
 ######################## ---- prediction ----- #####################
-  if(!is.null(borders)){
-    locations <- locations.inside(locations, borders)
-    if(nrow(locations) == 0)
-      stop(" glsm.krige : there are no prediction locations inside the borders")
-    if(messages.screen)
-      cat(" glsm.krige: results will be returned only for prediction locations inside the borders\n")
-  }
   if(mcmc.output$model$family=="binomial"){
     krige <- list(type.krige = "sk", beta = beta, trend.d = trend.d, trend.l = trend.l, cov.model = cov.model, 
                   cov.pars = cov.pars, kappa = kappa, nugget = nugget, micro.scale = micro.scale, dist.epsilon = dist.epsilon, 
                   aniso.pars = aniso.pars, link = mcmc.output$model$link)
-    kpl.result <- .glm.krige.aux(data = mcmc.output$simulations, coords = coords, locations = locations, krige = krige,
+    kpl.result <- .glm.krige.aux(data = mcmc.output$simulations, coords = coords, locations = locations, borders=borders, krige = krige,
                                 output = list(n.predictive = ifelse(sim.predict,1,0),
                                   signal = TRUE, messages=FALSE))
   }
@@ -58,7 +52,7 @@
     krige <- list(type.krige = "sk", beta = beta, trend.d = trend.d, trend.l = trend.l, cov.model = cov.model, 
                   cov.pars = cov.pars, kappa = kappa, nugget = nugget, micro.scale = micro.scale, dist.epsilon = dist.epsilon, 
                   aniso.pars = aniso.pars, lambda = lambda)
-    kpl.result <- .krige.conv.extnd(data = .BC.inv(mcmc.output$simulations, lambda), coords = coords, locations = locations, krige = krige,
+    kpl.result <- .krige.conv.extnd(data = .BC.inv(mcmc.output$simulations, lambda), coords = coords, locations = locations, borders=borders, krige = krige,
                                    output = list(n.predictive = ifelse(sim.predict,1,0), signal = TRUE, messages = FALSE))
     
   }

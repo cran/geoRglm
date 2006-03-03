@@ -91,16 +91,19 @@
 }
 
 
-"binom.krige" <- function(geodata, coords = geodata$coords, data = geodata$data, units.m = "default", locations = NULL, borders = NULL, mcmc.input, krige, output)
+"binom.krige" <- function(geodata, coords = geodata$coords, data = geodata$data, units.m = "default", locations = NULL, borders, mcmc.input, krige, output)
 {
   if(missing(geodata))
     geodata <- list(coords=coords, data=data, units.m=units.m)
+  if(missing(borders))
+    borders <- geodata$borders
   call.fc <- match.call()
   n <- length(data)
   if(any(units.m == "default")){
     if(!is.null(geodata$units.m)) units.m <- geodata$units.m
     else units.m <- rep(1, n)
   }
+  if(any(units.m <= 0)) stop("units.m must be postive")
   if(missing(krige)) stop("must provide object krige")
   krige <- .krige.glm.check.aux(krige,fct="binom.krige")
   cov.model <- krige$cov.model
@@ -176,15 +179,10 @@
   ##------------------------------------------------------------
 ######################## ---- prediction ----- #####################
   if(!is.null(locations)) {
-    if(!is.null(borders)){
-      locations <- locations.inside(locations, borders)
-      if(nrow(locations) == 0) stop(" binom.krige : there are no prediction locations inside the borders")
-      if(messages.screen) cat(" binom.krige: results will be returned only for prediction locations inside the borders\n")
-    }
     krige <- list(type.krige = krige$type.krige, beta = beta, trend.d = trend.d, trend.l = trend.l, cov.model = cov.model, 
                   cov.pars = cov.pars, kappa = kappa, nugget = nugget, micro.scale = micro.scale, dist.epsilon = dist.epsilon, 
                   aniso.pars = aniso.pars, link = "logit")
-    kpl.result <- .glm.krige.aux(data = res.mcmc$Sdata, coords = coords, locations = locations, krige = krige,
+    kpl.result <- .glm.krige.aux(data = res.mcmc$Sdata, coords = coords, locations = locations, borders=borders, krige = krige,
 					output = list(n.predictive = ifelse(sim.predict,1,0),
 					      signal = TRUE, messages=FALSE))			   
     remove(list = c("res.mcmc"))
@@ -216,11 +214,11 @@
 }
 
 ".glm.krige.aux" <- 
-function(data, coords, locations, krige, output)
+function(data, coords, locations, borders, krige, output)
 {
   krige$lambda <- 1
   krige$link <- NULL 
-  kc.result <- .krige.conv.extnd(data = data, coords = coords, locations = locations, krige = krige, output = output)
+  kc.result <- .krige.conv.extnd(data = data, coords = coords, locations = locations, borders=borders, krige = krige, output = output)
   kc.result$message <- NULL 
   ##
   ##################### Back-transforming predictions
