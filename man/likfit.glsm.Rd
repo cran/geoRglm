@@ -59,7 +59,8 @@ likfit.glsm(mcmc.obj, trend = mcmc.obj$trend, cov.model = "matern",
     minimization algorithm. Default is \code{lambda = NULL}, in which case the used link function will be the same as for the 
     generated sample in \code{mcmc.obj}.  }
   \item{limits}{values defining lower and upper limits for the model parameters used in the numerical minimization.
-    The auxiliary function \code{\link[geoR]{pars.limits()}} is used to set the limits.  }
+    The auxiliary function \code{\link[geoR]{pars.limits()}} is used to
+    set the limits.  }
   \item{messages}{logical. Indicates whether status messages should be printed on the screen (or output device)
     while the function is running.  }
   \item{\dots}{additional parameters to be passed to the optimisation
@@ -76,7 +77,7 @@ Parameter estimation is done numerically using the \R function
 \code{\link{optim}} with box-constraints, i.e. \code{method="L-BFGS-B"}.
 
 Lower and upper limits for parameter values can be specified using the function \code{pars.limits()}.
-For example, including \code{limits = pars.limits(phi=c(0, 10))} in the function call
+For example, including \code{limits = pars.limits(phi=c(0.01, 10))} in the function call
 will specify the limits for the parameter \eqn{\phi}{phi}.
 Default values are used if the argument \code{limits} is not provided.
      
@@ -118,6 +119,7 @@ Summary and print methods for summarising and printing the output also exist.
     status (estimated or fixed) and values.  }
   \item{loglik}{the value of the maximized likelihood.  }
   \item{npars}{number of estimated parameters.  }
+  \item{info.minimisation}{results returned by the minimisation function.}
   \item{call}{the function call.  }
 }
 

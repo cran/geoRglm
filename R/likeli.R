@@ -4,6 +4,7 @@
 ### this is for the glsm.mcmc() function
   ##
   if(class(mcmc.output) != "glsm.mcmc") stop("mcmc.output must be an object of class ``glsm.mcmc'' ")
+  if(sum(mcmc.output$acc.rate[,2])==0) stop("mcmc.output must not have all accept-rates equal to zero ")
   n.dat <- nrow(mcmc.output$simulations)
   n.sim <- ncol(mcmc.output$simulations)
   if(use.intensity){
@@ -123,8 +124,6 @@
     sigmasq.hat <- .diagquadraticformXAX(S-trend%*%t(beta.hat),invcov$lower.inverse,invcov$diag.inverse)/n.dat
     SivDi2 <- SivD^2
     corr1 <- mean(-0.5*(SivS-2*SivD*mean(beta.hat)+DivD*mean(beta.hat)^2)/mean(sigmasq.hat)-log.f.sim)
-    ##beta <- beta.hat[1]
-    ##sigmasq <- sigmasq.hat[1]
   }
   else{
     SivD <- .bilinearformXAY(S,invcov$lower.inverse,invcov$diag.inverse,trend)
@@ -134,8 +133,6 @@
     "cp" <- function(x){return(x%*%t(x))}
     SivDi2 <- array(t(apply(SivD,1,cp)),dim=c(n.sim,beta.size,beta.size))
     corr1 <- mean(-0.5*(SivS-2*as.vector(SivD%*%colMeans(beta.hat))+t(colMeans(beta.hat))%*%DivD%*%colMeans(beta.hat))/mean(sigmasq.hat)-log.f.sim)
-    ##beta <- beta.hat[1,]
-    ##sigmasq <- sigmasq.hat[1]
   }
   log.f.c <- log.f.sim + corr1
   log.hh <- (-Inf)
@@ -393,7 +390,8 @@
     result <- .maxim.aux1(S = mcmc.obj$S, invcov = siv, trend = temp.list$xmat,log.f.sim = temp.list$log.f.sim, messages.screen=messages.screen)
     if(cov.model == "pure.nugget") loglik.max <- result$logh
     results <- list(family=mcmc.obj$family, link=mcmc.obj$link, cov.model = cov.model, beta = result$beta, cov.pars = c(result$sigmasq, phi), nugget.rel = nugget.rel,
-                    kappa = kappa, aniso.pars = aniso.pars, lambda = mcmc.obj$lambda, trend = trend, npars=npars, loglik = loglik.max, call = call.fc)
+                    kappa = kappa, aniso.pars = aniso.pars, lambda = mcmc.obj$lambda, trend = trend, npars=npars, loglik = loglik.max,
+                    info.minimisation.function = lik.optim, call = call.fc)
   }
   ##
   if(beta.size == 1) beta.name <- "beta"

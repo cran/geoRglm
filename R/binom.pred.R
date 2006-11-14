@@ -91,12 +91,32 @@
 }
 
 
+".glm.krige.aux" <- function(data, coords, locations, borders, krige, output)
+{
+  krige$lambda <- 1
+  krige$link <- NULL 
+  kc.result <- .krige.conv.extnd(data = data, coords = coords, locations = locations, borders=borders, krige = krige, output = output)
+  kc.result$message <- NULL 
+  ##
+  ##################### Back-transforming predictions
+  ## using second order taylor-expansion + facts for N(0,1) [third moment = 0 ; fourth moment = 12].
+  ivlogit2 <- ifelse(kc.result$predict<700, exp(kc.result$predict)*(-expm1(kc.result$predict))/(1+exp(kc.result$predict))^3, 0)
+  kc.result$predict <- plogis(kc.result$predict) + 0.5*ivlogit2*kc.result$krige.var
+  kc.result$krige.var <- ifelse(kc.result$predict<700, exp(kc.result$predict)/(1+exp(kc.result$predict))^2, 0)^2*kc.result$krige.var+(11/4)*ivlogit2^2*kc.result$krige.var^2
+  remove(list = c("ivlogit2"))
+  if(output$n.predictive > 0) {
+    kc.result$simulations <- plogis(kc.result$simulations)
+  }
+  return(kc.result)
+}
+
+
 "binom.krige" <- function(geodata, coords = geodata$coords, data = geodata$data, units.m = "default", locations = NULL, borders, mcmc.input, krige, output)
 {
   if(missing(geodata))
     geodata <- list(coords=coords, data=data, units.m=units.m)
   if(missing(borders))
-    borders <- geodata$borders
+    borders <- geodata$borders 
   call.fc <- match.call()
   n <- length(data)
   if(any(units.m == "default")){
@@ -211,24 +231,4 @@
   if(!is.null(call.fc$borders)) attr(kpl.result, "borders") <- call.fc$borders
   class(kpl.result) <- "kriging"
   return(kpl.result)
-}
-
-".glm.krige.aux" <- 
-function(data, coords, locations, borders, krige, output)
-{
-  krige$lambda <- 1
-  krige$link <- NULL 
-  kc.result <- .krige.conv.extnd(data = data, coords = coords, locations = locations, borders=borders, krige = krige, output = output)
-  kc.result$message <- NULL 
-  ##
-  ##################### Back-transforming predictions
-  ## using second order taylor-expansion + facts for N(0,1) [third moment = 0 ; fourth moment = 12].
-  ivlogit2 <- ifelse(kc.result$predict<700, exp(kc.result$predict)*(-expm1(kc.result$predict))/(1+exp(kc.result$predict))^3, 0)
-  kc.result$predict <- plogis(kc.result$predict) + 0.5*ivlogit2*kc.result$krige.var
-  kc.result$krige.var <- ifelse(kc.result$predict<700, exp(kc.result$predict)/(1+exp(kc.result$predict))^2, 0)^2*kc.result$krige.var+(11/4)*ivlogit2^2*kc.result$krige.var^2
-  remove(list = c("ivlogit2"))
-  if(output$n.predictive > 0) {
-    kc.result$simulations <- plogis(kc.result$simulations)
-  }
-  return(kc.result)
 }

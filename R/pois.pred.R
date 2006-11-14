@@ -295,6 +295,7 @@
 }
 
 
+
 "pois.krige" <- 
 function(geodata, coords = geodata$coords, data = geodata$data, units.m = "default", locations = NULL,  borders, mcmc.input, krige, output)
 {

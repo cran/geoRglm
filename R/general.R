@@ -26,7 +26,7 @@
                 "powered.exponential", "cauchy", "gneiting",
                 "gneiting.matern", "pure.nugget"))
   if(cov.model == "powered.exponential" & (kappa <= 0 | kappa > 2))
-    stop("model.glm.control: for power exponential correlation model the parameter kappa must be in the interval \(0,2\]")
+    stop("model.glm.control: for power exponential correlation model the parameter kappa must be in the interval (0,2]")
   if(cov.model == "power") stop("model.glm.control: correlation function does not exist for the power variogram")
   if(!is.null(aniso.pars)){ 
     if(length(aniso.pars) != 2 | !is.numeric(aniso.pars))
