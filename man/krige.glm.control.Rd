@@ -1,4 +1,4 @@
-\name{krige.gkm.control}
+\name{krige.glm.control}
 
 
 \alias{krige.glm.control}

@@ -710,7 +710,7 @@ function(geodata, coords = geodata$coords, data = geodata$data,
   if(beta.prior == "flat") {
     kc.result$predict <- array(tv0ivdata, dim = c(ni, n.datasets)) + crossprod(b,beta.flat)
     remove(list = c("tv0ivdata"))
-    colSums(b * solve(ttivtt,b))
+    bitb <- colSums(b * solve(ttivtt,b))
     kc.result$krige.var <- sigmasq*drop(1+nug.factor - tv0ivv0 + bitb)
     kc.result$beta.est <- beta.flat
     remove("beta.flat")
@@ -723,8 +723,7 @@ function(geodata, coords = geodata$coords, data = geodata$data,
   if(n.predictive > 0) {
     if(messages.screen) cat(".krige.conv.extnd: sampling from the predictive distribution (conditional simulations)\n")    
     Dval <- 1. + nug.factor
-    if(beta.prior == "deg")
-      vbetai <- matrix(0, ncol = beta.size, nrow = beta.size)
+    if(beta.prior == "deg") vbetai <- matrix(0, ncol = beta.size, nrow = beta.size)
     else vbetai <- matrix(.solve.geoR(ttivtt), ncol = beta.size, nrow = beta.size)
     coincide.cond <- (((round(1e12 * nugget) == 0) | !signal) & (!is.null(loc.coincide)))
     nloc <- ni - length(loc.coincide)

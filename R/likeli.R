@@ -382,13 +382,20 @@
       result <- .maxim.aux1(S = (mcmc.obj$mu^lambda-1)/lambda, invcov = siv, trend = as.vector(temp.list$xmat),
                            log.f.sim = temp.list$log.f.sim - apply(log(mcmc.obj$mu),2,sum)*(lambda-1), messages.screen=messages.screen)
     }
-    if(cov.model == "pure.nugget") loglik.max <- result$logh
+    if(cov.model == "pure.nugget"){
+      loglik.max <- result$logh
+      lik.optim <- NULL
+    }
     results <- list(family=mcmc.obj$family, link="boxcox", cov.model = cov.model, beta = result$beta, cov.pars=c(result$sigmasq, phi), nugget.rel = nugget.rel, 
-                    kappa = kappa, aniso.pars = aniso.pars, lambda = lambda, trend = trend, npars=npars, loglik = loglik.max, call = call.fc)
+                    kappa = kappa, aniso.pars = aniso.pars, lambda = lambda, trend = trend, npars=npars, loglik = loglik.max,
+                    info.minimisation.function = lik.optim, call = call.fc)
   }
   else{
     result <- .maxim.aux1(S = mcmc.obj$S, invcov = siv, trend = temp.list$xmat,log.f.sim = temp.list$log.f.sim, messages.screen=messages.screen)
-    if(cov.model == "pure.nugget") loglik.max <- result$logh
+    if(cov.model == "pure.nugget"){
+      loglik.max <- result$logh
+      lik.optim <- NULL
+    }
     results <- list(family=mcmc.obj$family, link=mcmc.obj$link, cov.model = cov.model, beta = result$beta, cov.pars = c(result$sigmasq, phi), nugget.rel = nugget.rel,
                     kappa = kappa, aniso.pars = aniso.pars, lambda = mcmc.obj$lambda, trend = trend, npars=npars, loglik = loglik.max,
                     info.minimisation.function = lik.optim, call = call.fc)
