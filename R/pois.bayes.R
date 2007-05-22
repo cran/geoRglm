@@ -706,7 +706,7 @@
       stop("pois.krige.bayes: number of points to be estimated is different of the number of trend locations")
     if(!is.null(borders)){
       ind.loc0  <- .geoR_inout(locations, borders)
-      if(any(ind.loc0)){
+      if(!any(ind.loc0)){
         warning("\n pois.krige.bayes: no prediction to be performed.\n             There are no prediction locations inside the borders")
         do.prediction <- FALSE
       }
