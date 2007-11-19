@@ -65,7 +65,7 @@
   else calcresult <- array(log(t(t(as.matrix(result[, 1,  ]))/mm2)), dim = c(nbins, n.datasets))
   indp <- (result[, 2, 1] >= pairs.min)
   if(estimator.type == "poisson")
-    result <- list(u = c(0, uvec[indp]), v = calcresult[indp,  ], n = c(n.data, result[indp, 2, 1]), bins.lim = bins.lim)
+    result <- list(u = c(0, uvec[indp]), v = calcresult[c(TRUE,indp),  ], n = c(n.data, result[indp, 2, 1]), bins.lim = bins.lim)
   else result <- list(u = uvec[indp], v = calcresult[indp,  ], n = result[indp, 2, 1], bins.lim = bins.lim)
   result <- c(result, list(v0 = sigma2, estimator.type = estimator.type, n.data = n.data, call = call.fc))
   class(result) <- "covariogram"

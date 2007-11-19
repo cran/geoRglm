@@ -42,7 +42,7 @@ asympvar(timeseries, type="mon", lag.max = 100, messages)
 \author{
   The orginal Splus version of this function was written by Rasmus
   Waagepetersen. R port by \cr
-  Ole F. Christensen \email{olefc@birc.au.dk}, \cr
+  Ole F. Christensen \email{OleF.Christensen@agrsci.dk}, \cr
   Paulo J. Ribeiro Jr. \email{Paulo.Ribeiro@est.ufpr.br}.
 }
 

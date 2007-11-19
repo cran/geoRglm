@@ -28,8 +28,10 @@ prior.glm.control(beta.prior = c("flat", "normal", "fixed"),
   \item{beta}{hyper-parameter for the prior distribution of the mean (vector) parameter \eqn{\beta}{beta}. 
     Only used if \code{beta.prior = "normal"} or \code{beta.prior = "fixed"}. For the latter \code{beta} defines the value of
     the known mean.  }
-  \item{beta.var.std}{(co)variance hyper-parameters for the prior of the mean
-    (vector) parameter \eqn{\beta}{beta}. Only used if \code{beta.prior = "normal"}.  }
+  \item{beta.var.std}{standardised (co)variance hyperparameter(s) for the prior
+          for the mean (vector) parameter beta. The (co)variance matrix
+          for beta is given by the multiplication of this matrix by
+          \eqn{sigma^2}{sigma^2}. Only used if 'beta.prior = "normal"'.  }
   \item{sigmasq.prior}{prior distribution for the parameter \eqn{\sigma^2}{sigma^2}. The options are \code{"uniform"} (default), 
     \code{"sc.inv.chisq"}, \code{"reciprocal"} (gives improper posterior), or \code{"fixed"}.  }
   \item{sigmasq}{fixed value of the parameter \eqn{\sigma^2}{sigma^2} when
@@ -47,9 +49,8 @@ prior.glm.control(beta.prior = c("flat", "normal", "fixed"),
     specified by providing a vector of probabilities. These
     probabilities corrresponds to a prior distribution with support \code{phi.discrete}. \cr     
     If the \code{"fixed"} the argument \eqn{\phi}{phi}
-    should be provided and it is regarded as fixed when performing predictions.
-
-  }
+    should be provided and it is regarded as fixed when performing
+    predictions.  }
   \item{phi}{fixed value of the parameter \eqn{\phi}{phi} when
     \code{phi.prior = "fixed"}. Mean of the prior distribution when \code{phi.prior = "exponential"}.   }
   \item{phi.discrete}{support points for the discretisation of the
@@ -64,7 +65,7 @@ prior.glm.control(beta.prior = c("flat", "normal", "fixed"),
 }
 
 \author{
-  Ole F. Christensen \email{olefc@birc.au.dk}, \cr
+  Ole F. Christensen \email{OleF.Christensen@agrsci.dk}, \cr
   Paulo J. Ribeiro Jr. \email{Paulo.Ribeiro@est.ufpr.br}.
 }
 

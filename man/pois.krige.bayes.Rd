@@ -221,7 +221,7 @@ Further information about \bold{geoRglm} can be found at:\cr
 }
 
 \author{
-  Ole F. Christensen \email{olefc@birc.au.dk}, \cr
+  Ole F. Christensen \email{OleF.Christensen@agrsci.dk}, \cr
   Paulo J. Ribeiro Jr. \email{Paulo.Ribeiro@est.ufpr.br}.
 }
 
