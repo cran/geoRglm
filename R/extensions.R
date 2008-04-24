@@ -318,7 +318,7 @@
   yiRy <-  colSums(data * iRy.x[,ind.datasets])
   xiRy.x <- crossprod(trend.data, iRy.x)
   ##
-  if(!is.matrix(xiRy.x)) xiRy.x <- is.matrix(xiRy.x, 1, n.datasets+beta.size)
+  if(!is.matrix(xiRy.x)) xiRy.x <- matrix(xiRy.x, 1, n.datasets+beta.size)
   ##
   ## 1. Computing parameters of posterior for beta
   ##

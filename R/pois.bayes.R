@@ -44,8 +44,7 @@
   ##                                                                      
 ##### ---------- sampling ----------- ###### 
   cov.model.number <- .cor.number(cov.model)
-  if(is.vector(trend)) beta.size <- 1
-  else beta.size <- ncol(trend)
+  beta.size <- if(is.vector(trend)) 1 else ncol(trend)
   n.sim <- floor(n.iter/thin)
   ## remember this rather odd coding for telling that S.start is from the prior !!!
   if(any(mcmc.input$S.start=="random")) Sdata <- as.double(as.vector(c(rep(0, n.sim*n - 1),1)))
@@ -133,8 +132,7 @@
   ##                                                                      
 ##### ---------- sampling ----------- ###### 
   cov.model.number <- .cor.number(cov.model)
-  if(is.vector(trend)) beta.size <- 1
-  else beta.size <- ncol(trend)
+  beta.size <- if(is.vector(trend)) 1 else ncol(trend)
   n.sim <- floor(n.iter/thin)
   ## remeber this rather odd coding for telling that S.start is from the prior !!!
   if(any(mcmc.input$S.start=="random")) Sdata <- as.double(as.vector(c(rep(0, n.sim*n - 1),1)))
@@ -785,7 +783,7 @@
         gauss.post <- .mcmc.bayes.conj.pois.log(data=data, units.m=units.m, meanS = mean.d, ttvbetatt = ttvbetatt, mcmc.input=mcmc.input,
                                                messages.screen=messages.screen, cov.model=cov.model,  kappa=kappa, tausq.rel = tausq.rel,
                                                coords=coords.transf,  ss.sigma = df.sigmasq*S2.prior, df = df.model,
-                                               phi.prior = phi.prior.prob, phi.discrete = phi.discrete,)
+                                               phi.prior = phi.prior.prob, phi.discrete = phi.discrete)
       }
       else{ 
         gauss.post <- .mcmc.bayes.conj.pois.boxcox(data=data, units.m=units.m, meanS = mean.d, ttvbetatt = ttvbetatt,

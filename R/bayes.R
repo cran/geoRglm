@@ -171,7 +171,7 @@
             number.col, coords.data,
             x.leg, y.leg, messages, ...) 
 {
-  ## apart from the "values.to.plot" argument, this function is identical to "image.glm.krige.bayes"
+  ## apart from the arguments for "values.to.plot", this function is identical to "image.krige.bayes"
   ldots <- match.call(expand.dots = FALSE)$...
   if(missing(x)) x <- NULL
   attach(x, pos=2, warn.conflicts=FALSE)
@@ -201,7 +201,7 @@
   ## Plotting 1D or 2D
   ##
   if(!is.null(attr(x, 'sp.dim')) && attr(x, 'sp.dim') == '1D')
-    do.call("plot.1d", c(list(x = values,
+    do.call("plot.1d", c(list(x = values.to.plot,
                               x1vals = unique(round(locations[,1], dig=12))), .ldots.set(ldots, type="plot.1d",
                                    data="prediction")))
   else{
@@ -254,7 +254,7 @@
   ## Plotting 1D or 2D
   ##
   if(!is.null(attr(x, 'sp.dim')) && attr(x, 'sp.dim') == '1D')
-    do.call("plot.1d", c(list(x = values,
+    do.call("plot.1d", c(list(x = values.to.plot,
                               x1vals = unique(round(locations[,1], dig=12))), .ldots.set(ldots, type="plot.1d",
                                     data="prediction")))
   else{

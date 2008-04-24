@@ -40,8 +40,7 @@
   ##                                                                      
   ## ---------- sampling ----------- ###### 
   cov.model.number <- .cor.number(cov.model)
-  if(is.vector(trend)) beta.size <- 1
-  else beta.size <- ncol(trend)
+  beta.size <- if(is.vector(trend)) 1 else ncol(trend)
   n.sim <- floor(n.iter/thin)
   ## remeber this rather odd coding for telling that S.start is from the prior !!!
   if(any(mcmc.input$S.start=="random")) Sdata <- as.double(as.vector(c(rep(0, n.sim*n - 1),1)))
