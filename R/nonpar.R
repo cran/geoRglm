@@ -14,7 +14,7 @@
     if(!is.null(geodata$units.m)) units.m <- geodata$units.m
     else units.m <- rep(1, n.data)
   }
-  if(any(units.m <= 0)) stop("units.m must be postive")
+  if(any(units.m <= 0)) stop("units.m must be positive")
   data1 <- as.matrix(data/units.m)
   if(n.datasets == 1)
     data1 <- as.vector(data1)
@@ -88,7 +88,7 @@ function(geodata, coords = geodata$coords, units.m = "default", obj.covariog, mo
     if(!is.null(geodata$units.m)) units.m <- geodata$units.m
     else units.m <- rep(1, obj.covariog$n.data)
   }
-  if(any(units.m <= 0)) stop("units.m must be postive")
+  if(any(units.m <= 0)) stop("units.m must be positive")
   if(is.null(model.pars$beta) | !is.numeric(model.pars$beta)) {
     stop("argument beta must be provided in order to perform make covariogram envelopes")
   }
@@ -213,11 +213,9 @@ function(n = NULL, grid, nx = round(sqrt(n)), ny = round(sqrt(n)), nsim = 1,
               cov.pars, nugget = nugget, lambda = 1, kappa = kappa, method = method, messages =  messages.screen, ...)
   trend.data <- unclass(trend.spatial(trend = trend, geodata = work))
   n <- nrow(work$coords)
-  if((length(beta) == 1) & trend == "cte")
-    mu <- rep(beta, n)
-  else mu <- trend.data %*% as.vector(beta)
+  if((length(beta) == 1) & trend == "cte") mu <- rep(beta, n) else mu <- trend.data %*% as.vector(beta)
   if(all(units.m == "default")) units.m <- rep(1, n)
-  if(any(units.m <= 0)) stop("units.m must be postive")
+  if(any(units.m <= 0)) stop("units.m must be positive")
   lambda <- matrix(rep(units.m * exp(mu), nsim), nrow = n, ncol = nsim) * exp(as.matrix(work$data))
   zsim <- matrix(rpois(n * nsim, lambda = lambda), nrow = n, ncol = nsim)
   if(nsim == 1)

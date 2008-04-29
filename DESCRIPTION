@@ -1,6 +1,6 @@
 Package: geoRglm
-Version: 0.8-23
-Date: 2008-04-24
+Version: 0.8-24
+Date: 2008-04-29
 Title: geoRglm - a package for generalised linear spatial models
 Author: Ole F. Christensen <OleF.Christensen@agrsci.dk> and  Paulo J. Ribeiro Jr <Paulo.Ribeiro@est.ufpr.br>
 Maintainer: Ole Christensen <OleF.Christensen@agrsci.dk>
@@ -11,4 +11,4 @@ License: GPL (>= 2)
 URL: http://www.daimi.au.dk/~olefc/geoRglm
 LazyLoad: yes
 LazyData: yes
-Packaged: Thu Apr 24 17:41:19 2008; ofch
+Packaged: Tue Apr 29 08:38:07 2008; ofch

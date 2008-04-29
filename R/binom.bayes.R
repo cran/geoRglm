@@ -121,7 +121,6 @@
   ##
   ## ---------- sampling ----------- ###### 
   cov.model.number <- .cor.number(cov.model)
-  if(is.null(ttvbetatt)) ttvbetatt <- matrix(0,beta.size,beta.size)
   n.sim <- floor(n.iter/thin)
   ## remeber this rather odd coding for telling that S.start is from the prior !!!
   if(any(mcmc.input$S.start=="random")) Sdata <- as.double(as.vector(c(rep(0, n.sim*n - 1),1)))
@@ -188,7 +187,7 @@
     if(!is.null(geodata$units.m)) units.m <- geodata$units.m
     else units.m <- rep(1, n)
   }
-  if(any(units.m <= 0)) stop("units.m must be postive")
+  if(any(units.m <= 0)) stop("units.m must be positive")
   ##
   ## reading input
   ##
@@ -313,8 +312,7 @@
   if(beta.prior == "normal"){
     if(beta.size > 1) ttvbetatt <- trend.data%*%beta.var%*%t(trend.data)
     else ttvbetatt <- crossprod(t(trend.data))*beta.var
-  }  
-  else ttvbetatt <- NULL
+  } else ttvbetatt <- matrix(0, beta.size, beta.size)
   if(sigmasq.prior == "fixed"){     ### implies that phi is fixed !
     invcov <- varcov.spatial(coords = coords, cov.model = cov.model, kappa = kappa, nugget = tausq.rel*sigmasq,
                                cov.pars = c(sigmasq,phi), inv = TRUE, func.inv = "cholesky",

@@ -309,7 +309,7 @@ function(geodata, coords = geodata$coords, data = geodata$data, units.m = "defau
     if(!is.null(geodata$units.m)) units.m <- geodata$units.m
     else units.m <- rep(1, n)
   }
-  if(any(units.m <= 0)) stop("units.m must be postive")
+  if(any(units.m <= 0)) stop("units.m must be positive")
   if(missing(krige)) stop("must provide object krige")
   krige <- .krige.glm.check.aux(krige,fct="pois.krige")
   cov.model <- krige$cov.model

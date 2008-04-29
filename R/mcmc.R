@@ -12,7 +12,7 @@
     if(!is.null(geodata$units.m)) units.m <- geodata$units.m
     else units.m <- rep(1, n)
   }
-  if(any(units.m <= 0)) stop("units.m must be postive")
+  if(any(units.m <= 0)) stop("units.m must be positive")
   ##
   if(is.vector(coords)){
     coords <- cbind(coords, 0)
