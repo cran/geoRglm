@@ -128,7 +128,7 @@ Summary and print methods for summarising and printing the output also exist.
   Journal of computational and graphical statistics \bold{13} 702-718.
    
   Further information about \bold{geoRglm} can be found at:\cr
-  \url{http://www.daimi.au.dk/~olefc/geoRglm}.
+  \url{http://gbi.agrsci.dk/~ofch/geoRglm}.
 }
 
 \author{

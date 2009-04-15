@@ -119,7 +119,7 @@ also recommend that the user to studies plots of the autocorrelations.
   and M. West), Oxford University Press, 307-326.
 
   Further information about \bold{geoRglm} can be found at:\cr
-  \url{http://www.daimi.au.dk/~olefc/geoRglm}.
+  \url{http://gbi.agrsci.dk/~ofch/geoRglm}.
 }
 
 \author{

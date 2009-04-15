@@ -30,7 +30,7 @@
 
 \source{
 For further details on the radionuclide concentration data, see Diggle,
-Harper and Simon (1997), Diggle {\em et al.} (1998) and Christensen (2004).
+Harper and Simon (1997), Diggle, Tawn and Moyeed (1998) and Christensen (2004).
 }
 
 \references{
@@ -42,8 +42,8 @@ Harper and Simon (1997), Diggle {\em et al.} (1998) and Christensen (2004).
   Chichester, 89-107.
   
   Diggle, P. J., Tawn, J. A. and Moyeed, R. A. (1998). Model-based
-  geostatistics (with Discussion). \emph{Applied Statistics},
-  \bold{47}, 299--350.
+  geostatistics (with Discussion). Applied Statistics,
+  47, 299--350.
 }
 
 \keyword{datasets}

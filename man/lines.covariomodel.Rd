@@ -38,7 +38,7 @@
 
 \references{
   Further information about \bold{geoRglm} can be found at:\cr
-  \url{http://www.daimi.au.dk/~olefc/geoRglm}.
+  \url{http://gbi.agrsci.dk/~ofch/geoRglm}.
 }
 
 \author{

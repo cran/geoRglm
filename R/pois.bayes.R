@@ -731,7 +731,7 @@
     if(beta.size > 1) ttvbetatt <- trend.data%*%beta.var%*%t(trend.data)
     else ttvbetatt <- crossprod(t(trend.data))*beta.var
   }  
-  else ttvbetatt <- matrix(0, beta.size, beta.size)
+  else ttvbetatt <- matrix(0, n, n)
   if(sigmasq.prior == "fixed") {     ### implies that phi is fixed !
     invcov <- varcov.spatial(coords = coords, cov.model = cov.model, kappa = kappa, nugget = tausq.rel*sigmasq,
                                cov.pars = c(sigmasq,phi), inv = TRUE, func.inv = "cholesky",

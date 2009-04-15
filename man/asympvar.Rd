@@ -36,7 +36,7 @@ asympvar(timeseries, type="mon", lag.max = 100, messages)
   \emph{Statist. Sci.} \bold{7}, 473-511.
   
   Further information about \bold{geoRglm} can be found at:\cr
-  \url{http://www.daimi.au.dk/~olefc/geoRglm}.
+  \url{http://gbi.agrsci.dk/~ofch/geoRglm}.
 }
 
 \author{
