@@ -30,7 +30,7 @@ glsm.mcmc(geodata, coords = geodata$coords, data = geodata$data,
   \item{units.m}{ \eqn{n}-dimensional vector of observation times for the data. By default (\code{units.m = "default"}), 
     it takes \code{geodata$units.m} in case this exist and else a vector of 1's.  }
   \item{model}{defines the model components. Either an object of
-    \code{class} \code{likGLSM}; typically output from
+    class \code{likGLSM}; typically output from
     \code{likfit.glsm}, or a list containing
     the arguments : 
     \cr

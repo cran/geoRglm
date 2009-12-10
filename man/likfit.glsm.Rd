@@ -59,7 +59,7 @@ likfit.glsm(mcmc.obj, trend = mcmc.obj$trend, cov.model = "matern",
     minimization algorithm. Default is \code{lambda = NULL}, in which case the used link function will be the same as for the 
     generated sample in \code{mcmc.obj}.  }
   \item{limits}{values defining lower and upper limits for the model parameters used in the numerical minimization.
-    The auxiliary function \code{\link[geoR]{pars.limits()}} is used to
+    The auxiliary function \code{\link[geoR]{pars.limits}} is used to
     set the limits.  }
   \item{messages}{logical. Indicates whether status messages should be printed on the screen (or output device)
     while the function is running.  }

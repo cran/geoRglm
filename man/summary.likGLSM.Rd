@@ -22,10 +22,10 @@
 }
 
 \arguments{
-  \item{object}{an object of \code{\link[base]{class}} \emph{likGLSM}, typically
+  \item{object}{an object of class \code{likGLSM}, typically
     a result of a call to \code{\link{likfit.glsm}}.  }
-  \item{x}{an object of \code{\link[base]{class}} \emph{likGLSM} or
-    \code{\link[geoR]{class}} \emph{summary.likGLSM}, typically
+  \item{x}{an object of class \code{likGLSM} or
+    class \code{summary.likGLSM}, typically
     resulting from a call to \code{\link{likfit.glsm}}.  }
   \item{digits}{the number of significant digits to use when printing.  }
   \item{\dots}{extra arguments for \code{\link[base]{print}}.  }

@@ -58,7 +58,7 @@ proflik.glsm(mcmc.obj, obj.likfit.glsm, phi.values, nugget.rel.values,
   Paulo J. Ribeiro Jr. \email{Paulo.Ribeiro@est.ufpr.br}.
 }
 
-\seealso{\code{\lik{likfit.geoRglm}} for the parameter estimation, and
+\seealso{\code{\link{likfit.glsm}} for the parameter estimation, and
   \code{\link[geoR]{proflik}} for the profile likelihood in the Gaussian spatial model.
 }
 

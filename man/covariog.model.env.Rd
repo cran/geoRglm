@@ -63,7 +63,7 @@ covariog.model.env(geodata, coords = geodata$coords, units.m = "default",
 }
 
 \value{ 
-  An object of the \code{\link{class}} \code{"covariogram.envelope"} which is a
+  An object of the class \code{"covariogram.envelope"} which is a
   list with the components:
   \item{u}{a vector with distances. }
   \item{v.lower}{a vector with the upper-quantile covariogram values for each

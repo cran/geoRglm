@@ -86,7 +86,7 @@ covariog(geodata, coords = geodata$coords, data = geodata$data,
 }
 
 \value{
-  An object of the \code{\link[~/pack/R-1.2.1/lib/R/library/]{class}} \code{covariogram} which is a
+  An object of the class \code{covariogram} which is a
   list with the following components:
   \item{u }{a vector with distances.  }
   \item{v }{a vector with estimated covariogram values at distances given
