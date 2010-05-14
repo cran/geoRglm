@@ -354,9 +354,19 @@
 ".pred.aux" <- function(S, coords, locations, borders, model, prior, output, phi.posterior, link)
 {
   n.sim <- ncol(S)
-  ni <- nrow(locations)
   do.prediction <- ifelse(all(locations == "no"), FALSE, TRUE)
-  locations <- .check.locations(locations)
+  if(do.prediction){
+     locations <- .check.locations(locations)
+     if(!is.null(borders)){
+       ind.loc0  <- .geoR_inout(locations, borders)
+       locations <- locations[ind.loc0,,drop=TRUE]
+       if(nrow(locations) == 0){
+          warning("\n .pred.aux: no prediction to be performed.\n             There are no prediction locations inside the borders")
+          do.prediction <- FALSE
+       }
+     }
+     ni <- nrow(locations)
+  }
   beta.size <- ncol(unclass(trend.spatial(trend=model$trend.d, geodata = list(coords=coords))))
   lambda <- model$lambda
   ##
