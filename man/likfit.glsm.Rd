@@ -147,7 +147,7 @@ data(p50)
 \dontshow{library(geoR)}
 \dontrun{
 mcmc.5 <- mcmc.control(S.scale = 0.6, thin=20, n.iter=50000, burn.in=1000)
-model.5 <- list(cov.pars=c(0.6, 0.01), beta=1, family="poisson")
+model.5 <- list(cov.pars=c(0.6, 0.1), beta=1, family="poisson")
 outmcmc.5 <- glsm.mcmc(p50, model= model.5, mcmc.input = mcmc.5)     
 mcmcobj.5 <- prepare.likfit.glsm(outmcmc.5)   
 lik.5 <- likfit.glsm(mcmcobj.5, ini.phi = 0.1, fix.nugget.rel = TRUE)
