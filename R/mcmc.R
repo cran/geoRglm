@@ -211,7 +211,7 @@
   else stop("Must specify type as either: mon, pos or all")
   len.Gamma <- floor(lag.max/2)-1
   if(is.vector(timeseries)){
-     if(var(timeseries)>0){
+     if(all(is.finite(timeseries)) && var(timeseries)>0){
        asy.gamma <- acf(timeseries, type = "covariance", plot = FALSE, lag.max = lag.max)$acf
        asy.gamma1 <- c(asy.gamma[(1 + 2 * c(0:len.Gamma))])
        asy.gamma2 <- c(asy.gamma[(2 + 2 * c(0:len.Gamma))])
@@ -229,15 +229,15 @@
          if (kmaxpos == len.Gamma) warning("value of argument lag.max is not suffiently long")
        } 
      } else{
-       if(type == "all" | type =="mon") monvarest <- 0
-       if(type == "pos" | type == "all") posvarest <- 0
+       if(type == "all" | type =="mon") monvarest <- NA
+       if(type == "pos" | type == "all") posvarest <- NA
      }
   }
   else{
      if(type == "all" | type == "pos") posvarest <- rep(1,n.series)
      if(type == "all" | type == "mon") monvarest <- rep(1,n.series)
      for(i in seq(length=n.series)){
-        if(var(timeseries[i,])>0){     
+        if(all(is.finite(timeseries[,i])) && var(timeseries[i,])>0){     
           asy.gamma <- acf(timeseries[i,], type = "covariance", plot = FALSE, lag.max = lag.max)$acf
           asy.gamma1 <- c(asy.gamma[(1 + 2 * c(0:len.Gamma))])
           asy.gamma2 <- c(asy.gamma[(2 + 2 * c(0:len.Gamma))])
@@ -255,8 +255,8 @@
             if (kmaxpos == len.Gamma) warning("value of argument lag.max is not suffiently long")
           }
         } else{
-          if(type == "all" | type =="mon") monvarest[i] <- 0
-          if(type == "pos" | type == "all") posvarest[i] <- 0
+          if(type == "all" | type =="mon") monvarest[i] <- NA
+          if(type == "pos" | type == "all") posvarest[i] <- NA
         }
      }
   }

@@ -669,7 +669,7 @@ function(geodata, coords = geodata$coords, data = geodata$data,
                          cov.pars = cpars)$varcov
   ivtt <- solve(Vcov,trend.data)
   ttivtt <- crossprod(ivtt,trend.data)
-  if(beta.prior == "flat") beta.flat <- drop(solve(ttivtt,crossprod(ivtt, data)))
+  if(beta.prior == "flat") beta.flat <- solve(ttivtt,crossprod(ivtt, data))
   remove("ivtt")
   ## PJ: From a numerical perspective there quite a few ugly bits
   ##here. See R-help e-mails from Bates and Ripley about
@@ -712,7 +712,7 @@ function(geodata, coords = geodata$coords, data = geodata$data,
     remove(list = c("tv0ivdata"))
     bitb <- colSums(b * solve(ttivtt,b))
     kc.result$krige.var <- sigmasq*drop(1+nug.factor - tv0ivv0 + bitb)
-    kc.result$beta.est <- beta.flat
+    kc.result$beta.est <- drop(beta.flat)
     remove("beta.flat")
   }
   kc.result$krige.var[kc.result$krige.var < 1e-12] <- 0
