@@ -42,7 +42,7 @@
   cov.model.number <- .cor.number(cov.model)
   beta.size <- if(is.vector(trend)) 1 else ncol(trend)
   n.sim <- floor(n.iter/thin)
-  ## remeber this rather odd coding for telling that S.start is from the prior !!!
+  ## remember this rather odd coding for telling that S.start is from the prior !!!
   if(any(mcmc.input$S.start=="random")) Sdata <- as.double(as.vector(c(rep(0, n.sim*n - 1),1)))
   else Sdata <- as.double(as.vector(c(S, rep(0, (n.sim - 1) * n))))
   result <-  .C("mcmcrun4binom",
@@ -462,8 +462,7 @@
         else {
           kb.results$posterior$sigmasq$sample <- rinvchisq(n.sim, df.model, temp.post$S2)
           if(beta.prior != "fixed"){
-            if(is.R()) cond.beta.var <- temp.post$beta.var *rep(kb.results$posterior$sigmasq$sample/temp.post$S2,rep(beta.size^2,n.sim))
-            else cond.beta.var <- temp.post$beta.var *rep(kb.results$posterior$sigmasq$sample/temp.post$S2,each = beta.size^2)
+            cond.beta.var <- temp.post$beta.var *rep(kb.results$posterior$sigmasq$sample/temp.post$S2,rep(beta.size^2,n.sim))
             kb.results$posterior$beta$sample <- array(apply(cond.beta.var,3,.multgauss),dim=c(beta.size, n.sim)) + temp.post$beta.mean
           }
         }

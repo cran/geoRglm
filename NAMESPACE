@@ -1,0 +1,17 @@
+useDynLib(geoRglm)
+
+import(stats,geoR,graphics)
+
+export("asympvar","binom.krige.bayes","binom.krige","covariog.model.env",
+   "covariog","create.mcmc.coda","geoRglmdefunct","glsm.krige","glsm.mcmc", "krige.glm.control",
+   "likfit.glsm","mcmc.control","model.glm.control","output.glm.control","pois.krige.bayes",
+   "pois.krige","prepare.likfit.glsm","prior.glm.control","proflik.glsm")
+
+S3method(hist,glm.krige.bayes)
+S3method(image,glm.krige.bayes)
+S3method(persp,glm.krige.bayes)
+S3method(lines,covariomodel)
+S3method(plot,covariogram)
+S3method(summary,likGLSM)
+S3method(print,likGLSM)
+S3method(print,summary.likGLSM)

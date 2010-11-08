@@ -25,7 +25,7 @@ micro.scale=NULL, dist.epsilon= 1e-10, output)
     provided the prediction is performed only at locations inside this
     polygon.  }
   \item{trend.l}{specifies the trend (covariate) values at prediction
-    locations. It must be of the same type as for \code{trend.d}.  }
+    locations. It must be of the same type as for \code{trend}.  }
   \item{micro.scale}{micro-scale variance. If specified, the
     nugget is divided into 2 terms: \emph{micro-scale variance}
     and \emph{measurement error}.

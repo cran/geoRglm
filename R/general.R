@@ -70,10 +70,7 @@
 ".multgauss" <- 
   function(cov)
 {
-  if(is.R())
-    return(crossprod(chol(cov), rnorm(n=ncol(cov))))
-  else
-    return(rmvnorm(ncol(cov), cov = cov))
+  return(crossprod(chol(cov), rnorm(n=ncol(cov))))
 }
 
 "mcmc.control" <- 
