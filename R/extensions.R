@@ -712,7 +712,7 @@ function(geodata, coords = geodata$coords, data = geodata$data,
     remove(list = c("tv0ivdata"))
     bitb <- colSums(b * solve(ttivtt,b))
     kc.result$krige.var <- sigmasq*drop(1+nug.factor - tv0ivv0 + bitb)
-    kc.result$beta.est <- drop(beta.flat)
+    kc.result$beta.est <- beta.flat
     remove("beta.flat")
   }
   kc.result$krige.var[kc.result$krige.var < 1e-12] <- 0

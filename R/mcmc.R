@@ -237,7 +237,7 @@
      if(type == "all" | type == "pos") posvarest <- rep(1,n.series)
      if(type == "all" | type == "mon") monvarest <- rep(1,n.series)
      for(i in seq(length=n.series)){
-        if(all(is.finite(timeseries[,i])) && var(timeseries[i,])>0){     
+        if(all(is.finite(timeseries[i,])) && var(timeseries[i,])>0){     
           asy.gamma <- acf(timeseries[i,], type = "covariance", plot = FALSE, lag.max = lag.max)$acf
           asy.gamma1 <- c(asy.gamma[(1 + 2 * c(0:len.Gamma))])
           asy.gamma2 <- c(asy.gamma[(2 + 2 * c(0:len.Gamma))])
