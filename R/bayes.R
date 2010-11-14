@@ -206,7 +206,7 @@
                                    data="prediction")))
   else{
     ldots.image <- .ldots.set(ldots, type="image", data="prediction")
-    locations <- .prepare.graph.krige.bayes(obj=x,
+    locations <- geoR:::.prepare.graph.krige.bayes(obj=x,
                                            locations=locations,
                                            borders=borders,
                                            borders.obj = eval(attr(x, "borders")),
@@ -259,7 +259,7 @@
                                     data="prediction")))
   else{
     ldots.persp <- .ldots.set(ldots, type="persp", data="prediction")
-    locations <- .prepare.graph.krige.bayes(obj=x, locations=locations,
+    locations <- geoR:::.prepare.graph.krige.bayes(obj=x, locations=locations,
                                            borders=borders,
                                            borders.obj = eval(attr(x, "borders")),
                                            values.to.plot=values.to.plot,
@@ -320,6 +320,6 @@
     names(kb$posterior$sample) <- c(names(x$posterior$beta$mean), "sigmasq", "phi")
   }
   kb$posterior$sample$tausq.rel <- rep(-99,n.sim)
-  hist.krige.bayes(x=kb, pars=pars, density.est = density.est, histogram = histogram)
+  geoR:::hist.krige.bayes(x=kb, pars=pars, density.est = density.est, histogram = histogram)
   return(invisible())
 }
