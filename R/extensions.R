@@ -425,14 +425,17 @@
     tv0ivdata <- NULL        ### se efter om den kan fjernes foer
     Dval <-  1.0 + tausq.rel
     coincide.cond <- any(loc.coincide)
-    nloc <- ni - n.loc.coincide
     if(coincide.cond){
+      nloc <- ni - n.loc.coincide
       ind.not.coincide <- (-loc.coincide)
       v0 <- v0[, ind.not.coincide, drop=FALSE]
       tmean <- tmean[ind.not.coincide, , drop=FALSE]
       b <- b[,ind.not.coincide, drop=FALSE]
     }
-    else ind.not.coincide <- TRUE
+    else{
+      nloc <- ni
+      ind.not.coincide <- TRUE
+    }
     if(n.predictive > 1){
       warning("n.predictive > 1 is not implemented, n.predictive = 1")
       n.predictive <- 1
@@ -726,13 +729,16 @@ function(geodata, coords = geodata$coords, data = geodata$data,
     if(beta.prior == "deg") vbetai <- matrix(0, ncol = beta.size, nrow = beta.size)
     else vbetai <- matrix(.solve.geoR(ttivtt), ncol = beta.size, nrow = beta.size)
     coincide.cond <- (((round(1e12 * nugget) == 0) | !signal) & (!is.null(loc.coincide)))
-    nloc <- ni - length(loc.coincide)
     if(coincide.cond){
+      nloc <- ni - length(loc.coincide)
       ind.not.coincide <- -(loc.coincide) 
       v0 <- v0[,ind.not.coincide, drop=FALSE]
       b <- b[,ind.not.coincide, drop=FALSE]
     }
-    else ind.not.coincide <- TRUE
+    else{
+      nloc <- ni
+      ind.not.coincide <- TRUE
+    }
     kc.result$simulations <- matrix(0, nrow = ni, ncol = n.datasets)
     if(nloc>0){
       ## re-write this without using inverse!!!

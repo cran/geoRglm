@@ -101,8 +101,9 @@
   ##################### Back-transforming predictions
   ## using second order taylor-expansion + facts for N(0,1) [third moment = 0 ; fourth moment = 12].
   ivlogit2 <- ifelse(kc.result$predict<700, exp(kc.result$predict)*(-expm1(kc.result$predict))/(1+exp(kc.result$predict))^3, 0)
+  ivlogit1 <- ifelse(kc.result$predict<700, exp(kc.result$predict)/(1+exp(kc.result$predict))^2, 0)
   kc.result$predict <- plogis(kc.result$predict) + 0.5*ivlogit2*kc.result$krige.var
-  kc.result$krige.var <- ifelse(kc.result$predict<700, exp(kc.result$predict)/(1+exp(kc.result$predict))^2, 0)^2*kc.result$krige.var+(1/2)*ivlogit2^2*kc.result$krige.var^2
+  kc.result$krige.var <- ivlogit1^2*kc.result$krige.var+(1/2)*ivlogit2^2*kc.result$krige.var^2
   remove(list = c("ivlogit2"))
   if(output$n.predictive > 0) {
     kc.result$simulations <- plogis(kc.result$simulations)
