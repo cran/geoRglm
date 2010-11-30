@@ -199,6 +199,7 @@
   return(negloglik)
 }
 
+
 ".lik.sim.boxcox" <-
   function(pars, fp, ip, temp.list)
 { 
@@ -409,7 +410,7 @@
     if(cov.model == "pure.nugget"){
       par.su$status[beta.size+2] <- ""
     }
-    par.su$values <- round(c(results$beta, results$cov.pars, results$nugget.rel, results$lambda), dig=4)
+    par.su$values <- round(c(results$beta, results$cov.pars, results$nugget.rel, results$lambda), digits=4)
     row.names(par.su) <- c(beta.name, "sigmasq", "phi", "tausq.rel", "lambda")
   }
   else{  ### binomial distribution so far only includes the logit-link. Therefore no transformation parameter
@@ -418,7 +419,7 @@
     if(cov.model == "pure.nugget"){
       par.su$status[beta.size+2] <- ""
     }
-    par.su$values <- round(c(results$beta, results$cov.pars, results$nugget.rel), dig=4)
+    par.su$values <- round(c(results$beta, results$cov.pars, results$nugget.rel), digits=4)
     row.names(par.su) <- c(beta.name, "sigmasq", "phi", "tausq.rel")
   }
   results$parameters.summary <- par.su
@@ -489,11 +490,11 @@
   if(!is.null(x$aniso.pars)){
     cat(paste("\n (fixed) anisotropy parameters (angle, ratio) = (", x$aniso.pars, "( \n"))
   }
-  cat(paste("\n      (estimated) variance parameter sigmasq (partial sill) = ", format(x$spatial.component[1,2], dig=digits)))
-  if(x$cov.model != "pure.nugget") cat(paste("\n      (estimated) cor. fct. parameter phi (range parameter)  = ", format(x$spatial.component[2,2], dig=digits)))
+  cat(paste("\n      (estimated) variance parameter sigmasq (partial sill) = ", format(x$spatial.component[1,2], digits=digits)))
+  if(x$cov.model != "pure.nugget") cat(paste("\n      (estimated) cor. fct. parameter phi (range parameter)  = ", format(x$spatial.component[2,2], digits=digits)))
   cat("\n")
   if(x$nugget.component[,1] == "estimated")
-    cat(paste("\n (estimated) relative nugget = ", format(x$nugget.component[,2], dig=digits)))
+    cat(paste("\n (estimated) relative nugget = ", format(x$nugget.component[,2], digits=digits)))
   else
     cat(paste("\n (fixed) relative nugget =", x$nugget.component[,2]))
   cat("\n")
@@ -504,7 +505,7 @@
     cat("\n")
     lambda <- x$transformation[,2]
     if(x$transformation[,1] == "estimated")
-      cat(paste("      (estimated) Box-Cox parameter =", format(lambda, dig=digits)))
+      cat(paste("      (estimated) Box-Cox parameter =", format(lambda, digits=digits)))
     else{
       cat(paste("      (fixed) Box-Cox parameter =", lambda))
       if(abs(lambda - 1) <  0.0001) cat(" (no transformation)")

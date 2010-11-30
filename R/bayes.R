@@ -46,7 +46,7 @@
       stop("prior.glm.control: argument phi.discrete with support points for phi must be provided\n")
     if(length(phi.prior.probs) != length(phi.discrete))
       stop("prior.glm.control: user provided phi.prior and phi.discrete have incompatible dimensions\n")
-    if(round(sum(phi.prior.probs), dig=8) != 1)
+    if(round(sum(phi.prior.probs), digits=8) != 1)
       stop("prior.glm.control: prior probabilities provided for phi do not sum up to 1")
   }
   else phi.prior <- match.arg(phi.prior)
@@ -202,7 +202,7 @@
   ##
   if(!is.null(attr(x, 'sp.dim')) && attr(x, 'sp.dim') == '1D')
     do.call("plot.1d", c(list(x = values.to.plot,
-                              x1vals = unique(round(locations[,1], dig=12))), .ldots.set(ldots, type="plot.1d",
+                              x1vals = unique(round(locations[,1], digits=12))), .ldots.set(ldots, type="plot.1d",
                                    data="prediction")))
   else{
     ldots.image <- .ldots.set(ldots, type="image", data="prediction")
@@ -255,7 +255,7 @@
   ##
   if(!is.null(attr(x, 'sp.dim')) && attr(x, 'sp.dim') == '1D')
     do.call("plot.1d", c(list(x = values.to.plot,
-                              x1vals = unique(round(locations[,1], dig=12))), .ldots.set(ldots, type="plot.1d",
+                              x1vals = unique(round(locations[,1], digits=12))), .ldots.set(ldots, type="plot.1d",
                                     data="prediction")))
   else{
     ldots.persp <- .ldots.set(ldots, type="persp", data="prediction")
