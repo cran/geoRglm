@@ -42,18 +42,18 @@ binom.krige(geodata, coords = geodata$coords, data = geodata$data,
   \item{borders}{optional. If a two column matrix defining a polygon is
     provided the prediction is performed only at locations inside this
     polygon.  }
-  \item{mcmc.input}{input parameter for the MCMC algorithm. It can take an output from \code{mcmc.control} or
+  \item{mcmc.input}{input parameter for the MCMC algorithm. It can take an output from \code{\link{mcmc.control}} or
     a list with elements as for the arguments in
-    \code{mcmc.control}. See documentation for
-    \code{mcmc.control}.\cr ATTENTION: the argument \code{S.scale} is necessary while
+    \code{\link{mcmc.control}}. See documentation for
+    \code{\link{mcmc.control}}.\cr ATTENTION: the argument \code{S.scale} is necessary while
     all the others have default values.   }
   \item{krige}{defines the model components and the type of
-    kriging. It can take an output from \code{krige.glm.control} or
+    kriging. It can take an output from \code{\link{krige.glm.control}} or
     a list with elements as for the arguments in
-    \code{krige.glm.control}. See documentation for \code{krige.glm.control}.  } 
-  \item{output}{parameters for controlling the output. It can take an output from \code{output.glm.control} or
-    a list with elements as for the arguments in \code{output.glm.control}.
-    See documentation for \code{output.glm.control}.  } 
+    \code{\link{krige.glm.control}}. See documentation for \code{\link{krige.glm.control}}.  } 
+  \item{output}{parameters for controlling the output. It can take an output from \code{\link{output.glm.control}} or
+    a list with elements as for the arguments in \code{\link{output.glm.control}}.
+    See documentation for \code{\link{output.glm.control}}.  } 
 }
 
 
@@ -64,7 +64,7 @@ is used. This algorithm is a Metropolis-Hastings algorithm, where the
 proposal distribution uses gradient information from the
 log-posterior distribution. 
 
-The proposal variance (called \code{S.scale}; see \code{mcmc.control})
+The proposal variance (called \code{S.scale}; see \code{\link{mcmc.control}})
 for the algorithm needs to be scaled
 such that approximately 60 percent of the proposals are accepted. We
 also recommend that the user to studies plots of the autocorrelations.
@@ -74,7 +74,7 @@ The prediction part of the program consist of performing trans-Gaussian kriging 
 distribution. Afterwards the predictor is obtained by taking the mean of 
 prediction means, and the prediction variance
 is obtained by taking the mean of the prediction variances plus the variance of the prediction means.
-The trans-Gaussian kriging is done by calling the function \code{krige.conv.extnd}, which is an extension of 
+The trans-Gaussian kriging is done by calling an internal function which is an extension of 
 \code{\link[geoR]{krige.conv}} allowing for more than one ``data
 set'', and using a second order Taylor approximation of the inverse
 logit function \eqn{g^{-1}}{g^{-1}}.

@@ -36,7 +36,7 @@ model.glm.control(trend.d = "cte", trend.l = "cte", cov.model = "matern",
     transformation of the data and prediction coordinates performed
     by the function \code{\link[geoR]{coords.aniso}}.  }
   \item{lambda}{parameter controlling the link function for
-    \code{pois.krige.bayes}. \code{lambda = 0} is the default, which corresponds to a log link. 
+    \code{\link{pois.krige.bayes}}. \code{lambda = 0} is the default, which corresponds to a log link. 
     Other values gives a link function from the Box-Cox class.  }  
 }
 

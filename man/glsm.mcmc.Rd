@@ -31,7 +31,7 @@ glsm.mcmc(geodata, coords = geodata$coords, data = geodata$data,
     it takes \code{geodata$units.m} in case this exist and else a vector of 1's.  }
   \item{model}{defines the model components. Either an object of
     class \code{likGLSM}; typically output from
-    \code{likfit.glsm}, or a list containing
+    \code{\link{likfit.glsm}}, or a list containing
     the arguments : 
     \cr
     \itemize{
@@ -72,7 +72,7 @@ glsm.mcmc(geodata, coords = geodata$coords, data = geodata$data,
 	the log-transformation.  Only used when \code{family = "poisson"} }
     } 
   }
-  \item{mcmc.input}{input parameter for the MCMC algorithm. It can take an output from \code{mcmc.control} or
+  \item{mcmc.input}{input parameter for the MCMC algorithm. It can take an output from \code{\link{mcmc.control}} or
     a list with elements as for the arguments in
     \code{\link{mcmc.control}}. See documentation for
     \code{\link{mcmc.control}}.\cr ATTENTION: the argument \code{S.scale} is necessary while

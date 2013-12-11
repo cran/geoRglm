@@ -36,9 +36,9 @@ micro.scale=NULL, dist.epsilon= 1e-10, output)
   \item{dist.epsilon}{a numeric value. Locations which are separated
     by a distance less than this value
     are considered co-located.  }
-  \item{output}{parameters for controlling the output. It can take an output from \code{output.glm.control} or
-    a list with elements as for the arguments in \code{output.glm.control}.
-    See documentation for \code{output.glm.control}.  } 
+  \item{output}{parameters for controlling the output. It can take an output from \code{\link{output.glm.control}} or
+    a list with elements as for the arguments in \code{\link{output.glm.control}}.
+    See documentation for \code{\link{output.glm.control}}.  } 
 }
 
 \details{
@@ -51,7 +51,7 @@ micro.scale=NULL, dist.epsilon= 1e-10, output)
   distribution. Afterwards the predictor is obtained by taking the mean of 
   prediction means, and the prediction variance
   is obtained by taking the mean of the prediction variances plus the variance of the prediction means.
-  The trans-Gaussian kriging is done by calling the function \code{krige.conv.extnd}, which is an extension of 
+  The trans-Gaussian kriging is done by calling an internal function which is an extension of 
   \code{\link[geoR]{krige.conv}} allowing for more than one ``data
   set'', and using a second order Taylor approximation of the inverse
   link function \eqn{g^{-1}}{g^{-1}}.

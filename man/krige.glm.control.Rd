@@ -66,7 +66,7 @@ krige.glm.control(type.krige = "sk", trend.d = "cte", trend.l = "cte",
     transformation of the data and prediction coordinates performed
     by the function \code{\link[geoR]{coords.aniso}}.  }
   \item{lambda}{numeric value of the Box-Cox transformation parameter
-    for \code{pois.krige}.
+    for \code{\link{pois.krige}}.
     The value \eqn{\lambda = 1}{lambda = 1} corresponds to
     no transformation and \eqn{\lambda = 0}{lambda = 0} corresponds to
     the log-transformation. 

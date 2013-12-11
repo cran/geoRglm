@@ -134,7 +134,7 @@
   cov.model.number <- .cor.number(cov.model)
   beta.size <- if(is.vector(trend)) 1 else ncol(trend)
   n.sim <- floor(n.iter/thin)
-  ## remeber this rather odd coding for telling that S.start is from the prior !!!
+  ## remember this rather odd coding for telling that S.start is from the prior !!!
   if(any(mcmc.input$S.start=="random")) Sdata <- as.double(as.vector(c(rep(0, n.sim*n - 1),1)))
   else Sdata <- as.double(as.vector(c(S, rep(0, (n.sim - 1) * n))))
   result <-  .C("mcmcrun4boxcox",
@@ -146,7 +146,7 @@
                 as.integer(cov.model.number),
                 as.double(kappa),
                 as.double(tausq.rel),
-		as.double(coords[,1]),
+		  as.double(coords[,1]),
                 as.double(coords[,2]),
                 as.double(S.scale),
                 as.double(phi.scale),

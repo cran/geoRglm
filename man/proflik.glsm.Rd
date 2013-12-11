@@ -9,7 +9,7 @@
 \description{Computes two dimenaional profile likelihood for the
   parameters
   (phi, nugget.rel) for a model previously
-  derived using the function \code{likfit.glsm}.
+  derived using the function \code{\link{likfit.glsm}}.
 }
 
 \usage{

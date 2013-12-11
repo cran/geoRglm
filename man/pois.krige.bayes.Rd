@@ -38,24 +38,24 @@ pois.krige.bayes(geodata, coords = geodata$coords, data = geodata$data,
   \item{borders}{optional. If a two column matrix defining a polygon is
     provided the prediction is performed only at locations inside this
     polygon.  }
-  \item{model}{a list defining the components of the model. It can take an output from \code{model.glm.control} or
-    a list with elements as for the arguments in \code{model.glm.control}.
-    See documentation for \code{model.glm.control}.
+  \item{model}{a list defining the components of the model. It can take an output from \code{\link{model.glm.control}} or
+    a list with elements as for the arguments in \code{\link{model.glm.control}}.
+    See documentation for \code{\link{model.glm.control}}.
     All arguments have default values }
   \item{prior}{specification of priors for the model parameters.
-    It can take an output from \code{prior.glm.control} or
-    a list with elements as for the arguments in \code{prior.glm.control}. See documentation for
-   \code{prior.glm.control}. ATTENTION: When \code{phi.prior = "fixed"} then \code{phi} must be specified, and when 
+    It can take an output from \code{\link{prior.glm.control}} or
+    a list with elements as for the arguments in \code{\link{prior.glm.control}}. See documentation for
+   \code{\link{prior.glm.control}}. ATTENTION: When \code{phi.prior = "fixed"} then \code{phi} must be specified, and when 
     \code{phi.prior} is not \code{"fixed"} then \code{phi.discrete} must be specified. All other parameters have default values.  }
-  \item{mcmc.input}{input parameter for the MCMC algorithm. It can take an output from \code{mcmc.control} or
+  \item{mcmc.input}{input parameter for the MCMC algorithm. It can take an output from \code{\link{mcmc.control}} or
     a list with elements as for the arguments in
-    \code{mcmc.control}. See documentation for
-    \code{mcmc.control}.\cr ATTENTION: the argument \code{S.scale} must be specified,
+    \code{\link{mcmc.control}}. See documentation for
+    \code{\link{mcmc.control}}.\cr ATTENTION: the argument \code{S.scale} must be specified,
     the argument \code{phi.start} must specified when 
     \code{prior$phi} is not \code{"fixed"}, while all the others have default values.  }
-  \item{output}{parameters for controlling the output. It can take an output from \code{output.glm.control} or
-    a list with elements as for the arguments in \code{output.glm.control}.
-    See documentation for \code{output.glm.control}.  }
+  \item{output}{parameters for controlling the output. It can take an output from \code{\link{output.glm.control}} or
+    a list with elements as for the arguments in \code{\link{output.glm.control}}.
+    See documentation for \code{\link{output.glm.control}}.  }
 }
 
 \details{
@@ -64,7 +64,7 @@ pois.krige.bayes(geodata, coords = geodata$coords, data = geodata$data,
   inference in the Poisson spatial model.
   
   It can be used for an analysis with fixed values of the parameters. However, the
-  function \code{pois.krige} may be preferable in this case.
+  function \code{\link{pois.krige}} may be preferable in this case.
   
   The Bayesian algorithm is using a discretized version of the prior
   distribution for the parameter \eqn{\phi}{phi}. This means that the prior for \eqn{\phi}{phi} is always a proper prior.
@@ -119,21 +119,22 @@ nabla(gamma )^{trunc}= - (I_n - Q^{-1}*D*(D^T*V^{-1}*D)^{-1}*D^T*(Q^{-1})^T)*gam
 The proposal \eqn{\gamma'}{gamma'} follows a multivariate normal distribution with mean vector
 \eqn{\xi(\gamma)=\gamma+(h/2)\nabla(\gamma)^{trunc}}{xi(gamma)=gamma+(h/2)*nabla(gamma)^{trunc}} and covariance matrix \eqn{hI},
 where \eqn{h>0} is a user-specified ``proposal variance'' (called
-\code{S.scale}; see \code{mcmc.control}).
+\code{S.scale}; see \code{\link{mcmc.control}}).
 
 When \code{phi.prior} is not \code{"fixed"}, we update the parameter \eqn{\phi}{phi} by a random walk Metropolis step.
-Here \code{mcmc.input$phi.scale} (see \code{mcmc.control}) is the
-proposal variance, which needs to be sufficiently large so that the algorithm easily can move between the discrete values in \code{prior$phi.discrete} (see \code{prior.glm.control}).
+Here \code{mcmc.input$phi.scale} (see \code{\link{mcmc.control}}) is the
+proposal variance, which needs to be sufficiently large so that the algorithm easily can move between the discrete values in \code{prior$phi.discrete} 
+(see \code{\link{prior.glm.control}}).
 
 \bold{CONTROL FUNCTIONS}
 
   The function call includes auxiliary control functions which allows
   the user to specify and/or change the specification of 1) model
   components
-  (using \code{model.glm.control}), 2) prior
-  distributions (using \code{prior.glm.control}), 3) options for the
-  MCMC algorithm (using \code{mcmc.control}), and 4) options for the
-  output (using \code{output.glm.control}).
+  (using \code{\link{model.glm.control}}), 2) prior
+  distributions (using \code{\link{prior.glm.control}}), 3) options for the
+  MCMC algorithm (using \code{\link{mcmc.control}}), and 4) options for the
+  output (using \code{\link{output.glm.control}}).
   Default values are available in most of the cases.
   The arguments for the control functions are described in their
   respective help files.
@@ -149,8 +150,8 @@ uncertainty. Below we describe the procedure for calculating these quantities.
 First we perform a Bayesian Gaussian prediction with the given priors on \eqn{\beta}{beta}
 and \eqn{\sigma^2}{sigma^2} on each of the simulated \eqn{S}{S}-``datasets'' from the 
 posterior distribution (and in case \eqn{\phi}{phi} is not fixed, for each sampled \eqn{\phi}{phi} value).
-This Gaussian prediction is done by calling the 
-function \code{krige.bayes.extnd}, which 
+This Gaussian prediction is done by calling an internal
+function which 
 is an extension of \code{\link[geoR]{krige.bayes}} 
 allowing for more than one ``data set''. 
 
@@ -204,7 +205,7 @@ the guess is too low, it is adjusted upwards, and vise verse.
       \cr
     }
   }
-  \item{model}{model components used as defined by \code{model.glm.control}.  }
+  \item{model}{model components used as defined by \code{\link{model.glm.control}}.  }
   \item{prior}{priors used for the model parameters.  }
   \item{mcmc.input}{input parameters used for the MCMC algorithm.  }
   \item{.Random.seed}{system random seed before running the function.
