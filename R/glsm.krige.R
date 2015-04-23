@@ -25,7 +25,7 @@
   if(missing(locations))
     stop("locations need to be specified for prediction; prediction not performed")
   else {
-    locations <- .check.locations(locations)
+    locations <- .geoR.check.locations(locations)
     if(is.null(trend.l))
       stop("trend.l needed for prediction")
     if(length(unique(locations[,1])) == 1 | length(unique(locations[,2])) == 1)

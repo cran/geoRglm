@@ -90,13 +90,13 @@ Real calc_ss(Real *z, Integer dim){
 /* The Bayesian code. This has not been changed w.r.t better parametrisation */
 
 
-void calc_Dmat(Real *B, Real *D, Real *outmat, Real *det_DivD_half, Integer dim, Integer no_linpar, Real *sqivD, Real *DivD,Real *sqDivD, Real *temp){   
+void calc_Dmat(Real *B, Real *D, Real *outmat, Real *logdet_DivD_half, Integer dim, Integer no_linpar, Real *sqivD, Real *DivD,Real *sqDivD, Real *temp){   
   /* calculation of the matrix Dmat */
   /* this version is operating on the lower triangle of B and outmat (B is lower triangular, and outmat (Dmat) is symmetric) */
   
   typedef Real *Doublearray; 
   Integer l, k, q, p ;
-  Real sum, prod;
+  Real sum, summa;
   
   /* computing sqivD = B^{-1}*D */
   for (q=0; q<no_linpar; q++){
@@ -143,10 +143,10 @@ void calc_Dmat(Real *B, Real *D, Real *outmat, Real *det_DivD_half, Integer dim,
     }  
   }
   /* calculating square root of the determinant of DivD */
-  if(no_linpar == 1) *det_DivD_half = sqrt(DivD[0]);
+  if(no_linpar == 1) *logdet_DivD_half = 0.5*log(DivD[0]);
   else{
-    for(q=0,prod=1;q<no_linpar;q++) prod *= sqDivD[no_linpar*q-q*(q+1)/2+q];  
-    *det_DivD_half = prod;
+    for(q=0,summa=0;q<no_linpar;q++) summa += log(sqDivD[no_linpar*q-q*(q+1)/2+q]);  
+    *logdet_DivD_half = summa;
   } 
 }
 
@@ -214,7 +214,7 @@ void mcmcrun4(Integer *n, Real *data, Real *units, Real *DD, Integer *no_linpar,
   Integer i, j, jj, l, k, acc, acc_phi, dim2, itr, jstep, jphi ; 
   Real logfprop, logp_zprop,logf, logp_z, logq, logqprop, ss4, ss4prop, phi, phiprop, phistep, logp_phi, logp_phiprop, temp_phi ;  
   Real distcoords; 
-  Real det_DDivDD[2001];
+  Real logdet_DDivDD_05[2001];
   Doublearray z, zprop, S, Sprop, gradz, gradzprop, temp;
   Doublearray Q, Qprop, AA, Dmat;
   Doublearray BB[2001], DDDMAT[2001];
@@ -264,7 +264,7 @@ void mcmcrun4(Integer *n, Real *data, Real *units, Real *DD, Integer *no_linpar,
       }
       cholesky(AA,BB[j],(*n)); 
       DDDMAT[j] = Salloc(dim2,Real) ;
-      calc_Dmat(BB[j], DD, DDDMAT[j], &det_DDivDD[j], (*n), (*no_linpar), sqivD, DivD, sqDivD, temp2);
+      calc_Dmat(BB[j], DD, DDDMAT[j], &logdet_DDivDD_05[j], (*n), (*no_linpar), sqivD, DivD, sqDivD, temp2);
     }  
     phi=phi_discrete[jphi]; 
     Q=BB[jphi];
@@ -281,7 +281,7 @@ void mcmcrun4(Integer *n, Real *data, Real *units, Real *DD, Integer *no_linpar,
       AA[(*n)*l - l*(l+1)/2+l] = 1+ (*tausq); 
     }
     cholesky(AA,Q,(*n)); 
-    calc_Dmat(Q, DD, Dmat, &det_DDivDD[0], (*n), (*no_linpar), sqivD, DivD, sqDivD, temp2);  
+    calc_Dmat(Q, DD, Dmat, &logdet_DDivDD_05[0], (*n), (*no_linpar), sqivD, DivD, sqDivD, temp2);  
   }
 
   RANDIN;
@@ -293,7 +293,7 @@ void mcmcrun4(Integer *n, Real *data, Real *units, Real *DD, Integer *no_linpar,
   conddensity4(S,Q,&logf,data,z,units,(*n));
   ss4 = calc4_ss(z,Dmat,(*n))+(*ss_sigma);  
   gradient4(S,gradz,Q,Dmat,z,data,units,Htrunc,(*n),ss4,(*df));  
-  logp_z = -0.5*(*df)*log(ss4)+log(det_DDivDD[jphi]); 
+  logp_z = -0.5*(*df)*log(ss4)-logdet_DDivDD_05[jphi]; 
   logp_phi = log(phiprior[jphi]);
   itr = (*niter) + (*burn_in) ;
   acc= 0; acc_phi = 0 ;
@@ -303,7 +303,7 @@ void mcmcrun4(Integer *n, Real *data, Real *units, Real *DD, Integer *no_linpar,
     conddensity4(Sprop,Q,&logfprop,data,zprop,units,(*n)); 
     ss4prop = calc4_ss(zprop,Dmat,(*n))+(*ss_sigma); 
     gradient4(Sprop,gradzprop,Q,Dmat,zprop,data,units,Htrunc,(*n),ss4prop,(*df)); 
-    logp_zprop = -0.5*(*df)*log(ss4prop)+log(det_DDivDD[jphi]); 
+    logp_zprop = -0.5*(*df)*log(ss4prop)-logdet_DDivDD_05[jphi]; 
     for (logq=0,logqprop=0,l=0; l<(*n); l++){
       logq+=pow(zprop[l]-(z[l]+0.5*gradz[l]*(*scale)),2);
       logqprop+=pow(z[l]-(zprop[l]+0.5*gradzprop[l]*(*scale)),2);
@@ -338,7 +338,7 @@ void mcmcrun4(Integer *n, Real *data, Real *units, Real *DD, Integer *no_linpar,
       logp_phiprop = log(phiprior[jphi+jstep]); 
       conddensity4(Sprop,BB[jphi+jstep],&logfprop,data,z,units,(*n));                              
       ss4prop = calc4_ss(z,DDDMAT[jphi+jstep],(*n))+(*ss_sigma);                 
-      logp_zprop = -0.5*(*df)*log(ss4prop)+log(det_DDivDD[jphi+jstep]);        
+      logp_zprop = -0.5*(*df)*log(ss4prop)-logdet_DDivDD_05[jphi+jstep];        
       if (log(RUNIF)<logfprop-logf+logp_phiprop-logp_phi+logp_zprop-logp_z){    
 	phi=phiprop;
 	logf=logfprop;
@@ -432,7 +432,7 @@ void mcmcrun4boxcox(Integer *n, Real *data, Real *units, Real *DD, Integer *no_l
   Integer i, j, jj, l, k, acc, acc_phi, dim2, itr, jstep, jphi , ctrl1, ctrl2, ctrl3; 
   Real logfprop, logp_zprop,logf, logp_z, logq, logqprop, ss4, ss4prop, phi, phiprop, phistep, logp_phi, logp_phiprop, temp_phi ;   
   Real distcoords;
-  Real det_DDivDD[2001];
+  Real logdet_DDivDD_05[2001];
   Doublearray z, zprop, S, Sprop, gradz, gradzprop, temp;
   Doublearray Q, Qprop, AA, Dmat;
   Doublearray BB[2001], DDDMAT[2001];
@@ -475,14 +475,14 @@ void mcmcrun4boxcox(Integer *n, Real *data, Real *units, Real *DD, Integer *no_l
       BB[j] = Salloc(dim2,Real) ;
       for (l=0; l<(*n); l++){
 	for (k=0; k<l; k++){
-	  distcoords = sqrt( pow(coords1[k]-coords1[l],2) + pow(coords2[k]-coords2[l],2));
+	  distcoords = sqrt(pow(coords1[k]-coords1[l],2) + pow(coords2[k]-coords2[l],2));
 	  AA[(*n)*k - k*(k+1)/2+l]=corrfct(phi_discrete[j],(*kappa),distcoords,(*cornr));
 	}
 	AA[(*n)*l - l*(l+1)/2+l] = 1+ (*tausq); 
       }
       cholesky(AA,BB[j],(*n)); 
       DDDMAT[j] = Salloc(dim2,Real) ;
-      calc_Dmat(BB[j], DD, DDDMAT[j], &det_DDivDD[j], (*n), (*no_linpar), sqivD, DivD, sqDivD, temp2);
+      calc_Dmat(BB[j], DD, DDDMAT[j], &logdet_DDivDD_05[j], (*n), (*no_linpar), sqivD, DivD, sqDivD, temp2);
     }  
     phi=phi_discrete[jphi]; 
     Q=BB[jphi];
@@ -499,7 +499,7 @@ void mcmcrun4boxcox(Integer *n, Real *data, Real *units, Real *DD, Integer *no_l
       AA[(*n)*l - l*(l+1)/2+l] = 1+ (*tausq); 
     }
     cholesky(AA,Q,(*n)); 
-    calc_Dmat(Q, DD, Dmat, &det_DDivDD[0], (*n), (*no_linpar), sqivD, DivD, sqDivD, temp2);  
+    calc_Dmat(Q, DD, Dmat, &logdet_DDivDD_05[0], (*n), (*no_linpar), sqivD, DivD, sqDivD, temp2);  
   } 
 
   RANDIN;
@@ -516,7 +516,7 @@ void mcmcrun4boxcox(Integer *n, Real *data, Real *units, Real *DD, Integer *no_l
   }
   ss4 = calc4_ss(z,Dmat,(*n))+(*ss_sigma);  
   gradient4boxcox(S,gradz,Q,Dmat,z,data,units,Htrunc,(*n),ss4,(*df),(*lambda));  
-  logp_z = -0.5*(*df)*log(ss4)+log(det_DDivDD[jphi]); 
+  logp_z = -0.5*(*df)*log(ss4)-logdet_DDivDD_05[jphi]; 
   logp_phi = log(phiprior[jphi]);
   itr = (*niter) + (*burn_in) ;
   acc= 0; acc_phi = 0 ; ctrl2 = 0; ctrl3 = 0;
@@ -533,7 +533,7 @@ void mcmcrun4boxcox(Integer *n, Real *data, Real *units, Real *DD, Integer *no_l
     if(ctrl1 == 0){
       ss4prop = calc4_ss(zprop,Dmat,(*n))+(*ss_sigma); 
       gradient4boxcox(Sprop,gradzprop,Q,Dmat,zprop,data,units,Htrunc,(*n),ss4prop,(*df),(*lambda)); 
-      logp_zprop = -0.5*(*df)*log(ss4prop)+log(det_DDivDD[jphi]);
+      logp_zprop = -0.5*(*df)*log(ss4prop)-logdet_DDivDD_05[jphi];
       for (logq=0,logqprop=0,l=0; l<(*n); l++){
 	logq+=pow(zprop[l]-(z[l]+0.5*gradz[l]*(*scale)),2);
 	logqprop+=pow(z[l]-(zprop[l]+0.5*gradzprop[l]*(*scale)),2);
@@ -577,7 +577,7 @@ void mcmcrun4boxcox(Integer *n, Real *data, Real *units, Real *DD, Integer *no_l
       }
       if(ctrl1 == 0){                  
 	ss4prop = calc4_ss(z,DDDMAT[jphi+jstep],(*n))+(*ss_sigma);          
-	logp_zprop = -0.5*(*df)*log(ss4prop)+log(det_DDivDD[jphi+jstep]);        
+	logp_zprop = -0.5*(*df)*log(ss4prop)-logdet_DDivDD_05[jphi+jstep];        
 	if (ctrl1 == 0 && log(RUNIF)<logfprop-logf+logp_phiprop-logp_phi+logp_zprop-logp_z){    
 	  phi=phiprop;
 	  logf=logfprop;
@@ -665,7 +665,7 @@ void mcmcrun4binom(Integer *n, Real *data, Real *units, Real *DD, Integer *no_li
   Integer i, j, jj, l, k, acc, acc_phi, dim2, itr, jstep, jphi ; 
   Real logfprop, logp_zprop,logf, logp_z, logq, logqprop, ss4, ss4prop, phi, phiprop, phistep, logp_phi, logp_phiprop, temp_phi ;   
   Real distcoords;
-  Real det_DDivDD[2001];
+  Real logdet_DDivDD_05[2001];
   Doublearray z, zprop, S, Sprop, gradz, gradzprop, temp;
   Doublearray Q, Qprop, AA, Dmat;
   Doublearray BB[2001], DDDMAT[2001];
@@ -697,7 +697,7 @@ void mcmcrun4binom(Integer *n, Real *data, Real *units, Real *DD, Integer *no_li
   }
   for (jj=0; jj<dim2; jj++){
     AA[jj]=Q[jj]=Qprop[jj]=Dmat[jj]=0;   
-  }    
+  }
   phi = phisamples[0];
   if(*nmphi > 1){
     phistep=phi_discrete[1]-phi_discrete[0];
@@ -715,7 +715,7 @@ void mcmcrun4binom(Integer *n, Real *data, Real *units, Real *DD, Integer *no_li
       }
       cholesky(AA,BB[j],(*n)); 
       DDDMAT[j] = Salloc(dim2,Real) ;
-      calc_Dmat(BB[j], DD, DDDMAT[j], &det_DDivDD[j], (*n), (*no_linpar), sqivD, DivD, sqDivD, temp2);
+      calc_Dmat(BB[j], DD, DDDMAT[j], &logdet_DDivDD_05[j], (*n), (*no_linpar), sqivD, DivD, sqDivD, temp2);
     }  
     phi=phi_discrete[jphi]; 
     Q=BB[jphi];
@@ -732,7 +732,7 @@ void mcmcrun4binom(Integer *n, Real *data, Real *units, Real *DD, Integer *no_li
       AA[(*n)*l - l*(l+1)/2+l] = 1+ (*tausq); 
     }
     cholesky(AA,Q,(*n)); 
-    calc_Dmat(Q, DD, Dmat, &det_DDivDD[0], (*n), (*no_linpar), sqivD, DivD, sqDivD, temp2);  
+    calc_Dmat(Q, DD, Dmat, &logdet_DDivDD_05[0], (*n), (*no_linpar), sqivD, DivD, sqDivD, temp2);  
   } 
 
   RANDIN;
@@ -744,7 +744,7 @@ void mcmcrun4binom(Integer *n, Real *data, Real *units, Real *DD, Integer *no_li
   conddensity4binom(S,Q,&logf,data,z,units,(*n));
   ss4 = calc4_ss(z,Dmat,(*n))+(*ss_sigma);  
   gradient4binom(S,gradz,Q,Dmat,z,data,units,(*n),ss4,(*df));  
-  logp_z = -0.5*(*df)*log(ss4)+log(det_DDivDD[jphi]); 
+  logp_z = -0.5*(*df)*log(ss4)-logdet_DDivDD_05[jphi]; 
   logp_phi = log(phiprior[jphi]);
   itr = (*niter) + (*burn_in) ;
   acc= 0; acc_phi = 0 ;
@@ -754,7 +754,7 @@ void mcmcrun4binom(Integer *n, Real *data, Real *units, Real *DD, Integer *no_li
     conddensity4binom(Sprop,Q,&logfprop,data,zprop,units,(*n)); 
     ss4prop = calc4_ss(zprop,Dmat,(*n))+(*ss_sigma); 
     gradient4binom(Sprop,gradzprop,Q,Dmat,zprop,data,units,(*n),ss4prop,(*df)); 
-    logp_zprop = -0.5*(*df)*log(ss4prop)+log(det_DDivDD[jphi]); 
+    logp_zprop = -0.5*(*df)*log(ss4prop)-logdet_DDivDD_05[jphi]; 
     for (logq=0,logqprop=0,l=0; l<(*n); l++){
       logq+=pow(zprop[l]-(z[l]+0.5*gradz[l]*(*scale)),2);
       logqprop+=pow(z[l]-(zprop[l]+0.5*gradzprop[l]*(*scale)),2);
@@ -789,7 +789,7 @@ void mcmcrun4binom(Integer *n, Real *data, Real *units, Real *DD, Integer *no_li
       logp_phiprop = log(phiprior[jphi+jstep]); 
       conddensity4binom(Sprop,BB[jphi+jstep],&logfprop,data,z,units,(*n));                              
       ss4prop = calc4_ss(z,DDDMAT[jphi+jstep],(*n))+(*ss_sigma);                 
-      logp_zprop = -0.5*(*df)*log(ss4prop)+log(det_DDivDD[jphi+jstep]);        
+      logp_zprop = -0.5*(*df)*log(ss4prop)-logdet_DDivDD_05[jphi+jstep];        
       if (log(RUNIF)<logfprop-logf+logp_phiprop-logp_phi+logp_zprop-logp_z){    
 	phi=phiprop;
 	logf=logfprop;

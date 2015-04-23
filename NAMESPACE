@@ -1,6 +1,9 @@
 useDynLib(geoRglm)
 
-import(stats,geoR,graphics)
+import(stats)
+import(geoR)
+import(graphics)
+import(sp)
 
 export("asympvar","binom.krige.bayes","binom.krige","covariog.model.env",
    "covariog","create.mcmc.coda","geoRglmdefunct","glsm.krige","glsm.mcmc", "krige.glm.control",

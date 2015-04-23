@@ -142,6 +142,7 @@ test <- glsm.mcmc(b50, model = list(family="binomial",
           mcmc.input = mcmc.control(S.scale = 0.2, thin = 1))
 ## visulalising the MCMC output using the coda package
 test.coda <- create.mcmc.coda(test, mcmc.input = list(thin = 1))
+library(coda)
 \dontrun{
 plot(test.coda)
 autocorr.plot(test.coda) 

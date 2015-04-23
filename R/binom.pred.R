@@ -21,7 +21,7 @@
                as.double(S.scale),
                as.integer(nsim),
                as.integer(thin),
-               acc.rate = as.double(1), DUP=FALSE, PACKAGE = "geoRglm")[c("z", "S", "acc.rate")]
+               acc.rate = as.double(1), PACKAGE = "geoRglm")[c("z", "S", "acc.rate")]
   attr(result$S, "dim") <- c(n, nsim) 
   return(result)
 }
@@ -154,7 +154,7 @@
     if(messages.screen) cat(paste("locations need to be specified for prediction; prediction not performed \n"))
   }
   else{
-    locations <- .check.locations(locations)
+    locations <- .geoR.check.locations(locations)
     if(is.null(trend.l))
       stop("trend.l needed for prediction")
     if(length(unique(locations[,1])) == 1 | length(unique(locations[,2])) == 1)

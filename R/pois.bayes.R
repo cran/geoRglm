@@ -75,7 +75,7 @@
                 Sdata = Sdata,
                 phi.sample = as.double(rep(phi, n.sim)),
 		acc.rate = rep(0,floor(n.iter/1000)+1), 
-		acc.rate.phi = rep(0,floor(n.iter/1000)+1), DUP=FALSE, PACKAGE = "geoRglm")[c("Sdata", "phi.sample","acc.rate","acc.rate.phi" )]
+		acc.rate.phi = rep(0,floor(n.iter/1000)+1), PACKAGE = "geoRglm")[c("Sdata", "phi.sample","acc.rate","acc.rate.phi" )]
   attr(result$Sdata, "dim") <- c(n, n.sim)
   if(nmphi>1) result$acc.rate <- cbind(burn.in + seq(0,floor(n.iter/1000))*1000, result$acc.rate,result$acc.rate.phi)
   else result$acc.rate <- cbind(burn.in + seq(0,floor(n.iter/1000))*1000, result$acc.rate)
@@ -164,7 +164,7 @@
                 Sdata = Sdata,
                 phi.sample = as.double(rep(phi, n.sim)), 
 		acc.rate = rep(0,floor(n.iter/1000)+1), 
-		acc.rate.phi = rep(0,floor(n.iter/1000)+1), DUP=FALSE, PACKAGE = "geoRglm")[c("Sdata", "phi.sample","acc.rate","acc.rate.phi" )]   
+		acc.rate.phi = rep(0,floor(n.iter/1000)+1), PACKAGE = "geoRglm")[c("Sdata", "phi.sample","acc.rate","acc.rate.phi" )]   
   attr(result$Sdata, "dim") <- c(n, n.sim)
   if(nmphi>1) result$acc.rate <- cbind(burn.in + seq(0,floor(n.iter/1000))*1000, result$acc.rate,result$acc.rate.phi)
   else result$acc.rate <- cbind(burn.in + seq(0,floor(n.iter/1000))*1000, result$acc.rate)
@@ -251,7 +251,7 @@
                 Sdata = Sdata,
                 phi.sample = as.double(rep(phi, n.sim)),
 		acc.rate = rep(0,floor(n.iter/1000)+1), 
-		acc.rate.phi = rep(0,floor(n.iter/1000)+1), DUP=FALSE, PACKAGE = "geoRglm")[c("Sdata", "phi.sample","acc.rate","acc.rate.phi" )]
+		acc.rate.phi = rep(0,floor(n.iter/1000)+1), PACKAGE = "geoRglm")[c("Sdata", "phi.sample","acc.rate","acc.rate.phi" )]
   attr(result$Sdata, "dim") <- c(n, n.sim) 
   if(nmphi>1) result$acc.rate <- cbind(burn.in + seq(0,floor(n.iter/1000))*1000, result$acc.rate,result$acc.rate.phi)
   else result$acc.rate <- cbind(burn.in + seq(0,floor(n.iter/1000))*1000, result$acc.rate)
@@ -339,7 +339,7 @@
                 Sdata = Sdata,
                 phi.sample = as.double(rep(phi, n.sim)), 
 		acc.rate = rep(0,floor(n.iter/1000)+1),
-		acc.rate.phi = rep(0,floor(n.iter/1000)+1), DUP=FALSE, PACKAGE = "geoRglm")[c("Sdata", "phi.sample","acc.rate","acc.rate.phi" )]
+		acc.rate.phi = rep(0,floor(n.iter/1000)+1), PACKAGE = "geoRglm")[c("Sdata", "phi.sample","acc.rate","acc.rate.phi" )]
   attr(result$Sdata, "dim") <- c(n, n.sim)
   if(nmphi>1) result$acc.rate <- cbind(burn.in + seq(0,floor(n.iter/1000))*1000, result$acc.rate,result$acc.rate.phi)
   else result$acc.rate <- cbind(burn.in + seq(0,floor(n.iter/1000))*1000, result$acc.rate)
@@ -356,7 +356,7 @@
   n.sim <- ncol(S)
   do.prediction <- ifelse(all(locations == "no"), FALSE, TRUE)
   if(do.prediction){
-     locations <- .check.locations(locations)
+     locations <- .geoR.check.locations(locations)
      if(!is.null(borders)){
        ind.loc0  <- .geoR_inout(locations, borders)
        locations <- locations[ind.loc0,,drop=TRUE]
@@ -688,7 +688,7 @@
   ## checking prediction locations
   ##
   if((inference) & (do.prediction)){
-    locations <- .check.locations(locations)
+    locations <- .geoR.check.locations(locations)
     ## Checking the consistency between coords, locations, and trends
     trend.l <- model$trend.l
     ## Checking for 1D prediction 

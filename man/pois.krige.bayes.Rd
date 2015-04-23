@@ -81,10 +81,10 @@ When \eqn{\beta}{beta} follows a uniform prior and the prior for \eqn{\sigma^2}{
 distribution, 
 the marginalised improper density of \eqn{S} is
 \deqn{
-f_I(s) \propto |D^T V^{-1}D|^{1/2}|V|^{-1/2}\{n_{\sigma}S^2_{\sigma} 
+f_I(s) \propto |D^T V^{-1}D|^{-1/2}|V|^{-1/2}\{n_{\sigma}S^2_{\sigma} 
 + s^T (V^{-1}-V^{-1}D(D^T V^{-1}D)^{-1}D^T V^{-1})s \}^{-(n-p+n_{\sigma})/2},
 }{
-f_I(s) propto |D^T*V^{-1}*D|^{1/2}*|V|^{-1/2}*{n.sigma*S2.sigma
+f_I(s) propto |D^T*V^{-1}*D|^{-1/2}*|V|^{-1/2}*{n.sigma*S2.sigma
 + s^T*(V^{-1}-V^{-1}*D*(D^T*V^{-1}*D)^{-1}*D^T*V^{-1})*s }^{-(n-p+n.sigma)/2},
 }
 where \eqn{V} is the correlation matrix of \eqn{S}. The uniform prior for \eqn{\sigma^2}{sigma^2} corresponds 
@@ -270,25 +270,25 @@ par(mfrow=c(3,1))
 hist(test.6.new)
 }
 \dontshow{
-y9 <- list(data=p50$data[c(1:4,10:14)],coords=p50$coords[c(1:4,10:14),],units.m=p50$units.m[c(1:4,10:14)])
-class(y9) <- "geodata"
-mcmc5 <- mcmc.control(S.scale = 0.1, thin = 1, n.iter=10)
-test5 <- pois.krige.bayes(y9, locations = t(cbind(c(2,1),c(-6050,-3270),c(1.1,2.1),c(2,3))),
-prior = list(phi.prior = "fixed", phi= 1), mcmc.input = mcmc5,
-output = list(threshold = c(9,10), quantile = c(0.05,0.99),
-sim.predict=TRUE))
-par(mfrow=c(1,2))
-hist(test5)
-prior6 <- prior.glm.control(phi.prior = "uniform", phi.discrete =
-c(0.98,1.02), tausq.rel = 0.05)
-mcmc6 <- list(S.scale = 0.1, thin = 1, n.iter=10, burn.in = 1, phi.scale = 0.01, phi.start = 1) 
-test6 <- pois.krige.bayes(y9, locations=t(cbind(c(2.5,3.5),c(-60,-37))),
-prior = prior6, mcmc.input = mcmc6)
-par(mfrow=c(3,1))
-hist(test6,density.est=FALSE)
-run2.y9 <- pois.krige.bayes(y9, prior = list(phi.prior = "fixed", phi= 1), mcmc.input = mcmc5,
-model = list(trend.d ="1st", trend.l ="1st", aniso.pars =c(1,2), kappa
-=1, lambda= 0.5), locations = t(cbind(c(2.5,3.5),c(-60,-37))) ,
-output = output.glm.control(sim.predict = TRUE))  }
+##y9 <- list(data=p50$data[c(1:4,10:14)],coords=p50$coords[c(1:4,10:14),],units.m=p50$units.m[c(1:4,10:14)])
+##class(y9) <- "geodata"
+##mcmc5 <- mcmc.control(S.scale = 0.1, thin = 1, n.iter=10)
+##test5 <- pois.krige.bayes(y9, locations = t(cbind(c(2,1),c(-6050,-3270),c(1.1,2.1),c(2,3))),
+##prior = list(phi.prior = "fixed", phi= 1), mcmc.input = mcmc5,
+##output = list(threshold = c(9,10), quantile = c(0.05,0.99),
+##sim.predict=TRUE))
+##par(mfrow=c(1,2))
+##hist(test5)
+##prior6 <- prior.glm.control(phi.prior = "uniform", phi.discrete =
+##c(0.98,1.02), tausq.rel = 0.05)
+##mcmc6 <- list(S.scale = 0.1, thin = 1, n.iter=10, burn.in = 1, phi.scale = 0.01, phi.start = 1) 
+##test6 <- pois.krige.bayes(y9, locations=t(cbind(c(2.5,3.5),c(-60,-37))),
+##prior = prior6, mcmc.input = mcmc6)
+##par(mfrow=c(3,1))
+##hist(test6,density.est=FALSE)
+##run2.y9 <- pois.krige.bayes(y9, prior = list(phi.prior = "fixed", phi= 1), mcmc.input = mcmc5,
+##model = list(trend.d ="1st", trend.l ="1st", aniso.pars =c(1,2), kappa
+##=1, lambda= 0.5), locations = t(cbind(c(2.5,3.5),c(-60,-37))) ,
+##output = output.glm.control(sim.predict = TRUE))  }
 }
 \keyword{spatial}

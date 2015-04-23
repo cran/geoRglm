@@ -147,7 +147,6 @@
 
 "create.mcmc.coda" <- function(x, mcmc.input)
 {
-  require(coda)
   if(exists("mcmc.input")){
     if(!is.list(mcmc.input)) stop(" mcmc.input must be given as a list ")
     if(is.null(mcmc.input$thin)) thin <- 10
@@ -165,7 +164,7 @@
     for(i in 1:n) S.names[i] <- paste("S[",i,"]",sep="")
     temp <- t(x$simulations)
     colnames(temp) <- S.names
-    return(mcmc(data=temp, start = st.val, thin=thin))
+    return(coda::mcmc(data=temp, start = st.val, thin=thin))
   }
   else{
     if(class(x)=="glm.krige.bayes"){
@@ -180,11 +179,11 @@
         temp <- cbind(x$posterior$phi$sample,t(x$posterior$simulations))
         colnames(temp) <- c("phi", S.names)
       }
-      return(mcmc(data=temp, start = st.val, thin=thin))
+      return(coda::mcmc(data=temp, start = st.val, thin=thin))
     }
     else{
-      if(is.matrix(x)) return(mcmc(data=t(x), start = st.val, thin=thin))
-      if(is.vector(x)) return(mcmc(data=x, start = st.val,thin=thin))
+      if(is.matrix(x)) return(coda::mcmc(data=t(x), start = st.val, thin=thin))
+      if(is.vector(x)) return(coda::mcmc(data=x, start = st.val,thin=thin))
     }
   }
 }

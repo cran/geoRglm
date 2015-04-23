@@ -11,11 +11,13 @@
   return(invisible(0))
 }
 
-".bilinearformXAY"<- function(...) geoR:::.bilinearformXAY(...)
-".check.locations"<- function(...) geoR:::.check.locations(...)
-".cond.sim"<- function(...) geoR:::.cond.sim(...)
-".cor.number"<- function(...) geoR:::.cor.number(...)
-".diagquadraticformXAX"<- function(...) geoR:::.diagquadraticformXAX(...)
-".geoR_inout"<- function(...) geoR:::.geoR_inout(...)
-".ldots.set"<- function(...) geoR:::.ldots.set(...)
-".solve.geoR"<- function(...) geoR:::.solve.geoR(...)
+
+## geoR functions, that are now copied into geoRglm
+##".bilinearformXAY"<- function(...) geoR:::.bilinearformXAY(...)
+##".check.locations"<- function(...) geoR:::.check.locations(...)
+##".cond.sim"<- function(...) geoR:::.cond.sim(...)
+##".cor.number"<- function(...) geoR:::.cor.number(...)
+##".diagquadraticformXAX"<- function(...) geoR:::.diagquadraticformXAX(...)
+##".geoR_inout"<- function(...) geoR:::.geoR_inout(...)
+##".ldots.set"<- function(...) geoR:::.ldots.set(...)
+##".solve.geoR"<- function(...) geoR:::.solve.geoR(...)

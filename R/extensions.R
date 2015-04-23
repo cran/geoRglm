@@ -202,7 +202,7 @@
     stop(".krige.bayes.extnd: size of beta incompatible with the trend model (covariates)")
   ##
   if(do.prediction) {
-    locations <- .check.locations(locations)
+    locations <- .geoR.check.locations(locations)
     if(!is.null(borders)){
       nloc0 <- nrow(locations)
       ind.loc0  <- .geoR_inout(locations, borders)
@@ -450,7 +450,7 @@
                            cov.pars = c(1, phi.fixed), inv = TRUE,
                            only.inv.lower.diag = TRUE)
       kb$predictive$simulations[ind.not.coincide,] <-
-        .cond.sim(env.loc = base.env, env.iter = base.env,
+        geoR::.cond.sim(env.loc = base.env, env.iter = base.env,
                   loc.coincide = loc.coincide,
                   coincide.cond = coincide.cond, tmean = tmean,
                   Rinv = list(lower=iR$lower.inverse, diag=iR$diag.inverse),
@@ -598,7 +598,7 @@ function(geodata, coords = geodata$coords, data = geodata$data,
     warning("vector of coordinates: one spatial dimension assumed")
   }
   coords <- as.matrix(coords)
-  locations <- .check.locations(locations)
+  locations <- .geoR.check.locations(locations)
   ## selecting locations inside the borders 
   ## and also values of trend.l if the case
   ##
@@ -747,7 +747,7 @@ function(geodata, coords = geodata$coords, data = geodata$data,
                                cov.pars = cpars, 
                                inv = TRUE, only.inv.lower.diag = TRUE)
       kc.result$simulations[ind.not.coincide,  ] <-
-        .cond.sim(env.loc = base.env, env.iter = base.env,
+        geoR::.cond.sim(env.loc = base.env, env.iter = base.env,
                   loc.coincide = loc.coincide,
                   coincide.cond = coincide.cond,
                   tmean = kc.result$predict[ind.not.coincide, , drop = FALSE],

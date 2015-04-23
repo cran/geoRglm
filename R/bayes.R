@@ -174,8 +174,8 @@
   ## apart from the arguments for "values.to.plot", this function is identical to "image.krige.bayes"
   ldots <- match.call(expand.dots = FALSE)$...
   if(missing(x)) x <- NULL
-  attach(x, pos=2, warn.conflicts=FALSE)
-  on.exit(detach(2))
+##  attach(x, pos=2, warn.conflicts=FALSE)
+##  on.exit(detach("x"))
   if(missing(locations))
     locations <-  eval(attr(x, "prediction.locations"))
   if(is.null(locations)) stop("prediction locations must be provided")
@@ -206,7 +206,7 @@
                                    data="prediction")))
   else{
     ldots.image <- .ldots.set(ldots, type="image", data="prediction")
-    locations <- geoR:::.prepare.graph.krige.bayes(obj=x,
+    locations <- .prepare.graph.krige.bayes(obj=x,
                                            locations=locations,
                                            borders=borders,
                                            borders.obj = eval(attr(x, "borders")),
@@ -238,8 +238,8 @@
   ## apart from the "values.to.plot" argument, this function is identical to "image.glm.krige.bayes"
   ldots <- match.call(expand.dots = FALSE)$...
   if(missing(x)) x <- NULL
-  attach(x, pos=2, warn.conflicts=FALSE)
-  on.exit(detach(2))
+  ## attach(x, pos=2, warn.conflicts=FALSE)
+  ## on.exit(detach("x"))
   if(missing(locations)) locations <-  eval(attr(x, "prediction.locations"))
   if(is.null(locations)) stop("prediction locations must be provided")
   if(ncol(locations) != 2) stop("locations must be a matrix or data-frame with two columns")
@@ -259,7 +259,7 @@
                                     data="prediction")))
   else{
     ldots.persp <- .ldots.set(ldots, type="persp", data="prediction")
-    locations <- geoR:::.prepare.graph.krige.bayes(obj=x, locations=locations,
+    locations <- .prepare.graph.krige.bayes(obj=x, locations=locations,
                                            borders=borders,
                                            borders.obj = eval(attr(x, "borders")),
                                            values.to.plot=values.to.plot,
@@ -320,6 +320,6 @@
     names(kb$posterior$sample) <- c(names(x$posterior$beta$mean), "sigmasq", "phi")
   }
   kb$posterior$sample$tausq.rel <- rep(-99,n.sim)
-  geoR:::hist.krige.bayes(x=kb, pars=pars, density.est = density.est, histogram = histogram)
+  hist.krige.bayes(x=kb, pars=pars, density.est = density.est, histogram = histogram)
   return(invisible())
 }
