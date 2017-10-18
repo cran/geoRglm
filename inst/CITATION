@@ -10,6 +10,6 @@ citEntry(entry="Article",
 	number       = 2,
 	pages        = "26-28",
          note         = "ISSN 1609-3631",
-         url          = "http://cran.R-project.org/doc/Rnews",
+         url          = "https://cran.r-project.org/doc/Rnews",
          textVersion =   paste("Christensen, O.F. & Ribeiro Jr., P.J. (2002) geoRglm: A package for generalised linear spatial models. R-NEWS, Vol 2, No 2, 26-28.")
 )

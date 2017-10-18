@@ -91,11 +91,11 @@
 }
 
 
-".glm.krige.aux" <- function(data, coords, locations, borders, krige, output)
+".glm.krige.aux" <- function(geodata, locations, borders, krige, output)
 {
   krige$lambda <- 1
   krige$link <- NULL 
-  kc.result <- .krige.conv.extnd(data = data, coords = coords, locations = locations, borders=borders, krige = krige, output = output)
+  kc.result <- .krige.conv.extnd(geodata=geodata, locations = locations, borders=borders, krige = krige, output = output)
   kc.result$message <- NULL 
   ##
   ##################### Back-transforming predictions
@@ -203,7 +203,9 @@
     krige <- list(type.krige = krige$type.krige, beta = beta, trend.d = trend.d, trend.l = trend.l, cov.model = cov.model, 
                   cov.pars = cov.pars, kappa = kappa, nugget = nugget, micro.scale = micro.scale, dist.epsilon = dist.epsilon, 
                   aniso.pars = aniso.pars, link = "logit")
-    kpl.result <- .glm.krige.aux(data = res.mcmc$Sdata, coords = coords, locations = locations, borders=borders, krige = krige,
+    sim.geodata <- geodata
+    sim.geodata$data <- res.mcmc$Sdata
+    kpl.result <- .glm.krige.aux(geodata=sim.geodata, locations = locations, borders=borders, krige = krige,
 					output = list(n.predictive = ifelse(sim.predict,1,0),
 					      signal = TRUE, messages=FALSE))			   
     remove(list = c("res.mcmc"))

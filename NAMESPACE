@@ -5,6 +5,9 @@ import(geoR)
 import(graphics)
 import(sp)
 
+importFrom("grDevices", "heat.colors")
+
+
 export("asympvar","binom.krige.bayes","binom.krige","covariog.model.env",
    "covariog","create.mcmc.coda","geoRglmdefunct","glsm.krige","glsm.mcmc", "krige.glm.control",
    "likfit.glsm","mcmc.control","model.glm.control","output.glm.control","pois.krige.bayes",

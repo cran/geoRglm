@@ -399,7 +399,9 @@ function(geodata, coords = geodata$coords, data = geodata$data, units.m = "defau
     krige <- list(type.krige = krige$type.krige, beta = beta, trend.d = trend.d, trend.l = trend.l, cov.model = cov.model, 
                   cov.pars = cov.pars, kappa = kappa, nugget = nugget, micro.scale = micro.scale, dist.epsilon = dist.epsilon, 
                   aniso.pars = aniso.pars, lambda = lambda)
-    kpl.result <- .krige.conv.extnd(data = intensity, coords = coords, locations = locations, borders=borders, krige = krige,
+    sim.geodata<- geodata
+    sim.geodata$data <- intensity
+    kpl.result <- .krige.conv.extnd(geodata=sim.geodata, locations = locations, borders=borders, krige = krige,
                                    output = list(n.predictive = ifelse(sim.predict,1,0), signal = TRUE, messages = FALSE))
     remove(list = c("intensity"))
     kpl.result$krige.var <- rowMeans(kpl.result$krige.var) + apply(kpl.result$predict, 1, var) 

@@ -362,7 +362,7 @@
   if(inference) {
     if(phi.prior=="fixed") phi.posterior <- list(phi.prior=phi.prior, phi=phi)
     else  phi.posterior <- list(phi.prior=phi.prior, phi.discrete=phi.discrete, sample=kb.results$posterior$phi$sample)
-    predict.temp <- .pred.aux(S=log.odds, coords=coords, locations=locations, borders=borders, model=model, prior=prior, output=output, phi.posterior=phi.posterior, link="logit")
+    predict.temp <- .pred.aux(geodata=geodata, S=log.odds, locations=locations, borders=borders, model=model, prior=prior, output=output, phi.posterior=phi.posterior, link="logit")
     temp.post <- predict.temp$temp.post
     if(do.prediction) {
       temp.pred <- predict.temp$temp.pred

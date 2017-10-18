@@ -351,7 +351,7 @@
   return(result)
 }
 
-".pred.aux" <- function(S, coords, locations, borders, model, prior, output, phi.posterior, link)
+".pred.aux" <- function(geodata, S, locations, borders, model, prior, output, phi.posterior, link)
 {
   n.sim <- ncol(S)
   do.prediction <- ifelse(all(locations == "no"), FALSE, TRUE)
@@ -367,7 +367,7 @@
      }
      ni <- nrow(locations)
   }
-  beta.size <- ncol(unclass(trend.spatial(trend=model$trend.d, geodata = list(coords=coords))))
+  beta.size <- ncol(unclass(trend.spatial(trend=model$trend.d, geodata = geodata)))
   lambda <- model$lambda
   ##
   temp.post <- list()
@@ -396,10 +396,12 @@
   prior.temp$phi.discrete <- NULL
   prior.temp$tausq.rel.prior <- "fixed"
   prior.temp$priors.info <- NULL
+  sim.geodata<- geodata
   if(phi.posterior$phi.prior == "fixed" || length(phi.posterior$phi.discrete) == 1) {
     if(phi.posterior$phi.prior == "fixed") prior.temp$phi <- phi.posterior$phi
     else prior.temp$phi <- phi.posterior$phi.discrete
-    temp.result <- .krige.bayes.extnd(data = S, coords = coords, locations = locations, borders=borders, 
+    sim.geodata$data <- S
+    temp.result <- .krige.bayes.extnd(geodata=sim.geodata, locations = locations, borders=borders, 
                                      model = model.temp, prior = prior.temp, output = output.temp)
     temp.post$beta.mean <- temp.result$posterior$beta$pars$mean
     temp.post$beta.var <- temp.result$posterior$beta$pars$var
@@ -435,9 +437,10 @@
     for(i in seq(length=len.phi.un)){
       id.phi.i <- indic.phi[i, seq(length=phi.table[i])]
       prior.temp$phi <- phi.sample.unique[i]
+      sim.geodata$data <- S[, id.phi.i]
       if(phi.table[i]==1)
-        temp.result <- krige.bayes(data = S[, id.phi.i], coords = coords, locations = locations, borders=borders, model = model.temp, prior = prior.temp, output = output.temp)
-      else temp.result <- .krige.bayes.extnd(data = S[, id.phi.i], coords = coords, locations = locations, borders=borders,  
+        temp.result <- krige.bayes(geodata=sim.geodata, locations = locations, borders=borders, model = model.temp, prior = prior.temp, output = output.temp)
+      else temp.result <- .krige.bayes.extnd(geodata=sim.geodata, locations = locations, borders=borders,  
                                             model = model.temp, prior = prior.temp, output = output.temp)
       temp.post$beta.mean[, id.phi.i] <- temp.result$posterior$beta$pars$mean         
       temp.post$beta.var[,  , id.phi.i] <- temp.result$posterior$beta$pars$var
@@ -812,7 +815,7 @@
   if(inference){
     if(phi.prior=="fixed") phi.posterior <- list(phi.prior=phi.prior, phi=phi)
     else  phi.posterior <- list(phi.prior=phi.prior, phi.discrete=phi.discrete, sample=kb.results$posterior$phi$sample)
-    predict.temp <- .pred.aux(S=gauss.post, coords=coords, locations=locations, borders=borders, model=model, prior=prior, output=output, phi.posterior=phi.posterior, link="boxcox")
+    predict.temp <- .pred.aux(geodata=geodata, S=gauss.post, locations=locations, borders=borders, model=model, prior=prior, output=output, phi.posterior=phi.posterior, link="boxcox")
     temp.post <- predict.temp$temp.post
     if(do.prediction){
       temp.pred <- predict.temp$temp.pred

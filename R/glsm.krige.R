@@ -2,7 +2,7 @@
 "glsm.krige" <- function(mcmc.output, locations, borders, trend.l="cte", micro.scale=NULL, dist.epsilon= 1e-10,  output)
 {
   call.fc <- match.call()
-  coords <- mcmc.output$geodata$coords
+  geodata <- mcmc.output$geodata
   cov.model <- mcmc.output$model$cov.model
   kappa <- mcmc.output$model$kappa
   beta <- mcmc.output$model$beta
@@ -39,11 +39,13 @@
   ##
   ##------------------------------------------------------------
 ######################## ---- prediction ----- #####################
+  sim.geodata <- geodata
   if(mcmc.output$model$family=="binomial"){
     krige <- list(type.krige = "sk", beta = beta, trend.d = trend.d, trend.l = trend.l, cov.model = cov.model, 
                   cov.pars = cov.pars, kappa = kappa, nugget = nugget, micro.scale = micro.scale, dist.epsilon = dist.epsilon, 
                   aniso.pars = aniso.pars, link = mcmc.output$model$link)
-    kpl.result <- .glm.krige.aux(data = mcmc.output$simulations, coords = coords, locations = locations, borders=borders, krige = krige,
+    sim.geodata$data <- mcmc.output$simulations 
+    kpl.result <- .glm.krige.aux(geodata=sim.geodata, locations = locations, borders=borders, krige = krige,
                                 output = list(n.predictive = ifelse(sim.predict,1,0),
                                   signal = TRUE, messages=FALSE))
   }
@@ -52,7 +54,8 @@
     krige <- list(type.krige = "sk", beta = beta, trend.d = trend.d, trend.l = trend.l, cov.model = cov.model, 
                   cov.pars = cov.pars, kappa = kappa, nugget = nugget, micro.scale = micro.scale, dist.epsilon = dist.epsilon, 
                   aniso.pars = aniso.pars, lambda = lambda)
-    kpl.result <- .krige.conv.extnd(data = .BC.inv(mcmc.output$simulations, lambda), coords = coords, locations = locations, borders=borders, krige = krige,
+    sim.geodata$data <- .BC.inv(mcmc.output$simulations, lambda)
+    kpl.result <- .krige.conv.extnd(geodata=sim.geodata, locations = locations, borders=borders, krige = krige,
                                    output = list(n.predictive = ifelse(sim.predict,1,0), signal = TRUE, messages = FALSE))
     
   }
