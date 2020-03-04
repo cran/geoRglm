@@ -27,11 +27,6 @@ create.mcmc.coda(x, mcmc.input)
   An object of class \code{mcmc} to be used for CODA.
 }
 
-\references{ 
-Further information about \bold{geoRglm} can be found at:\cr
-  \url{http://gbi.agrsci.dk/~ofch/geoRglm}.
-}
-
 \author{
   Ole F. Christensen \email{OleF.Christensen@agrsci.dk}, \cr
   Paulo J. Ribeiro Jr. \email{Paulo.Ribeiro@est.ufpr.br}.

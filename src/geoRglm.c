@@ -94,7 +94,6 @@ void calc_Dmat(Real *B, Real *D, Real *outmat, Real *logdet_DivD_half, Integer d
   /* calculation of the matrix Dmat */
   /* this version is operating on the lower triangle of B and outmat (B is lower triangular, and outmat (Dmat) is symmetric) */
   
-  typedef Real *Doublearray; 
   Integer l, k, q, p ;
   Real sum, summa;
   

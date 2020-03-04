@@ -48,10 +48,6 @@ proflik.glsm(mcmc.obj, obj.likfit.glsm, phi.values, nugget.rel.values,
   contains values of the pair of parameters and the corresponding value of the profile likelihood.
 }
 
-\references{
-  Further information about \bold{geoRglm} can be found at:\cr
-  \url{http://gbi.agrsci.dk/~ofch/geoRglm}.
-}
 
 \author{
   Ole F. Christensen \email{OleF.Christensen@agrsci.dk}, \cr

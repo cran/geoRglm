@@ -17,7 +17,7 @@ if(!exists(".Random.seed", envir=.GlobalEnv, inherits = FALSE)) set.seed(1234)
 
 
 ###################################################
-### code chunk number 3: geoRglmintro.Rnw:90-94
+### code chunk number 3: geoRglmintro.Rnw:94-98
 ###################################################
 options(geoR.messages = FALSE)
 library(geoR)
@@ -33,20 +33,20 @@ data(p50)
 
 
 ###################################################
-### code chunk number 5: geoRglmintro.Rnw:124-125
+### code chunk number 5: geoRglmintro.Rnw:128-129
 ###################################################
 options(geoR.messages = FALSE)
 
 
 ###################################################
-### code chunk number 6: geoRglmintro.Rnw:127-129
+### code chunk number 6: geoRglmintro.Rnw:131-133
 ###################################################
 sim.g <- grf(grid = expand.grid(x = seq(1, 10, l = 10), y = seq(1,
 10, l = 10)), cov.pars = c(0.1, 0.2))
 
 
 ###################################################
-### code chunk number 7: geoRglmintro.Rnw:131-132
+### code chunk number 7: geoRglmintro.Rnw:135-136
 ###################################################
 options(geoR.messages = TRUE)
 
@@ -60,7 +60,7 @@ sim$data <- rpois(100, lambda = sim$units.m*exp(sim.g$data))
 
 
 ###################################################
-### code chunk number 9: geoRglmintro.Rnw:148-150
+### code chunk number 9: geoRglmintro.Rnw:152-154
 ###################################################
 getOption("SweaveHooks")[["fig"]]()
 plot(sim$coords[,1], sim$coords[,2], type = "n")  
@@ -76,21 +76,21 @@ test2.tune <- glsm.mcmc(p50, model = model2, mcmc.input=mcmc2.test)
 
 
 ###################################################
-### code chunk number 11: geoRglmintro.Rnw:192-194
+### code chunk number 11: geoRglmintro.Rnw:196-198
 ###################################################
 mcmc2.tune <- mcmc.control(S.scale=0.5, thin=1)
 test2.tune <- glsm.mcmc(p50, model=model2, mcmc.input=mcmc2.tune)
 
 
 ###################################################
-### code chunk number 12: geoRglmintro.Rnw:202-204
+### code chunk number 12: geoRglmintro.Rnw:206-208
 ###################################################
 library(coda)
 test2.tune.c <- create.mcmc.coda(test2.tune, mcmc.input=mcmc2.tune)
 
 
 ###################################################
-### code chunk number 13: geoRglmintro.Rnw:217-221
+### code chunk number 13: geoRglmintro.Rnw:221-225
 ###################################################
 getOption("SweaveHooks")[["fig"]]()
 test2.tune.c <- create.mcmc.coda(test2.tune$simulations[45,], mcmc.input=list(S.scale=0.5, thin=1))
@@ -114,13 +114,13 @@ pred.test2 <- glsm.krige(test2, locations = cbind(c(0.5,0.5),c(1,0.4)), output =
 
 
 ###################################################
-### code chunk number 16: geoRglmintro.Rnw:262-263
+### code chunk number 16: geoRglmintro.Rnw:266-267
 ###################################################
 cbind(pred.test2$predict,pred.test2$mcmc.error)
 
 
 ###################################################
-### code chunk number 17: geoRglmintro.Rnw:273-276
+### code chunk number 17: geoRglmintro.Rnw:277-280
 ###################################################
 getOption("SweaveHooks")[["fig"]]()
 par(mfrow = c(1,2))
@@ -151,7 +151,7 @@ test5 <- pois.krige.bayes(p50, locations=t(cbind(c(2.5,3),c(-6050,-3270))), prio
 
 
 ###################################################
-### code chunk number 21: geoRglmintro.Rnw:349-353
+### code chunk number 21: geoRglmintro.Rnw:353-357
 ###################################################
 getOption("SweaveHooks")[["fig"]]()
 par(mfrow = c(1,3))
@@ -176,7 +176,7 @@ test6 <- pois.krige.bayes(p50, locations=t(cbind(c(2.5,3.5),c(-60,-37))), prior=
 
 
 ###################################################
-### code chunk number 24: geoRglmintro.Rnw:380-384
+### code chunk number 24: geoRglmintro.Rnw:384-388
 ###################################################
 getOption("SweaveHooks")[["fig"]]()
 par(mfrow = c(1,3))

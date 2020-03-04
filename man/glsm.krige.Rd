@@ -71,15 +71,7 @@ micro.scale=NULL, dist.epsilon= 1e-10, output)
   \item{call}{the function call.  }
 }
 
-\references{
-  Further information about \bold{geoRglm} can be found at:\cr
-  \url{http://gbi.agrsci.dk/~ofch/geoRglm}.
-}
 
-\author{
-  Ole F. Christensen \email{OleF.Christensen@agrsci.dk}, \cr
-  Paulo J. Ribeiro Jr. \email{Paulo.Ribeiro@est.ufpr.br}.
-}
 
 \seealso{\code{\link{glsm.mcmc}} for MCMC simulation in a generalised linear spatial model.
 }

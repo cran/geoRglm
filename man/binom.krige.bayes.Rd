@@ -207,10 +207,6 @@ the guess is too low, it is adjusted upwards, and vise verse.
   
 }
 
-\references{
- Further information about \bold{geoRglm} can be found at:\cr
- \url{http://gbi.agrsci.dk/~ofch/geoRglm}.
-}
 
 \author{
   Ole F. Christensen \email{OleF.Christensen@agrsci.dk}, \cr

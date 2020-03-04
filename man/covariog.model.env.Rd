@@ -72,11 +72,6 @@ covariog.model.env(geodata, coords = geodata$coords, units.m = "default",
     distance in \code{u}.  }
 }
 
-\references{
-  Further information about \bold{geoRglm} can be found at:\cr
-  \url{http://gbi.agrsci.dk/~ofch/geoRglm}.
-}
-
 \author{
   Ole F. Christensen \email{OleF.Christensen@agrsci.dk}, \cr
   Paulo J. Ribeiro Jr. \email{Paulo.Ribeiro@est.ufpr.br}.

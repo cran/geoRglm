@@ -126,9 +126,6 @@ Summary and print methods for summarising and printing the output also exist.
 \references{
   Christensen, O. F. (2004). Monte Carlo maximum likelihood in model-based geostatistics.
   Journal of computational and graphical statistics \bold{13} 702-718.
-   
-  Further information about \bold{geoRglm} can be found at:\cr
-  \url{http://gbi.agrsci.dk/~ofch/geoRglm}.
 }
 
 \author{

@@ -49,9 +49,6 @@ introduction to model-based geostatistics. In : \emph{Spatial statistics and com
 Springer Verlag, 43-86.
 
 Christensen, O. F. and Ribeiro Jr, P. J. (2002). geoRglm - a package for generalised linear spatial models. \emph{R News}, 2(2), 26-28.
-  
-Further information about \bold{geoRglm} can be found at:\cr
-\url{http://gbi.agrsci.dk/~ofch/geoRglm}.
 }
 
 \keyword{datasets}

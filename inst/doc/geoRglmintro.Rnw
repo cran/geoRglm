@@ -7,7 +7,11 @@
 \usepackage[dvips]{graphicx}
 %\usepackage{psfig,epsfig,psfrag}
 \usepackage{color,enumerate,longtable}
-\usepackage{texnames,lastpage,verbatim,fancyvrb}
+% OFC 23-5-2019: lastpage.sty could not be found. Seems not be needed anyway
+%\usepackage{texnames,lastpage,verbatim,fancyvrb}
+% OFC 21-02-2020: texnames.sty not found.
+%\usepackage{texnames,verbatim,fancyvrb}
+\usepackage{verbatim,fancyvrb}
 %% possible conflicts with Rd.sty
 %\usepackage{url,html}
 %\usepackage{heqn}

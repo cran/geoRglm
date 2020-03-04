@@ -34,9 +34,6 @@ asympvar(timeseries, type="mon", lag.max = 100, messages)
 \references{ 
   Geyer, C. (1992). Practical Monte Carlo (with discussion). 
   \emph{Statist. Sci.} \bold{7}, 473-511.
-  
-  Further information about \bold{geoRglm} can be found at:\cr
-  \url{http://gbi.agrsci.dk/~ofch/geoRglm}.
 }
 
 \author{
